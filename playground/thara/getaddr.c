@@ -3,7 +3,8 @@
 
 // 疑問
 // なぜlocalhostに接続が出来る?
-// なぜgoogle.comに接続が出来ない -> !connet()ではなくconect() != -1でちゃんと動く(繋がってないのに繋がったと出力されて繋がってるのに繋がってないと出力されていた)
+// なぜgoogle.comに接続が出来ない -> !connet()ではなくconect() !=
+// -1でちゃんと動く(繋がってないのに繋がったと出力されて繋がってるのに繋がってないと出力されていた)
 
 #include <libc.h>
 #include <netdb.h>
@@ -44,12 +45,29 @@ int main() {
     perror("");
     printf("error connect\n");
     return 1;
-  }
-  else
+  } else
     printf("connection success!\n");
-  while (1);
+
+  sleep(1);
+
+  char *request = "message from client!";
+  int write_res = sendto(sock, request, strlen(request), 0, (struct sockaddr *)&res, sizeof(res));
+  if (write_res == -1) {
+    perror("write");
+  } else {
+    printf("%d\n", write_res);
+  }
+
+  char response[100];
+  memset(response, 0, 100);
+  int size = read(sock, response, 100);
+  printf("%s\n", response);
+  printf("%d \n", size);
+
+  // while (1);
 
   freeaddrinfo(res);
+  close(sock);
 
   return 0;
 }
