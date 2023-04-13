@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #define PORT 80
 
@@ -33,18 +34,27 @@ int main() {
 		printf("listen error\n");
 		return 1;
 	}
-	sleep(10);
+	//fcntl(socket_fd, F_SETFL, O_NONBLOCK);
+	static int socks[100];
+	static int sock_idx;
 	while (1) {
-		if ((accept_fd = accept(socket_fd, (struct sockaddr *) &add, (socklen_t *)&addlen)) == -1) {
+		printf("one loop\n");
+		if ((socks[sock_idx++] = accept(socket_fd, (struct sockaddr *) &add, (socklen_t *)&addlen)) == -1) {
 			printf("accept error\n");
 			return 1;
-		} 
-		printf("hello\n");
+		}
+		fcntl(accept_fd, F_SETFL, O_NONBLOCK);
+
 		char response[100];
 		memset(response, 0, 100);
-		int size = read(accept_fd, response, 100);
-		printf("%s\n", response);
-		
-		close(accept_fd);
+		int size;
+		sleep(1);
+		for (int i = 0; i < sock_idx; i++) {
+			if ((size = read(socks[i], response, 100)) == -1)
+				continue;
+			printf("%s\n", response);
+			printf("%d\n", size);
+		}		
+		//close(accept_fd);
 	}
 }

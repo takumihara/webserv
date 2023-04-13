@@ -12,7 +12,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-int main() {
+int main(int argc, char **argv) {
   char *hostname = "localhost";
   // can be "http"
   char *service = "80";
@@ -48,18 +48,19 @@ int main() {
   } else
     printf("connection success!\n");
 
-  sleep(1);
-
-  char *request = "message from client!";
-  int write_res = sendto(sock, request, strlen(request), 0, (struct sockaddr *)&res, sizeof(res));
-  if (write_res == -1) {
-    perror("write");
-  } else {
-    printf("%d\n", write_res);
+  for (int i = 1; i < argc; i++) {
+    char *request = argv[i];
+    int write_res = sendto(sock, request, strlen(request), 0, (struct sockaddr *)&res, sizeof(res));
+    if (write_res == -1) {
+      perror("write");
+    } else {
+      printf("%d\n", write_res);
+    }
+    sleep(5);
   }
-
   char response[100];
   memset(response, 0, 100);
+  sleep(1);
   int size = read(sock, response, 100);
   printf("%s\n", response);
   printf("%d \n", size);
