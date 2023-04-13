@@ -3,7 +3,7 @@
 
 // 疑問
 // なぜlocalhostに接続が出来る?
-// なぜgoogle.comに接続が出来ない
+// なぜgoogle.comに接続が出来ない -> !connet()ではなくconect() != -1でちゃんと動く(繋がってないのに繋がったと出力されて繋がってるのに繋がってないと出力されていた)
 
 #include <libc.h>
 #include <netdb.h>
@@ -12,7 +12,7 @@
 #include <sys/types.h>
 
 int main() {
-  char *hostname = "42.fr";
+  char *hostname = "localhost";
   // can be "http"
   char *service = "80";
   struct addrinfo hints, *res;
@@ -20,7 +20,7 @@ int main() {
   int sock;
 
   memset(&hints, 0, sizeof(hints));
-  hints.ai_socktype = SOCK_DGRAM;
+  hints.ai_socktype = SOCK_STREAM;
   // 名前解決の方法を指定
   hints.ai_family = AF_INET;
 
@@ -40,11 +40,14 @@ int main() {
     return 1;
   }
 
-  if (!connect(sock, res->ai_addr, res->ai_addrlen)) {
+  if (connect(sock, res->ai_addr, res->ai_addrlen) == -1) {
     perror("");
     printf("error connect\n");
     return 1;
   }
+  else
+    printf("connection success!\n");
+  while (1);
 
   freeaddrinfo(res);
 
