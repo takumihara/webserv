@@ -81,7 +81,6 @@ int open_port() {
     perror("listen");
     return 1;
   }
-  fcntl(port_fd, F_SETFL, O_NONBLOCK);
   return port_fd;
 }
 
@@ -93,7 +92,6 @@ int main() {
 
   std::vector<int> socks;
   socks.push_back(port_fd);
-  fcntl(socks.back(), F_SETFL, O_NONBLOCK);
 	std::cout << "server setup finished!" << std::endl;
   while (1) {
     fd_set rd;
