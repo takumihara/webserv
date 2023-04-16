@@ -41,12 +41,23 @@ int make_client_connection(fd_set *rd, int port_fd) {
   return connection_fd;
 }
 
+void send_response(int socket_fd, char *response) {
+  int res = sendto(socket_fd, response, strlen(response), 0, NULL, 0);
+  if (res == -1) {
+    perror("write");
+    exit(1);
+  }
+  std::cout << "response sent: "
+            << "'" << response << "'"
+            << " (" << res << ")" << std::endl;
+}
+
 void handle_request(std::vector<int> &socks, int i) {
-  char response[100];
+  char request[100];
   int size;
-  bzero(response, 100);
-  if ((size = read(socks[i], response, 100)) == -1) {
-    printf("read error\n");
+  bzero(request, 100);
+  if ((size = read(socks[i], request, 100)) == -1) {
+    perror("read");
     exit(1);
   }
   if (size == 0) {
@@ -56,21 +67,19 @@ void handle_request(std::vector<int> &socks, int i) {
     std::advance(itr, i);
     socks.erase(itr);
   } else {
-    std::cout << response << std::endl;
-    std::cout << size << std::endl;
+    std::cout << "request received"
+              << "(fd:" << socks[i] << "): '" << request << "'" << std::endl;
+    send_response(socks[i], request);
   }
 }
 
-int main() {
+int open_port() {
   int port_fd;
   struct sockaddr_in add;
   int addlen;
-  char buff[1000];
-  struct timeval tv;
-  tv.tv_sec = 0;
-  tv.tv_usec = 200000;
+
   if ((port_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-    printf("socket error\n");
+    perror("socket");
     return 1;
   }
   add.sin_family = AF_INET;
@@ -78,17 +87,25 @@ int main() {
   add.sin_port = htons(PORT);
 
   if (bind(port_fd, (struct sockaddr *)&add, sizeof(add)) == -1) {
-    printf("bind error\n");
+    perror("bind");
     return 1;
   }
   if (listen(port_fd, 0) < 0) {
-    printf("listen error\n");
+    perror("listen");
     return 1;
   }
-  fcntl(port_fd, F_SETFL, O_NONBLOCK);
+  return port_fd;
+}
+
+int main() {
+  int port_fd = open_port();
+  struct timeval tv;
+  tv.tv_sec = 0;
+  tv.tv_usec = 200000;
+
   std::vector<int> socks;
   socks.push_back(port_fd);
-  fcntl(socks.back(), F_SETFL, O_NONBLOCK);
+  std::cout << "server setup finished!" << std::endl;
   while (1) {
     fd_set rd;
     int max_fd = 1;
@@ -98,11 +115,9 @@ int main() {
       continue;
     else if (ret_select == -1)
       perror("select");
-    printf("here\n");
-    sleep(1);
+
     for (int i = 0; i < socks.size(); i++) {
       if (FD_ISSET(socks[i], &rd) == 0) continue;
-      std::cout << "content of itr: " << socks[i] << std::endl;
       if (socks[i] == port_fd) {
         socks.push_back(make_client_connection(&rd, port_fd));
       } else {

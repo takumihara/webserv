@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include <iostream>
 #include <string>
 
 int main(int argc, char **argv) {
@@ -31,7 +32,6 @@ int main(int argc, char **argv) {
     printf("error %d\n", err);
     return 1;
   }
-  printf("%hhu\n", res->ai_addr->sa_family);
   void *ptr = &((struct sockaddr_in *)res->ai_addr)->sin_addr;
   char addr_buf[64];
   inet_ntop(res->ai_family, ptr, addr_buf, sizeof(addr_buf));
@@ -39,36 +39,37 @@ int main(int argc, char **argv) {
 
   sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (sock == -1) {
-    printf("socket\n");
+    perror("socket");
     return 1;
   }
 
   if (connect(sock, res->ai_addr, res->ai_addrlen) == -1) {
-    perror("");
-    printf("error connect\n");
+    perror("connect");
     return 1;
   } else
     printf("connection success!\n");
 
   for (int i = 1; i < argc; i++) {
     char *request = argv[i];
-    int write_res = sendto(sock, request, strlen(request), 0, (struct sockaddr *)&res, sizeof(res));
+    int write_res = sendto(sock, request, strlen(request), 0, NULL, 0);
     if (write_res == -1) {
       perror("write");
     } else {
-      printf("%d\n", write_res);
+      std::cout << "request sent: "
+                << "'" << request << "'"
+                << " (" << write_res << ")" << std::endl;
     }
-    sleep(5);
+    char response[100];
+    memset(response, 0, 100);
+    ssize_t res = read(sock, response, 100);
+    if (res == -1) {
+      perror("read");
+      exit(1);
+    }
+    std::cout << "response received"
+              << "(fd:" << sock << "): '" << response << "'" << std::endl;
+    sleep(3);
   }
-
-  char response[100];
-  memset(response, 0, 100);
-  sleep(1);
-  int size = read(sock, response, 100);
-  printf("%s\n", response);
-  printf("%d \n", size);
-
-  // while (1);
 
   freeaddrinfo(res);
   close(sock);
