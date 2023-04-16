@@ -80,7 +80,7 @@ int open_port() {
 
   if ((port_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
     perror("socket");
-    return 1;
+    exit(1);
   }
   add.sin_family = AF_INET;
   add.sin_addr.s_addr = INADDR_ANY;
@@ -88,11 +88,11 @@ int open_port() {
 
   if (bind(port_fd, (struct sockaddr *)&add, sizeof(add)) == -1) {
     perror("bind");
-    return 1;
+    exit(1);
   }
   if (listen(port_fd, 0) < 0) {
     perror("listen");
-    return 1;
+    exit(1);
   }
   return port_fd;
 }
