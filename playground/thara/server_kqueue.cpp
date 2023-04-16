@@ -3,11 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/event.h>
 #include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <iostream>
-#include <vector>
+#include <set>
 
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
@@ -15,22 +18,10 @@
 // listenのqueueのsizeを0にしても2個目のクライアントがconnectできたのなぜ？
 // -> 同時に接続リクエストが来た時。connectが完了したら、queueからは消える。
 
-typedef std::vector<int>::iterator iterator;
-typedef std::vector<int>::const_iterator const_iterator;
+typedef std::set<int>::iterator iterator;
+typedef std::set<int>::const_iterator const_iterator;
 
-int update_rd(fd_set *rd, std::vector<int> &socks) {
-  int max_fd = 0;
-  FD_ZERO(rd);
-  for (iterator itr = socks.begin(); itr != socks.end(); itr++) {
-    // std::cout << *itr << " " ;
-    FD_SET(*itr, rd);
-    max_fd = max(max_fd, *itr);
-  }
-  // std::cout << std::endl;
-  return max_fd;
-}
-
-int make_client_connection(fd_set *rd, int port_fd) {
+int make_client_connection(int port_fd) {
   struct sockaddr_in add;
   int addlen;
   int connection_fd = accept(port_fd, (struct sockaddr *)&add, (socklen_t *)&addlen);
@@ -52,24 +43,22 @@ void send_response(int socket_fd, char *response) {
             << " (" << res << ")" << std::endl;
 }
 
-void handle_request(std::vector<int> &socks, int i) {
+void handle_request(std::set<int> &socks, int socket_fd) {
   char request[100];
   int size;
   bzero(request, 100);
-  if ((size = read(socks[i], request, 100)) == -1) {
+  if ((size = read(socket_fd, request, 100)) == -1) {
     perror("read");
     exit(1);
   }
   if (size == 0) {
-    std::cout << "closed fd = " << socks[i] << std::endl;
-    close(socks[i]);
-    iterator itr = socks.begin();
-    std::advance(itr, i);
-    socks.erase(itr);
+    std::cout << "closed fd = " << socket_fd << std::endl;
+    close(socket_fd);
+    socks.erase(socket_fd);
   } else {
     std::cout << "request received"
-              << "(fd:" << socks[i] << "): '" << request << "'" << std::endl;
-    send_response(socks[i], request);
+              << "(fd:" << socket_fd << "): '" << request << "'" << std::endl;
+    send_response(socket_fd, request);
   }
 }
 
@@ -99,29 +88,35 @@ int open_port() {
 
 int main() {
   int port_fd = open_port();
-  struct timeval tv;
-  tv.tv_sec = 0;
-  tv.tv_usec = 200000;
+  int kq = kqueue();
+  if (kq == -1) {
+    perror("kqueue");
+    exit(1);
+  }
+  setsockopt
 
-  std::vector<int> socks;
-  socks.push_back(port_fd);
+  std::set<int> socks;
+  socks.insert(port_fd);
   std::cout << "server setup finished!" << std::endl;
   while (1) {
-    fd_set rd;
-    int max_fd = 1;
-    max_fd = update_rd(&rd, socks);
-    int ret_select = select(max_fd + 1, &rd, NULL, NULL, &tv);
-    if (ret_select == 0)
-      continue;
-    else if (ret_select == -1)
-      perror("select");
+    struct kevent *chlist = new struct kevent[socks.size()];
+    int i = 0;
+    for (const_iterator itr = socks.begin(); itr != socks.end(); itr++, i++) {
+      EV_SET(&chlist[i], *itr, EVFILT_READ, EV_ADD, 0, 0, 0);
+    }
 
-    for (int i = 0; i < socks.size(); i++) {
-      if (FD_ISSET(socks[i], &rd) == 0) continue;
-      if (socks[i] == port_fd) {
-        socks.push_back(make_client_connection(&rd, port_fd));
+    struct kevent *evlist = new struct kevent[socks.size()];
+    int nev = kevent(kq, chlist, socks.size(), evlist, socks.size(), NULL);
+    if (nev == 0)
+      continue;
+    else if (nev == -1)
+      perror("kevent");
+
+    for (int i = 0; i < nev; i++) {
+      if (evlist[i].ident == port_fd) {
+        socks.insert(make_client_connection(port_fd));
       } else {
-        handle_request(socks, i);
+        handle_request(socks, evlist[i].ident);
       }
     }
   }
