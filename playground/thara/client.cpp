@@ -12,8 +12,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include <string>
 #include <iostream>
+#include <string>
 
 int main(int argc, char **argv) {
   std::string hostname = "localhost";
@@ -51,20 +51,25 @@ int main(int argc, char **argv) {
 
   for (int i = 1; i < argc; i++) {
     char *request = argv[i];
-    int write_res = sendto(sock, request, strlen(request), 0, (struct sockaddr *)&res, sizeof(res));
+    int write_res = sendto(sock, request, strlen(request), 0, NULL, 0);
     if (write_res == -1) {
       perror("write");
     } else {
-      std::cout << "request sent: " << "'" << request << "'" << " (" << write_res << ")" << std::endl;
+      std::cout << "request sent: "
+                << "'" << request << "'"
+                << " (" << write_res << ")" << std::endl;
     }
-    sleep(5);
+    char response[100];
+    memset(response, 0, 100);
+    ssize_t res = read(sock, response, 100);
+    if (res == -1) {
+      perror("read");
+      exit(1);
+    }
+    std::cout << "response received"
+              << "(fd:" << sock << "): '" << response << "'" << std::endl;
+    sleep(3);
   }
-
-  char response[100];
-  memset(response, 0, 100);
-  int size = read(sock, response, 100);
-  printf("%s\n", response);
-  printf("%d \n", size);
 
   freeaddrinfo(res);
   close(sock);

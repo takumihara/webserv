@@ -41,11 +41,22 @@ int make_client_connection(fd_set *rd, int port_fd) {
   return connection_fd;
 }
 
+void send_response(int socket_fd, char *response) {
+  int res = sendto(socket_fd, response, strlen(response), 0, NULL, 0);
+  if (res == -1) {
+    perror("write");
+    exit(1);
+  }
+  std::cout << "response sent: "
+            << "'" << response << "'"
+            << " (" << res << ")" << std::endl;
+}
+
 void handle_request(std::vector<int> &socks, int i) {
-  char response[100];
+  char request[100];
   int size;
-  bzero(response, 100);
-  if ((size = read(socks[i], response, 100)) == -1) {
+  bzero(request, 100);
+  if ((size = read(socks[i], request, 100)) == -1) {
     perror("read");
     exit(1);
   }
@@ -56,7 +67,9 @@ void handle_request(std::vector<int> &socks, int i) {
     std::advance(itr, i);
     socks.erase(itr);
   } else {
-    std::cout << "request received"  << "(fd:" << socks[i] << "): '" << response << "'"<< std::endl;
+    std::cout << "request received"
+              << "(fd:" << socks[i] << "): '" << request << "'" << std::endl;
+    send_response(socks[i], request);
   }
 }
 
@@ -92,7 +105,7 @@ int main() {
 
   std::vector<int> socks;
   socks.push_back(port_fd);
-	std::cout << "server setup finished!" << std::endl;
+  std::cout << "server setup finished!" << std::endl;
   while (1) {
     fd_set rd;
     int max_fd = 1;
