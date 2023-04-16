@@ -11,6 +11,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+
 #include <string>
 
 int main(int argc, char **argv) {
@@ -69,7 +70,7 @@ int main(int argc, char **argv) {
     }
     sleep(5);
   }
-  
+
   char response[100];
   memset(response, 0, 100);
   sleep(1);
