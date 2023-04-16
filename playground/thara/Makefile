@@ -2,7 +2,7 @@
 all: server client
 
 server:
-	clang++ server.cpp -o server -std=c++98
+	clang++ server_kqueue.cpp -o server -std=c++98
 
 client:
 	clang++ client.cpp -o client -std=c++98 -Wall -Wextra -Werror
