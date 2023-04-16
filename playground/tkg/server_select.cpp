@@ -11,6 +11,8 @@
 
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#define DATA_SIZE 100000000
 // listenのqueueのsizeを0にしても2個目のクライアントがconnectできたのなぜ？
 // -> 同時に接続リクエストが来た時。connectが完了したら、queueからは消える。
 
@@ -52,7 +54,32 @@ void send_response(int socket_fd, char *response) {
 }
 
 void handle_request(std::vector<int> &socks, int i) {
-  char request[100];
+  char *request = (char *)calloc(INT_MAX, 1);
+  int size;
+  static int cur = 0;
+  int fd = open("recieve.data", O_CREAT | O_RDWR);
+  bzero(request, INT_MAX);
+  if ((size = read(socks[i], request, 10000)) == -1) {
+    perror("read");
+    exit(1);
+  }
+  if (size == 0) {
+    std::cout << "closed fd = " << socks[i] << std::endl;
+    close(socks[i]);
+    iterator itr = socks.begin();
+    std::advance(itr, i);
+    socks.erase(itr);
+    return ;
+  } else {
+    write(fd, request, size);
+  }
+  cur += size;
+  close(fd);
+  free(request);
+}
+
+  // send_response(socks[i], request);
+  /*char request[100];
   int size;
   bzero(request, 100);
   if ((size = read(socks[i], request, 100)) == -1) {
@@ -68,9 +95,9 @@ void handle_request(std::vector<int> &socks, int i) {
   } else {
     std::cout << "request received"
               << "(fd:" << socks[i] << "): '" << request << "'" << std::endl;
-    send_response(socks[i], request);
-  }
-}
+    //send_response(socks[i], request);
+  }*/
+
 
 int open_port() {
   int port_fd;
@@ -99,26 +126,31 @@ int open_port() {
 int main() {
   int port_fd = open_port();
   struct timeval tv;
-  tv.tv_sec = 0;
+  tv.tv_sec = 1;
   tv.tv_usec = 200000;
 
   std::vector<int> socks;
   socks.push_back(port_fd);
   std::cout << "server setup finished!" << std::endl;
+  // fcntl(port_fd, F_SETFL, O_NONBLOCK);
   while (1) {
     fd_set rd;
     int max_fd = 1;
     max_fd = update_rd(&rd, socks);
     int ret_select = select(max_fd + 1, &rd, NULL, NULL, &tv);
-    if (ret_select == 0)
+    if (ret_select == -1) {
+      std::cout << "select error " << std::endl;
+    }
+    if (ret_select == 0) {
       continue;
-    else if (ret_select == -1)
+    } else if (ret_select == -1)
       perror("select");
 
     for (int i = 0; i < socks.size(); i++) {
       if (FD_ISSET(socks[i], &rd) == 0) continue;
       if (socks[i] == port_fd) {
         socks.push_back(make_client_connection(&rd, port_fd));
+        // fcntl(socks.back(), F_SETFL, O_NONBLOCK);
       } else {
         handle_request(socks, i);
       }

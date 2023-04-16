@@ -12,13 +12,10 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include <iostream>
-#include <string>
-
 int main(int argc, char **argv) {
-  std::string hostname = "localhost";
+  char *hostname = "localhost";
   // can be "http"
-  std::string service = "80";
+  char *service = "80";
   struct addrinfo hints, *res;
   int err;
   int sock;
@@ -28,10 +25,11 @@ int main(int argc, char **argv) {
   // 名前解決の方法を指定
   hints.ai_family = AF_INET;
 
-  if ((err = getaddrinfo(hostname.c_str(), service.c_str(), &hints, &res)) != 0) {
+  if ((err = getaddrinfo(hostname, service, &hints, &res)) != 0) {
     printf("error %d\n", err);
     return 1;
   }
+  printf("%hhu\n", res->ai_addr->sa_family);
   void *ptr = &((struct sockaddr_in *)res->ai_addr)->sin_addr;
   char addr_buf[64];
   inet_ntop(res->ai_family, ptr, addr_buf, sizeof(addr_buf));
@@ -39,37 +37,35 @@ int main(int argc, char **argv) {
 
   sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (sock == -1) {
-    perror("socket");
+    printf("socket\n");
     return 1;
   }
 
   if (connect(sock, res->ai_addr, res->ai_addrlen) == -1) {
-    perror("connect");
+    perror("");
+    printf("error connect\n");
     return 1;
   } else
     printf("connection success!\n");
 
   for (int i = 1; i < argc; i++) {
     char *request = argv[i];
-    int write_res = sendto(sock, request, strlen(request), 0, NULL, 0);
+    int write_res = sendto(sock, request, strlen(request), 0, (struct sockaddr *)&res, sizeof(res));
     if (write_res == -1) {
       perror("write");
     } else {
-      std::cout << "request sent: "
-                << "'" << request << "'"
-                << " (" << write_res << ")" << std::endl;
+      printf("%d\n", write_res);
     }
-    char response[100];
-    memset(response, 0, 100);
-    ssize_t res = read(sock, response, 100);
-    if (res == -1) {
-      perror("read");
-      exit(1);
-    }
-    std::cout << "response received"
-              << "(fd:" << sock << "): '" << response << "'" << std::endl;
-    sleep(3);
+    sleep(5);
   }
+  char response[100];
+  memset(response, 0, 100);
+  sleep(1);
+  int size = read(sock, response, 100);
+  printf("%s\n", response);
+  printf("%d \n", size);
+
+  // while (1);
 
   freeaddrinfo(res);
   close(sock);
