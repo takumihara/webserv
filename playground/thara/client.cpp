@@ -60,16 +60,6 @@ int main(int argc, char **argv) {
     }
     sleep(5);
   }
-  for (int i = 1; i < argc; i++) {
-    std::string request = "close";
-    int write_res = sendto(sock, request.c_str(), request.size(), 0, (struct sockaddr *)&res, sizeof(res));
-    if (write_res == -1) {
-      perror("write");
-    } else {
-      printf("%d\n", write_res);
-    }
-    sleep(5);
-  }
 
   char response[100];
   memset(response, 0, 100);
