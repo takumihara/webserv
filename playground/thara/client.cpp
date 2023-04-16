@@ -11,11 +11,12 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <string>
 
 int main(int argc, char **argv) {
-  char *hostname = "localhost";
+  std::string hostname = "localhost";
   // can be "http"
-  char *service = "80";
+  std::string service = "80";
   struct addrinfo hints, *res;
   int err;
   int sock;
@@ -25,7 +26,7 @@ int main(int argc, char **argv) {
   // 名前解決の方法を指定
   hints.ai_family = AF_INET;
 
-  if ((err = getaddrinfo(hostname, service, &hints, &res)) != 0) {
+  if ((err = getaddrinfo(hostname.c_str(), service.c_str(), &hints, &res)) != 0) {
     printf("error %d\n", err);
     return 1;
   }
@@ -51,6 +52,16 @@ int main(int argc, char **argv) {
   for (int i = 1; i < argc; i++) {
     char *request = argv[i];
     int write_res = sendto(sock, request, strlen(request), 0, (struct sockaddr *)&res, sizeof(res));
+    if (write_res == -1) {
+      perror("write");
+    } else {
+      printf("%d\n", write_res);
+    }
+    sleep(5);
+  }
+  for (int i = 1; i < argc; i++) {
+    std::string request = "close";
+    int write_res = sendto(sock, request.c_str(), request.size(), 0, (struct sockaddr *)&res, sizeof(res));
     if (write_res == -1) {
       perror("write");
     } else {

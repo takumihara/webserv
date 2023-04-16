@@ -5,15 +5,20 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <vector>
+#include <iostream>
 
 #define PORT 80
 
 // listenのqueueのsizeを0にしても2個目のクライアントがconnectできたのなぜ？
 // -> 同時に接続リクエストが来た時。connectが完了したら、queueからは消える。
 
+typedef std::vector<int>::iterator iterator;
+typedef std::vector<int>::const_iterator const_iterator;
+
 int main() {
 
-	int socket_fd, accept_fd;
+	int socket_fd;
 	struct sockaddr_in add;
 	int addlen;
 	char	buff[1000];
@@ -34,27 +39,31 @@ int main() {
 		printf("listen error\n");
 		return 1;
 	}
-	//fcntl(socket_fd, F_SETFL, O_NONBLOCK);
-	static int socks[100];
-	static int sock_idx;
+	// fcntl(socket_fd, F_SETFL, O_NONBLOCK);
+	std::vector<int> socks;
 	while (1) {
 		printf("one loop\n");
-		if ((socks[sock_idx++] = accept(socket_fd, (struct sockaddr *) &add, (socklen_t *)&addlen)) == -1) {
+		socks.push_back(accept(socket_fd, (struct sockaddr *) &add, (socklen_t *)&addlen));
+		if (socks.back() == -1) {
 			printf("accept error\n");
 			return 1;
 		}
-		fcntl(accept_fd, F_SETFL, O_NONBLOCK);
+		fcntl(socks.back(), F_SETFL, O_NONBLOCK);
 
 		char response[100];
 		memset(response, 0, 100);
 		int size;
 		sleep(1);
-		for (int i = 0; i < sock_idx; i++) {
-			if ((size = read(socks[i], response, 100)) == -1)
+		for (iterator itr = socks.begin(); itr != socks.end(); itr++) {
+			if ((size = read(*itr, response, 100)) == -1)
 				continue;
-			printf("%s\n", response);
-			printf("%d\n", size);
-		}		
-		//close(accept_fd);
+			if (std::string(response) == "close") {
+				close(*itr);
+				socks.erase(itr);
+			} else {
+				std::cout << response << std::endl;
+				std::cout << size << std::endl;
+			}
+		}
 	}
 }
