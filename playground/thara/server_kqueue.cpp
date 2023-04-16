@@ -93,7 +93,6 @@ int main() {
     perror("kqueue");
     exit(1);
   }
-  setsockopt
 
   std::set<int> socks;
   socks.insert(port_fd);
