@@ -12,10 +12,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include <string>
+
 int main(int argc, char **argv) {
-  char *hostname = "localhost";
+  std::string hostname = "localhost";
   // can be "http"
-  char *service = "80";
+  std::string service = "80";
   struct addrinfo hints, *res;
   int err;
   int sock;
@@ -25,7 +27,7 @@ int main(int argc, char **argv) {
   // 名前解決の方法を指定
   hints.ai_family = AF_INET;
 
-  if ((err = getaddrinfo(hostname, service, &hints, &res)) != 0) {
+  if ((err = getaddrinfo(hostname.c_str(), service.c_str(), &hints, &res)) != 0) {
     printf("error %d\n", err);
     return 1;
   }
@@ -58,6 +60,7 @@ int main(int argc, char **argv) {
     }
     sleep(5);
   }
+
   char response[100];
   memset(response, 0, 100);
   sleep(1);
