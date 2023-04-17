@@ -11,6 +11,7 @@
 
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
+
 // listenのqueueのsizeを0にしても2個目のクライアントがconnectできたのなぜ？
 // -> 同時に接続リクエストが来た時。connectが完了したら、queueからは消える。
 
