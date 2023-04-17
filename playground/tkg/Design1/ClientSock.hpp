@@ -18,6 +18,7 @@ class ClientSocket {
 		ClientSocket(int fd, SocketState state);
 		~ClientSocket();
 		void	notify();
+		void	handle_request();
 	
 
 };

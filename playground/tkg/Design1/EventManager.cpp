@@ -28,6 +28,7 @@ void	EventManager::removeConnectionFd(int fd) {
 	connection_fds_.erase(fd);
 }
 
+//changed fds functions
 std::map<int, int> &EventManager::getChangedFds() {
   return changed_fds_;
 }
@@ -35,29 +36,6 @@ std::map<int, int> &EventManager::getChangedFds() {
 void	EventManager::addChangedFd(int fd, int flag) {
 	changed_fds_[fd] = flag;
 }
-
-
-
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/event.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#include <iostream>
-#include <set>
-
-
-#define PORT 80
-#define max(x, y) ((x) > (y) ? (x) : (y))
-
-// listenのqueueのsizeを0にしても2個目のクライアントがconnectできたのなぜ？
-// -> 同時に接続リクエストが来た時。connectが完了したら、queueからは消える。
 
 
 void EventManager::make_client_connection(int port_fd) {
@@ -159,15 +137,12 @@ void EventManager::eventLoop() { //confファイルを引数として渡す？
       continue;
     else if (nev == -1)
       perror("kevent");
-    for (const_set_iterator itr = connection_fds_.begin(); itr != connection_fds_.begin(); itr++) {
-      std::cout << *itr << std::endl;
-    }
     for (int i = 0; i < nev; i++) {
       if (port_fds_.find(evlist[i].ident) != port_fds_.end()) {
         std::cout << "port fd " << std::endl;
         make_client_connection(evlist[i].ident);
       } else {
-         std::cout << "connection fd " << std::endl;
+        std::cout << "connection fd " << std::endl;
         handle_request(evlist[i].ident);
       }
     }
