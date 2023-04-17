@@ -1,6 +1,6 @@
 #include "EventManager.hpp"
 
-EventManager::EventManager():num_sockets_(0) {}
+EventManager::EventManager() {}
 
 //Port fds functions
 std::set<int> &EventManager::getPortFds() {
@@ -27,6 +27,15 @@ void	EventManager::addConnectionFd(int fd) {
 void	EventManager::removeConnectionFd(int fd) {
 	connection_fds_.erase(fd);
 }
+
+std::map<int, int> &EventManager::getChangedFds() {
+  return changed_fds_;
+}
+
+void	EventManager::addChangedFd(int fd, int flag) {
+	changed_fds_[fd] = flag;
+}
+
 
 
 #include <fcntl.h>
@@ -58,7 +67,7 @@ void EventManager::make_client_connection(int port_fd) {
   if (connection_fd == -1) {
     throw std::runtime_error("accept error");
   }
-  addConnectionFd(connection_fd);
+  addChangedFd(connection_fd, EV_ADD);
   return;
 }
 
@@ -72,27 +81,25 @@ void EventManager::send_response(int socket_fd, char *response) {
             << " (" << res << ")" << std::endl;
 }
 
-void EventManager::handle_request(std::set<int> &socks, int socket_fd){// std::vector<struct kevent> &chlist, int socket_fd) {
+void EventManager::handle_request(int socket_fd) {
   char request[100];
   int size;
   bzero(request, 100);
   if ((size = read(socket_fd, request, 100)) == -1) {
-    return;//throw std::runtime_error("read error");
+    throw std::runtime_error("read error");
   }
   if (size == 0) {
     std::cout << "closed fd = " << socket_fd << std::endl;
-    //EV_SET(&chlist[1], socket_fd, EVFILT_READ, EV_ADD, 0, 0, 0);
+    removeConnectionFd(socket_fd);
     close(socket_fd);
-    socks.erase(socket_fd);
   } else {
     std::cout << "request received"
               << "(fd:" << socket_fd << "): '" << request << "'" << std::endl;
     send_response(socket_fd, request);
   }
- // (void)chlist;
 }
 
-void EventManager::open_port() {
+void EventManager::open_port(int kq) {
   int port_fd;
   struct sockaddr_in add;
 
@@ -110,57 +117,58 @@ void EventManager::open_port() {
     throw std::runtime_error("listen error");
   }
   addPortFd(port_fd);
+  struct kevent pevent;
+  EV_SET(&pevent, port_fd, EVFILT_READ, EV_ADD, 0, 0, 0);
+  kevent(kq, &pevent, 1, NULL, 0, NULL);
   return;
 }
 
-void  EventManager::update_chlist(std::vector<struct kevent> &chlist) {
-  num_sockets_ = port_fds_.size() + connection_fds_.size();
-  if (chlist.capacity() < num_sockets_){
-   chlist.resize(num_sockets_);
-  }
-  // EV_SET(&chlist[0], 10, EVFILT_READ, EV_ADD, 0, 0, 0);
-  // EV_SET(&chlist[0], 10, EVFILT_READ, EV_DISABLE, 0, 0, 0);
-  std::cout << "port fds" << std::endl;
+void  EventManager::update_chlist(int kq, std::vector<struct kevent> &chlist) {
+
+  chlist.clear();
+  if (chlist.capacity() < changed_fds_.size())
+    chlist.reserve(changed_fds_.size());
   int i = 0;
-  for (const_iterator itr = port_fds_.begin(); itr != port_fds_.end(); itr++, i++) {
-    std::cout << *itr << std::endl;
-    EV_SET(&chlist[i], *itr, EVFILT_READ, EV_ADD, 0, 0, 0);
+  for (const_map_iterator itr = changed_fds_.begin(); itr != changed_fds_.end(); itr++, i++) {
+    std::cout << itr->first  << " " << itr->second  << " " << EV_ADD << std::endl;
+    EV_SET(&chlist[i], itr->first, EVFILT_READ, itr->second, 0, 0, 0);
+    if (itr->second & EV_ADD)
+      addConnectionFd(itr->first);
   }
-  std::cout << "connection fds" << std::endl;
-  for (const_iterator itr = connection_fds_.begin(); itr != connection_fds_.end(); itr++, i++) {
-    std::cout << *itr << std::endl;
-    EV_SET(&chlist[i], *itr, EVFILT_READ, EV_ADD, 0, 0, 0);
-  }
+  changed_fds_.clear();
+  kevent(kq, &(*chlist.begin()), num_events_, NULL, 0, NULL);
 }
 
-
 void EventManager::eventLoop() { //confファイルを引数として渡す？
-  open_port();
   int kq = kqueue();
   if (kq == -1) {
     throw std::runtime_error("kqueue error");
   }
+  open_port(kq);
   std::vector<struct kevent> chlist;
+  chlist.reserve(100);
   std::vector<struct kevent> evlist;
+  evlist.reserve(100);
   std::cout << "server setup finished!" << std::endl;
   while (1) {
     std::cout << "loop start" << std::endl;
-    update_chlist(chlist);
-    evlist.resize(chlist.size());
-    int nev = kevent(kq, &(*chlist.begin()), chlist.size(), &(*evlist.begin()), evlist.size(), NULL);
+    update_chlist(kq, chlist);
+    evlist.clear();
+    int nev = kevent(kq, NULL, 0, &(*evlist.begin()), 100, NULL);
     if (nev == 0)
       continue;
     else if (nev == -1)
       perror("kevent");
-    for (const_iterator itr = connection_fds_.begin(); itr != connection_fds_.begin(); itr++) {
+    for (const_set_iterator itr = connection_fds_.begin(); itr != connection_fds_.begin(); itr++) {
       std::cout << *itr << std::endl;
     }
     for (int i = 0; i < nev; i++) {
       if (port_fds_.find(evlist[i].ident) != port_fds_.end()) {
+        std::cout << "port fd " << std::endl;
         make_client_connection(evlist[i].ident);
       } else {
-        //handle_request(connection_fds_, chlist, evlist[i].ident);
-        handle_request(connection_fds_, evlist[i].ident);
+         std::cout << "connection fd " << std::endl;
+        handle_request(evlist[i].ident);
       }
     }
     std::cout << "----------------------" << std::endl;
