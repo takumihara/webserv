@@ -65,13 +65,13 @@ void EventManager::eventLoop() {  // confファイルを引数として渡す？
     throw std::runtime_error("kqueue error");
   }
   open_port();
-  struct kevent evlist[kEventSize];
+  struct kevent evlist[kMaxEventSize];
   DEBUG_PUTS("server setup finished!");
   while (1) {
     DEBUG_PUTS("loop start");
     update_chlist(kq);
-    bzero(evlist, sizeof(struct kevent) * kEventSize);
-    int nev = kevent(kq, NULL, 0, evlist, kEventSize, NULL);
+    bzero(evlist, sizeof(struct kevent) * kMaxEventSize);
+    int nev = kevent(kq, NULL, 0, evlist, kMaxEventSize, NULL);
     if (nev == 0)
       continue;
     else if (nev == -1)

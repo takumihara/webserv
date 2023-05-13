@@ -64,10 +64,8 @@ class EventManager {
 
  private:
   std::map<int, SockInfo> changed_fds_;
-  // key: socket_fd, val: socket class
   std::map<int, AbstractSocket *> sockets_;
-  static const int kEventSize = 100;
-  // static int num_events_;
+  static const int kMaxEventSize = 100;
 };
 
 #endif
