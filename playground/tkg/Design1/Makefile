@@ -7,10 +7,10 @@ endif
 all: server client
 
 server:
-	clang++ $(CXXFLAGS) EventManager.cpp main.cpp -o server
+	clang++ $(CXXFLAGS) *.cpp -o server
 
 client:
-	clang++ $(CXXFLAGS) ../client.cpp -o client
+	clang++ $(CXXFLAGS) ../echoserver/client.cpp -o client
 
 clean:
 	rm -rf server client
