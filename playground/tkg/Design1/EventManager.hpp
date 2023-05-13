@@ -1,9 +1,6 @@
 #ifndef EVENT_MANAGER_HPP_
 #define EVENT_MANAGER_HPP_
 
-#include <set>
-#include <map>
-#include <stdexcept>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -16,45 +13,59 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <map>
+#include <set>
+#include <stdexcept>
+
+#include "AbstractSocket.hpp"
 
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
+
+typedef enum SockType {
+  kTypeServer,
+  kTypeConnection,
+} t_socktype;
+
+struct SockInfo {
+  t_socktype type;
+  int flags;
+};
 
 class EventManager {
  public:
   typedef std::set<int>::iterator set_iterator;
   typedef std::set<int>::const_iterator const_set_iterator;
-  typedef std::map<int, int>::iterator map_iterator;
-  typedef std::map<int, int>::const_iterator const_map_iterator;
+  typedef std::map<int, SockInfo>::iterator map_iterator;
+  typedef std::map<int, SockInfo>::const_iterator const_map_iterator;
 
   EventManager();
   std::set<int> &getPortFds();
-  void addPortFd(int fd);
-  void removePortFd(int fd);
+  void addServerSocket(int fd);
+  void removeServerSocket(int fd);
   std::set<int> &getConnectionFds();
-  void addConnectionFd(int fd);
-  void removeConnectionFd(int fd);
-  std::map<int, int> &getChangedFds();
-  void addChangedFd(int fd, int flag);
+  void addConnectionSocket(int fd);
+  void removeConnectionSocket(int fd);
+  std::map<int, SockInfo> &getChangedFds();
+  void addChangedFd(int fd, SockInfo info);
   void removeNewFd(int fd);
+  void addSocket(int fd, SockType type);
+  void removeSocket(int fd);
   void make_client_connection(int port_fd);
-  void open_port(int kp);
+  void open_port();
   void eventLoop();
-  void update_chlist(int kq, std::vector<struct kevent> &chlist);
+  void update_chlist(int kq);
   void update_evlist(std::vector<struct kevent> &evlist);
-  void send_response(int socket_fd, char *response);
-  void handle_request(int fd);
   struct s_eventInfo {
-	bool read;
-	bool write;
-	bool except;
+    bool read;
+    bool write;
+    bool except;
   };
 
  private:
-  std::set<int> port_fds_;
-  std::set<int> connection_fds_;
-  std::map<int, int> changed_fds_;
-  static int num_events_;
+  std::map<int, SockInfo> changed_fds_;
+  std::map<int, AbstractSocket *> sockets_;
+  static const int kMaxEventSize = 100;
 };
 
 #endif

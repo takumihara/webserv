@@ -1,16 +1,18 @@
 
-CXXFLAGS = -Wall -Werror -Wextra -std=c++98
+CXXFLAGS	= -Wall -Werror -Wextra -std=c++98
+SERVER_SRC	= ServerSocket.cpp EventManager.cpp ConnectionSocket.cpp main.cpp
 
 ifdef DEBUG
 	CXXFLAGS += -D DEBUG
 endif
+
 all: server client
 
 server:
-	clang++ $(CXXFLAGS) EventManager.cpp main.cpp -o server
+	clang++ $(CXXFLAGS) $(SERVER_SRC) -o server
 
 client:
-	clang++ $(CXXFLAGS) ../client.cpp -o client
+	clang++ $(CXXFLAGS) client.cpp -o client
 
 clean:
 	rm -rf server client
