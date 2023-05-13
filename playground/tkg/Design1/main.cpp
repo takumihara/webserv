@@ -2,8 +2,8 @@
 #include "debug.hpp"
 
 int main() {
-	EventManager mg;
-	DEBUG_PUTS("hello\n");
-	mg.eventLoop();
-	return 1;
+  EventManager mg;
+  DEBUG_PUTS("hello");
+  mg.eventLoop();
+  return 1;
 }

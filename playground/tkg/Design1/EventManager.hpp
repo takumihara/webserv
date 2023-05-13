@@ -1,9 +1,6 @@
 #ifndef EVENT_MANAGER_HPP_
 #define EVENT_MANAGER_HPP_
 
-#include <set>
-#include <map>
-#include <stdexcept>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -16,6 +13,9 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <map>
+#include <set>
+#include <stdexcept>
 
 #include "AbstractSocket.hpp"
 
@@ -42,18 +42,19 @@ class EventManager {
   void make_client_connection(int port_fd);
   void open_port(int kp);
   void eventLoop();
-  void update_chlist(int kq, std::vector<struct kevent> &chlist);
+  void update_chlist(int kq);
   void update_evlist(std::vector<struct kevent> &evlist);
   struct s_eventInfo {
-	bool read;
-	bool write;
-	bool except;
+    bool read;
+    bool write;
+    bool except;
   };
 
  private:
   std::map<int, int> changed_fds_;
   // key: socket_fd, val: socket class
-  std::map<int, AbstractSocket*> sockets_;
+  std::map<int, AbstractSocket *> sockets_;
+  static const int kEventSize = 100;
   // static int num_events_;
 };
 

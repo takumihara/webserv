@@ -15,7 +15,10 @@
 #include <set>
 #include <stdexcept>
 
-void ServerSocket::notify(EventManager &event_manager) { make_client_connection(event_manager); }
+void ServerSocket::notify(EventManager &event_manager) {
+  DEBUG_PUTS("ServerSocket notify\n");
+  make_client_connection(event_manager);
+}
 
 void ServerSocket::make_client_connection(EventManager &event_manager) {
   struct sockaddr_in add;
@@ -24,6 +27,7 @@ void ServerSocket::make_client_connection(EventManager &event_manager) {
   if (connection_fd == -1) {
     throw std::runtime_error("accept error");
   }
+  // event_manager.addConnectionSocket(connection_fd);
   event_manager.addChangedFd(connection_fd, EV_ADD);
   return;
 }

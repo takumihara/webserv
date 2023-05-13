@@ -16,6 +16,7 @@
 #include <stdexcept>
 
 ConnectionSocket::ConnectionSocket(int fd, SocketState state) : AbstractSocket(fd), state_(state) {}
+
 void ConnectionSocket::handle_request(EventManager &event_manager) {
   (void)state_;
   char request[100];
@@ -25,7 +26,7 @@ void ConnectionSocket::handle_request(EventManager &event_manager) {
     throw std::runtime_error("read error");
   }
   if (size == 0) {
-    std::cout << "closed fd = " << fd_ << std::endl;
+    printf("closed fd = %d\n", fd_);
     event_manager.removeConnectionSocket(fd_);
     close(fd_);
   } else {
@@ -34,7 +35,11 @@ void ConnectionSocket::handle_request(EventManager &event_manager) {
     send_response(fd_, request);
   }
 }
-void ConnectionSocket::notify(EventManager &event_manager) { handle_request(event_manager); }
+
+void ConnectionSocket::notify(EventManager &event_manager) {
+  DEBUG_PUTS("ConnectionSocket notify");
+  handle_request(event_manager);
+}
 
 void ConnectionSocket::send_response(int socket_fd, char *response) {
   int res = sendto(socket_fd, response, strlen(response), 0, NULL, 0);

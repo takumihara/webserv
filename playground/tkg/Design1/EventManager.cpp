@@ -15,10 +15,10 @@ void EventManager::removeServerSocket(int fd) {
   sockets_.erase(fd);
 }
 
-//client connection fds functions
-// std::set<int> &EventManager::getConnectionFds() {
-//   return connection_fds_;
-// }
+// client connection fds functions
+//  std::set<int> &EventManager::getConnectionFds() {
+//    return connection_fds_;
+//  }
 
 void EventManager::addConnectionSocket(int fd) { sockets_[fd] = new ConnectionSocket(fd, ConnectionSocket::kSocFree); }
 
@@ -67,17 +67,19 @@ void EventManager::open_port(int kq) {
   return;
 }
 
-void EventManager::update_chlist(int kq, std::vector<struct kevent> &chlist) {
-  chlist.clear();
-  if (chlist.capacity() < changed_fds_.size()) chlist.reserve(changed_fds_.size());
+void EventManager::update_chlist(int kq) {
+  int size = changed_fds_.size();
+  struct kevent chlist[size];
+  bzero(chlist, sizeof(struct kevent) * size);
   int i = 0;
   for (const_map_iterator itr = changed_fds_.begin(); itr != changed_fds_.end(); itr++, i++) {
-    std::cout << itr->first << " " << itr->second << " " << EV_ADD << std::endl;
+    DEBUG_PRINTF("fd: %d, ", itr->first);
     EV_SET(&chlist[i], itr->first, EVFILT_READ, itr->second, 0, 0, 0);
     if (itr->second & EV_ADD) addConnectionSocket(itr->first);
   }
+  DEBUG_PUTS("");
   changed_fds_.clear();
-  kevent(kq, &(*chlist.begin()), chlist.size(), NULL, 0, NULL);
+  kevent(kq, &chlist[0], size, NULL, 0, NULL);
 }
 
 void EventManager::eventLoop() {  // confファイルを引数として渡す？
@@ -86,23 +88,19 @@ void EventManager::eventLoop() {  // confファイルを引数として渡す？
     throw std::runtime_error("kqueue error");
   }
   open_port(kq);
-  std::vector<struct kevent> chlist;
-  chlist.reserve(100);
-  std::vector<struct kevent> evlist;
-  evlist.reserve(100);
-  std::cout << "server setup finished!" << std::endl;
+  struct kevent evlist[kEventSize];
+  DEBUG_PUTS("server setup finished!");
   while (1) {
-    std::cout << "loop start" << std::endl;
-    update_chlist(kq, chlist);
-    evlist.clear();
-    int nev = kevent(kq, NULL, 0, &(*evlist.begin()), 100, NULL);
+    DEBUG_PUTS("loop start");
+    update_chlist(kq);
+    bzero(evlist, sizeof(struct kevent) * kEventSize);
+    int nev = kevent(kq, NULL, 0, evlist, 100, NULL);
     if (nev == 0)
       continue;
     else if (nev == -1)
       perror("kevent");
     for (int i = 0; i < nev; i++) {
       sockets_[evlist[i].ident]->notify(*this);
-
       // if (port_fds_.find(evlist[i].ident) != port_fds_.end()) {
       //   std::cout << "port fd " << std::endl;
       //   make_client_connection(evlist[i].ident);
@@ -110,6 +108,6 @@ void EventManager::eventLoop() {  // confファイルを引数として渡す？
       //   std::cout << "connection fd " << std::endl;
       // }
     }
-    std::cout << "----------------------" << std::endl;
+    DEBUG_PUTS("----------------------");
   }
 }
