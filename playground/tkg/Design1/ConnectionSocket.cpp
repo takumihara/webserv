@@ -15,7 +15,7 @@
 #include <map>
 #include <stdexcept>
 
-ConnectionSocket::ConnectionSocket(int fd, SocketState state) : AbstractSocket(fd), state_(state) {}
+ConnectionSocket::ConnectionSocket(int fd) : AbstractSocket(fd), state_(kSocFree) {}
 
 void ConnectionSocket::handle_request(EventManager &event_manager) {
   (void)state_;
@@ -27,8 +27,8 @@ void ConnectionSocket::handle_request(EventManager &event_manager) {
   }
   if (size == 0) {
     printf("closed fd = %d\n", fd_);
-    event_manager.removeConnectionSocket(fd_);
     close(fd_);
+    event_manager.removeSocket(fd_);
   } else {
     std::cout << "request received"
               << "(fd:" << fd_ << "): '" << request << "'" << std::endl;

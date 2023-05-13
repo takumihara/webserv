@@ -22,12 +22,22 @@
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
+typedef enum SockType {
+  kTypeServer,
+  kTypeConnection,
+} t_socktype;
+
+struct SockInfo {
+  t_socktype type;
+  int flags;
+};
+
 class EventManager {
  public:
   typedef std::set<int>::iterator set_iterator;
   typedef std::set<int>::const_iterator const_set_iterator;
-  typedef std::map<int, int>::iterator map_iterator;
-  typedef std::map<int, int>::const_iterator const_map_iterator;
+  typedef std::map<int, SockInfo>::iterator map_iterator;
+  typedef std::map<int, SockInfo>::const_iterator const_map_iterator;
 
   EventManager();
   std::set<int> &getPortFds();
@@ -36,11 +46,13 @@ class EventManager {
   std::set<int> &getConnectionFds();
   void addConnectionSocket(int fd);
   void removeConnectionSocket(int fd);
-  std::map<int, int> &getChangedFds();
-  void addChangedFd(int fd, int flag);
+  std::map<int, SockInfo> &getChangedFds();
+  void addChangedFd(int fd, SockInfo info);
   void removeNewFd(int fd);
+  void addSocket(int fd, SockType type);
+  void removeSocket(int fd);
   void make_client_connection(int port_fd);
-  void open_port(int kp);
+  void open_port();
   void eventLoop();
   void update_chlist(int kq);
   void update_evlist(std::vector<struct kevent> &evlist);
@@ -51,7 +63,7 @@ class EventManager {
   };
 
  private:
-  std::map<int, int> changed_fds_;
+  std::map<int, SockInfo> changed_fds_;
   // key: socket_fd, val: socket class
   std::map<int, AbstractSocket *> sockets_;
   static const int kEventSize = 100;

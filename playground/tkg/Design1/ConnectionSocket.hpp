@@ -11,7 +11,7 @@ class ConnectionSocket : public AbstractSocket {
     kSocReading,
     kSocWriting,
   };
-  ConnectionSocket(int fd, SocketState state);
+  ConnectionSocket(int fd);
   ~ConnectionSocket() {}
   void handle_request(EventManager &event_manager);
   void notify(EventManager &event_manager);
