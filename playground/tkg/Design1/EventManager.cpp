@@ -17,21 +17,9 @@ void EventManager::removeSocket(int fd) {
   sockets_.erase(fd);
 }
 
-// changed fds functions
 std::map<int, SockInfo> &EventManager::getChangedFds() { return changed_fds_; }
 
 void EventManager::addChangedFd(int fd, SockInfo info) { changed_fds_[fd] = info; }
-
-// void EventManager::make_client_connection(int port_fd) {
-//   struct sockaddr_in add;
-//   int addlen;
-//   int connection_fd = accept(port_fd, (struct sockaddr *)&add, (socklen_t *)&addlen);
-//   if (connection_fd == -1) {
-//     throw std::runtime_error("accept error");
-//   }
-//   addChangedFd(connection_fd, EV_ADD);
-//   return;
-// }
 
 void EventManager::open_port() {
   int port_fd;
