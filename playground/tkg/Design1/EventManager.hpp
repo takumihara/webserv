@@ -56,7 +56,7 @@ class EventManager {
   int open_port();
   void eventLoop();
   void register_event(int kq, int port_fd, int flag);
-  void update_chlist(int kq);
+  void update_kqueue(int kq);
   void update_evlist(std::vector<struct kevent> &evlist);
   struct s_eventInfo {
     bool read;

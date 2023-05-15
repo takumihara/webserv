@@ -20,18 +20,6 @@ void EventManager::removeConnectionSocket(int fd) {
   connection_sockets_.erase(fd);
 }
 
-// void EventManager::addSocket(int fd, SockType type) {
-//   if (type == kTypeServer)
-//     sockets_[fd] = new ServerSocket(fd);
-//   else if (type == kTypeConnection)
-//     sockets_[fd] = new ConnectionSocket(fd);
-// }
-
-// void EventManager::removeSocket(int fd) {
-//   delete sockets_[fd];
-//   sockets_.erase(fd);
-// }
-
 std::map<int, SockInfo> &EventManager::getChangedFds() { return changed_fds_; }
 
 void EventManager::addChangedFd(int fd, SockInfo info) { changed_fds_[fd] = info; }
@@ -59,7 +47,7 @@ int EventManager::open_port() {
   return port_fd;
 }
 
-void EventManager::update_chlist(int kq) {
+void EventManager::update_kqueue(int kq) {
   int size = changed_fds_.size();
   struct kevent chlist[size];
   bzero(chlist, sizeof(struct kevent) * size);
@@ -71,7 +59,6 @@ void EventManager::update_chlist(int kq) {
     if (info.type == kTypeConnection && info.flags & EV_ADD) addConnectionSocket(itr->first);
   }
   DEBUG_PUTS("");
-  changed_fds_.clear();
   kevent(kq, &chlist[0], size, NULL, 0, NULL);
 }
 
@@ -86,7 +73,8 @@ void EventManager::eventLoop() {  // confファイルを引数として渡す？
   DEBUG_PUTS("server setup finished!");
   while (1) {
     DEBUG_PUTS("loop start");
-    update_chlist(kq);
+    update_kqueue(kq);
+    changed_fds_.clear();
     bzero(evlist, sizeof(struct kevent) * kMaxEventSize);
     int nev = kevent(kq, NULL, 0, evlist, kMaxEventSize, NULL);
     if (nev == 0)

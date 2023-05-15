@@ -31,5 +31,6 @@ void ServerSocket::make_client_connection(EventManager &event_manager) {
   }
   SockInfo info = {.type = kTypeConnection, .flags = EV_ADD};
   event_manager.addChangedFd(connection_fd, info);
+  event_manager.addConnectionSocket(connection_fd);
   return;
 }
