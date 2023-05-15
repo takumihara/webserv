@@ -17,7 +17,8 @@
 #include <set>
 #include <stdexcept>
 
-#include "AbstractSocket.hpp"
+#include "ConnectionSocket.hpp"
+#include "ServerSocket.hpp"
 
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
@@ -52,8 +53,9 @@ class EventManager {
   void addSocket(int fd, SockType type);
   void removeSocket(int fd);
   void make_client_connection(int port_fd);
-  void open_port();
+  int open_port();
   void eventLoop();
+  void register_event(int kq, int port_fd, int flag);
   void update_chlist(int kq);
   void update_evlist(std::vector<struct kevent> &evlist);
   struct s_eventInfo {
@@ -64,7 +66,8 @@ class EventManager {
 
  private:
   std::map<int, SockInfo> changed_fds_;
-  std::map<int, AbstractSocket *> sockets_;
+  std::map<int, ServerSocket *> server_sockets_;
+  std::map<int, ConnectionSocket *> connection_sockets_;
   static const int kMaxEventSize = 100;
 };
 
