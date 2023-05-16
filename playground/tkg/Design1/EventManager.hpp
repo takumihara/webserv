@@ -17,7 +17,8 @@
 #include <set>
 #include <stdexcept>
 
-#include "AbstractSocket.hpp"
+#include "ConnectionSocket.hpp"
+#include "ServerSocket.hpp"
 
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
@@ -40,31 +41,29 @@ class EventManager {
   typedef std::map<int, SockInfo>::const_iterator const_map_iterator;
 
   EventManager();
-  std::set<int> &getPortFds();
+  void eventLoop();
   void addServerSocket(int fd);
   void removeServerSocket(int fd);
-  std::set<int> &getConnectionFds();
   void addConnectionSocket(int fd);
   void removeConnectionSocket(int fd);
-  std::map<int, SockInfo> &getChangedFds();
   void addChangedFd(int fd, SockInfo info);
-  void removeNewFd(int fd);
-  void addSocket(int fd, SockType type);
-  void removeSocket(int fd);
-  void make_client_connection(int port_fd);
-  void open_port();
-  void eventLoop();
-  void update_chlist(int kq);
-  void update_evlist(std::vector<struct kevent> &evlist);
+  void registerServerEvent(int fd);
+
+ private:
+  void updateKqueue();
+  void handleEvent(int fd);
+  bool isServerFd(int fd);
+  void clearEvlist(struct kevent *evlist);
   struct s_eventInfo {
     bool read;
     bool write;
     bool except;
   };
 
- private:
+  int kq_;
   std::map<int, SockInfo> changed_fds_;
-  std::map<int, AbstractSocket *> sockets_;
+  std::map<int, ServerSocket *> server_sockets_;
+  std::map<int, ConnectionSocket *> connection_sockets_;
   static const int kMaxEventSize = 100;
 };
 

@@ -1,9 +1,9 @@
 #include "EventManager.hpp"
+#include "HttpServer.hpp"
 #include "debug.hpp"
 
 int main() {
-  EventManager mg;
-  DEBUG_PUTS("hello");
-  mg.eventLoop();
+  HttpServer server;
+  server.start();
   return 1;
 }

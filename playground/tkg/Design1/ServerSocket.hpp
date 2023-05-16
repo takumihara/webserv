@@ -3,15 +3,17 @@
 
 #include <map>
 
-#include "AbstractSocket.hpp"
-#include "EventManager.hpp"
+class EventManager;
 
-class ServerSocket : public AbstractSocket {
+class ServerSocket {
  public:
-  ServerSocket(int fd) : AbstractSocket(fd) {}
+  ServerSocket(int fd) : fd_(fd) {}
   ~ServerSocket() {}
   void notify(EventManager &event_manager);
   void make_client_connection(EventManager &event_manager);
+
+ private:
+  int fd_;
 };
 
 #endif

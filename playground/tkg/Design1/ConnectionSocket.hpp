@@ -1,10 +1,11 @@
 #ifndef CONNECTION_SOCKET_HPP_
 #define CONNECTION_SOCKET_HPP_
 
-#include "AbstractSocket.hpp"
-#include "EventManager.hpp"
+#include "debug.hpp"
 
-class ConnectionSocket : public AbstractSocket {
+class EventManager;
+
+class ConnectionSocket {
  public:
   enum SocketState {
     kSocFree,
@@ -18,6 +19,7 @@ class ConnectionSocket : public AbstractSocket {
   void send_response(int socket_fd, char *response);
 
  private:
+  int fd_;
   SocketState state_;
 };
 
