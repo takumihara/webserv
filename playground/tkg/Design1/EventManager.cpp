@@ -25,7 +25,7 @@ void EventManager::removeConnectionSocket(int fd) {
   connection_sockets_.erase(fd);
 }
 
-void EventManager::addChangedFd(int fd, SockInfo info) { changed_fds_[fd] = info; }
+void EventManager::addChangedEvents(struct kevent kevent) { changed_events_.push_back(kevent); }
 
 void EventManager::registerServerEvent(int fd) {
   struct kevent chlist;
@@ -38,30 +38,40 @@ void EventManager::registerServerEvent(int fd) {
 }
 
 void EventManager::updateKqueue() {
-  int size = changed_fds_.size();
+  int size = changed_events_.size();
   struct kevent chlist[size];
   bzero(chlist, sizeof(struct kevent) * size);
   int i = 0;
-  for (const_map_iterator itr = changed_fds_.begin(); itr != changed_fds_.end(); itr++, i++) {
-    DEBUG_PRINTF("fd: %d, ", itr->first);
-    SockInfo info = itr->second;
-    EV_SET(&chlist[i], itr->first, EVFILT_READ, info.flags, 0, 0, 0);
+  for (changed_events_const_iterator itr = changed_events_.begin(); itr != changed_events_.end(); itr++, i++) {
+    DEBUG_PRINTF("fd: %lu, ", (*itr).ident);
+    EV_SET(&chlist[i], (*itr).ident, (*itr).filter, (*itr).flags, (*itr).fflags, (*itr).data, (*itr).udata);
   }
   DEBUG_PUTS("");
-  kevent(kq_, &chlist[0], size, NULL, 0, NULL);
-  changed_fds_.clear();
+  kevent(kq_, chlist, size, NULL, 0, NULL);
+  changed_events_.clear();
 }
 
 bool EventManager::isServerFd(int fd) { return server_sockets_.find(fd) != server_sockets_.end(); }
 
-void EventManager::handleEvent(int fd) {
-  if (isServerFd(fd)) {
-    DEBUG_PUTS("port fd ");
-    server_sockets_[fd]->make_client_connection(*this);
-  } else {
-    std::cout << "connection fd " << std::endl;
-    connection_sockets_[fd]->handle_request(*this);
+void EventManager::handleEvent(struct kevent ev) {
+  if (ev.filter == EVFILT_TIMER) {
+    DEBUG_PUTS("timeout");
+    handleTimeout(ev);
+  } else if (ev.filter == EVFILT_READ) {
+    if (isServerFd(ev.ident)) {
+      DEBUG_PUTS("port fd ");
+      server_sockets_[ev.ident]->make_client_connection(*this);
+    } else {
+      std::cout << "connection fd " << std::endl;
+      connection_sockets_[ev.ident]->handle_request(*this);
+    }
   }
+}
+
+void EventManager::handleTimeout(struct kevent ev) {
+  close(ev.ident);
+  removeConnectionSocket(ev.ident);
+  addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
 }
 
 void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(struct kevent) * kMaxEventSize); }
@@ -80,7 +90,7 @@ void EventManager::eventLoop() {  // confファイルを引数として渡す？
     else if (nev == -1)
       perror("kevent");
     for (int i = 0; i < nev; i++) {
-      handleEvent(evlist[i].ident);
+      handleEvent(evlist[i]);
     }
     DEBUG_PUTS("----------------------");
   }

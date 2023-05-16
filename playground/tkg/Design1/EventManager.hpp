@@ -16,6 +16,7 @@
 #include <map>
 #include <set>
 #include <stdexcept>
+#include <vector>
 
 #include "ConnectionSocket.hpp"
 #include "ServerSocket.hpp"
@@ -23,22 +24,10 @@
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
-typedef enum SockType {
-  kTypeServer,
-  kTypeConnection,
-} t_socktype;
-
-struct SockInfo {
-  t_socktype type;
-  int flags;
-};
-
 class EventManager {
  public:
-  typedef std::set<int>::iterator set_iterator;
-  typedef std::set<int>::const_iterator const_set_iterator;
-  typedef std::map<int, SockInfo>::iterator map_iterator;
-  typedef std::map<int, SockInfo>::const_iterator const_map_iterator;
+  typedef std::vector<struct kevent>::iterator changed_events_iterator;
+  typedef std::vector<struct kevent>::const_iterator changed_events_const_iterator;
 
   EventManager();
   void eventLoop();
@@ -46,14 +35,17 @@ class EventManager {
   void removeServerSocket(int fd);
   void addConnectionSocket(int fd);
   void removeConnectionSocket(int fd);
-  void addChangedFd(int fd, SockInfo info);
+  void addChangedEvents(struct kevent kevent);
   void registerServerEvent(int fd);
+
+  static const int kTimeoutDuration = 5;
 
  private:
   void updateKqueue();
-  void handleEvent(int fd);
+  void handleEvent(struct kevent ev);
   bool isServerFd(int fd);
   void clearEvlist(struct kevent *evlist);
+  void handleTimeout(struct kevent ev);
   struct s_eventInfo {
     bool read;
     bool write;
@@ -61,7 +53,7 @@ class EventManager {
   };
 
   int kq_;
-  std::map<int, SockInfo> changed_fds_;
+  std::vector<struct kevent> changed_events_;
   std::map<int, ServerSocket *> server_sockets_;
   std::map<int, ConnectionSocket *> connection_sockets_;
   static const int kMaxEventSize = 100;
