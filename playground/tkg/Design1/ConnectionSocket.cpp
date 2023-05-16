@@ -17,7 +17,11 @@
 
 #include "EventManager.hpp"
 
-ConnectionSocket::ConnectionSocket(int fd) : fd_(fd), state_(kSocFree) {}
+ConnectionSocket::ConnectionSocket(int fd) : fd_(fd), state_(kSocFree), response_size_(0), sending_response_size_(0) {}
+
+void ConnectionSocket::handle_response(EventManager &event_manager) {
+  send_response(event_manager, fd_, response_.c_str());
+}
 
 void ConnectionSocket::handle_request(EventManager &event_manager) {
   (void)state_;
@@ -25,8 +29,10 @@ void ConnectionSocket::handle_request(EventManager &event_manager) {
   int size;
   bzero(request, 100);
   if ((size = read(fd_, request, 100)) == -1) {
+    std::cout << "here \n";
     throw std::runtime_error("read error");
   }
+  response_size_ = size;
   if (size == 0) {
     printf("closed fd = %d\n", fd_);
     close(fd_);
@@ -34,17 +40,25 @@ void ConnectionSocket::handle_request(EventManager &event_manager) {
   } else {
     std::cout << "request received"
               << "(fd:" << fd_ << "): '" << request << "'" << std::endl;
-    send_response(fd_, request);
+    response_ = std::string(request);
+    event_manager.addChangedEvents((struct kevent){fd_, EVFILT_WRITE, EV_ADD, 0, 0, 0});
+    event_manager.addChangedEvents((struct kevent){fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+    // send_response(event_manager, fd_, request);
   }
 }
 
-void ConnectionSocket::notify(EventManager &event_manager) {
-  DEBUG_PUTS("ConnectionSocket notify");
-  handle_request(event_manager);
-}
-
-void ConnectionSocket::send_response(int socket_fd, char *response) {
-  int res = sendto(socket_fd, response, strlen(response), 0, NULL, 0);
+void ConnectionSocket::send_response(EventManager &event_manager, int socket_fd, const char *response) {
+  std::cout << "sending response \n";
+  int size = response_size_ - sending_response_size_;
+  if (size > kWriteSize) {
+    size = kWriteSize;
+  } else {
+    event_manager.addChangedEvents((struct kevent){socket_fd, EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
+    event_manager.addChangedEvents((struct kevent){socket_fd, EVFILT_READ, EV_ENABLE, 0, 0, 0});
+    state_ = kSocFree;
+  }
+  int res = sendto(socket_fd, &response[sending_response_size_], size, 0, NULL, 0);
+  sending_response_size_ += size;
   if (res == -1) {
     throw std::runtime_error("send error");
   }

@@ -62,9 +62,12 @@ void EventManager::handleEvent(struct kevent ev) {
       DEBUG_PUTS("port fd ");
       server_sockets_[ev.ident]->make_client_connection(*this);
     } else {
-      std::cout << "connection fd " << std::endl;
+      std::cout << "request connection fd " << std::endl;
       connection_sockets_[ev.ident]->handle_request(*this);
     }
+  } else if (ev.filter == EVFILT_WRITE) {
+    std::cout << "response connection fd " << std::endl;
+    connection_sockets_[ev.ident]->handle_response(*this);
   }
 }
 

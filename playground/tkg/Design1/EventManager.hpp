@@ -38,7 +38,7 @@ class EventManager {
   void addChangedEvents(struct kevent kevent);
   void registerServerEvent(int fd);
 
-  static const int kTimeoutDuration = 5;
+  static const int kTimeoutDuration = 10;
 
  private:
   void updateKqueue();

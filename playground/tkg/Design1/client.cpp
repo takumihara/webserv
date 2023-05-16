@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
       exit(1);
     }
     std::cout << "response received"
-              << "(fd:" << sock << "): '" << response << "'" << std::endl;
+              << "(fd:" << sock << "): '" << response << "' (size: " << res << ")" << std::endl;
     sleep(3);
   }
 
