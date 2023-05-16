@@ -59,7 +59,7 @@ void EventManager::handleEvent(struct kevent ev) {
     handleTimeout(ev);
   } else if (ev.filter == EVFILT_READ) {
     if (isServerFd(ev.ident)) {
-      DEBUG_PUTS("port fd ");
+      DEBUG_PUTS("request to make connection");
       server_sockets_[ev.ident]->make_client_connection(*this);
     } else {
       std::cout << "request connection fd " << std::endl;

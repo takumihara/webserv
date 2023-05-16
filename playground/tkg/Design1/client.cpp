@@ -50,14 +50,17 @@ int main(int argc, char **argv) {
     printf("connection success!\n");
 
   for (int i = 1; i < argc; i++) {
-    char *request = argv[i];
+    char request[100];
+    strcpy(request, argv[i]);
+    strcat(request, "\r\n\r\n");
     int write_res = sendto(sock, request, strlen(request), 0, NULL, 0);
     if (write_res == -1) {
       perror("write");
     } else {
       std::cout << "request sent: "
                 << "'" << request << "'"
-                << " (" << write_res << ")" << std::endl;
+                << "(fd:" << sock << "): '"
+                << " (size:" << write_res << ")" << std::endl;
     }
     char response[100];
     memset(response, 0, 100);

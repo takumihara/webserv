@@ -20,49 +20,65 @@
 ConnectionSocket::ConnectionSocket(int fd) : fd_(fd), state_(kSocFree), response_size_(0), sending_response_size_(0) {}
 
 void ConnectionSocket::handle_response(EventManager &event_manager) {
-  send_response(event_manager, fd_, response_.c_str());
+  send_response(event_manager);
 }
 
 void ConnectionSocket::handle_request(EventManager &event_manager) {
   (void)state_;
-  char request[100];
-  int size;
-  bzero(request, 100);
-  if ((size = read(fd_, request, 100)) == -1) {
-    std::cout << "here \n";
+  char request[kReadSize + 1];
+  bzero(request, kReadSize + 1);
+  std::string req_str;
+  int size = read(fd_, request, kReadSize);
+  if (size == -1) {
+    // todo: no exception
     throw std::runtime_error("read error");
-  }
-  response_size_ = size;
-  if (size == 0) {
+  } else if (size == 0) {
     printf("closed fd = %d\n", fd_);
     close(fd_);
     event_manager.removeConnectionSocket(fd_);
   } else {
-    std::cout << "request received"
-              << "(fd:" << fd_ << "): '" << request << "'" << std::endl;
-    response_ = std::string(request);
-    event_manager.addChangedEvents((struct kevent){fd_, EVFILT_WRITE, EV_ADD, 0, 0, 0});
-    event_manager.addChangedEvents((struct kevent){fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
-    // send_response(event_manager, fd_, request);
+    req_str = std::string(request);
+    request_ += req_str;
+    if (request_.find("\r\n\r\n") == std::string::npos) {
+      std::cout << "request too long (fd:" << fd_ << ")"
+                << ":" << request_ << std::endl;
+    } else {
+      std::cout << "request received"
+                << "(fd:" << fd_ << "): '" << request_ << "'" << std::endl;
+      response_ = request_;
+      request_ = "";
+      response_size_ = response_.size();
+      event_manager.addChangedEvents((struct kevent){fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
+      event_manager.addChangedEvents((struct kevent){fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+    }
   }
 }
 
-void ConnectionSocket::send_response(EventManager &event_manager, int socket_fd, const char *response) {
+void ConnectionSocket::send_response(EventManager &event_manager) {
+  const char *response = response_.c_str();
   std::cout << "sending response \n";
   int size = response_size_ - sending_response_size_;
   if (size > kWriteSize) {
     size = kWriteSize;
-  } else {
-    event_manager.addChangedEvents((struct kevent){socket_fd, EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
-    event_manager.addChangedEvents((struct kevent){socket_fd, EVFILT_READ, EV_ENABLE, 0, 0, 0});
-    state_ = kSocFree;
   }
-  int res = sendto(socket_fd, &response[sending_response_size_], size, 0, NULL, 0);
-  sending_response_size_ += size;
+  int res = sendto(fd_, &response[sending_response_size_], size, 0, NULL, 0);
   if (res == -1) {
+    perror("sendto");
     throw std::runtime_error("send error");
   }
+  std::string res_str = std::string(response);
   std::cout << "response sent: "
-            << "'" << response << "'"
-            << " (" << res << ")" << std::endl;
+            << "'" << res_str.substr(sending_response_size_, size) << "'"
+            << " (size:" << res << ")" << std::endl;
+  sending_response_size_ += size;
+  if (sending_response_size_ == response_size_) {
+    setToReadingState(event_manager);
+  }
+}
+
+void ConnectionSocket::setToReadingState(EventManager &em) {
+  sending_response_size_ = 0;
+  em.addChangedEvents((struct kevent){fd_, EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
+  em.addChangedEvents((struct kevent){fd_, EVFILT_READ, EV_ENABLE, 0, 0, 0});
+  state_ = kSocFree;
 }
