@@ -17,6 +17,7 @@
 
 #include "EventManager.hpp"
 
+// todo: remove
 void ServerSocket::notify(EventManager &event_manager) {
   DEBUG_PUTS("ServerSocket notify\n");
   make_client_connection(event_manager);
@@ -29,8 +30,9 @@ void ServerSocket::make_client_connection(EventManager &event_manager) {
   if (connection_fd == -1) {
     throw std::runtime_error("accept error");
   }
-  SockInfo info = {.type = kTypeConnection, .flags = EV_ADD};
-  event_manager.addChangedFd(connection_fd, info);
+  event_manager.addChangedEvents((struct kevent){connection_fd, EVFILT_READ, EV_ADD, 0, 0, 0});
+  event_manager.addChangedEvents((struct kevent){connection_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS,
+                                                 EventManager::kTimeoutDuration, 0});
   event_manager.addConnectionSocket(connection_fd);
   return;
 }
