@@ -3,9 +3,12 @@
 
 #include <string>
 
+#include "EventManager.hpp"
+#include "HttpRequest.hpp"
 #include "debug.hpp"
 
 class EventManager;
+class HttpRequest;
 
 class ConnectionSocket {
  public:
@@ -25,9 +28,9 @@ class ConnectionSocket {
  private:
   int fd_;
   SocketState state_;
+  HttpRequest request_;
   int response_size_;
   int sending_response_size_;
-  std::string request_;
   std::string response_;
   static const int kWriteSize = 100;
   static const int kReadSize = 3;

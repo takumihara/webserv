@@ -21,6 +21,8 @@
 #include "ConnectionSocket.hpp"
 #include "ServerSocket.hpp"
 
+class ConnectionSocket;
+
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
