@@ -16,15 +16,15 @@ void HttpRequest::readRequest(EventManager &event_manager) {
     event_manager.removeConnectionSocket(fd_);
   } else {
     req_str = std::string(request);
-    request_ += req_str;
+    raw_data_ += req_str;
     size_t end_pos;
-    if ((end_pos = request_.find("\r\n\r\n")) == std::string::npos) {
+    if ((end_pos = raw_data_.find("\r\n\r\n")) == std::string::npos) {
       std::cout << "request too long (fd:" << fd_ << ")"
-                << ":" << request_ << std::endl;
+                << ":" << raw_data_ << std::endl;
     } else {
-      rest = request_.substr(end_pos + 4);
+      rest_ = raw_data_.substr(end_pos + 4);
       std::cout << "request received"
-                << "(fd:" << fd_ << "): '" << request_ << "'" << std::endl;
+                << "(fd:" << fd_ << "): '" << raw_data_ << "'" << std::endl;
       event_manager.addChangedEvents((struct kevent){fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
       event_manager.addChangedEvents((struct kevent){fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
     }
@@ -32,6 +32,6 @@ void HttpRequest::readRequest(EventManager &event_manager) {
 }
 
 void HttpRequest::refresh() {
-  request_ = rest;
-  rest = "";
+  raw_data_ = rest_;
+  rest_ = "";
 }

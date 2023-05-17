@@ -19,8 +19,8 @@ class HttpRequest {
 
   // private:
   int fd_;
-  std::string request_;
-  std::string rest;
+  std::string raw_data_;
+  std::string rest_;
   static const int kReadSize = 3;
 };
 

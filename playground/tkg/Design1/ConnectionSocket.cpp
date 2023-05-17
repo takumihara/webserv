@@ -22,7 +22,7 @@ ConnectionSocket::ConnectionSocket(int fd)
     : fd_(fd), state_(kSocFree), request_(HttpRequest(fd)), response_size_(0), sending_response_size_(0) {}
 
 void ConnectionSocket::handle_response(EventManager &event_manager) {
-  response_ = request_.request_;
+  response_ = request_.raw_data_;
   response_size_ = response_.size();
   request_.refresh();
   send_response(event_manager);
@@ -58,6 +58,3 @@ void ConnectionSocket::setToReadingState(EventManager &em) {
   em.addChangedEvents((struct kevent){fd_, EVFILT_READ, EV_ENABLE, 0, 0, 0});
   state_ = kSocFree;
 }
-
-
-void ConnectionSocket::
