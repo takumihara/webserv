@@ -21,6 +21,8 @@
 #include "ConnectionSocket.hpp"
 #include "ServerSocket.hpp"
 
+class ConnectionSocket;
+
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
@@ -38,7 +40,7 @@ class EventManager {
   void addChangedEvents(struct kevent kevent);
   void registerServerEvent(int fd);
 
-  static const int kTimeoutDuration = 5;
+  static const int kTimeoutDuration = 10;
 
  private:
   void updateKqueue();

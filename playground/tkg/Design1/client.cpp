@@ -50,14 +50,17 @@ int main(int argc, char **argv) {
     printf("connection success!\n");
 
   for (int i = 1; i < argc; i++) {
-    char *request = argv[i];
+    char request[100] = "start-line\r\nheaders\r\n\r\n";
+    strcat(request, argv[i]);
+    strcat(request, "\r\n");
     int write_res = sendto(sock, request, strlen(request), 0, NULL, 0);
     if (write_res == -1) {
       perror("write");
     } else {
       std::cout << "request sent: "
                 << "'" << request << "'"
-                << " (" << write_res << ")" << std::endl;
+                << "(fd:" << sock << "): '"
+                << " (size:" << write_res << ")" << std::endl;
     }
     char response[100];
     memset(response, 0, 100);
@@ -67,7 +70,7 @@ int main(int argc, char **argv) {
       exit(1);
     }
     std::cout << "response received"
-              << "(fd:" << sock << "): '" << response << "'" << std::endl;
+              << "(fd:" << sock << "): '" << response << "' (size: " << res << ")" << std::endl;
     sleep(3);
   }
 
