@@ -61,6 +61,8 @@ void EventManager::handleEvent(struct kevent ev) {
     if (isServerFd(ev.ident)) {
       DEBUG_PUTS("request to make connection");
       server_sockets_[ev.ident]->make_client_connection(*this);
+      // } else if (isCGIFd()) {
+      //   // handle cgi response
     } else {
       std::cout << "request connection fd " << std::endl;
       connection_sockets_[ev.ident]->handle_request(*this);

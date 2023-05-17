@@ -12,15 +12,22 @@ class EventManager;
 
 class HttpRequest {
  public:
-  HttpRequest(int fd) : fd_(fd) {}
+  enum State { Free, ReadStartLine, ReadHeaders, ReadBody, Processing };
+
+  HttpRequest(int fd) : fd_(fd), state_(Free) {}
   ~HttpRequest(){};
   void readRequest(EventManager &em);
   void refresh();
+  std::string getEndingChars() const;
+  void moveToNextState();
+  bool trimToEndingChars();
 
   // private:
   int fd_;
   std::string raw_data_;
   std::string rest_;
+  State state_;
+
   static const int kReadSize = 3;
 };
 
