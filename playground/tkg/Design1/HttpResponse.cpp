@@ -7,10 +7,13 @@
 
 #include "EventManager.hpp"
 
-void HttpResponse::creatingResponse() { response_ = raw_data_; }
+void HttpResponse::createResponse(const std::string &result) {
+  raw_data_ = result;
+  response_ = result;
+  response_size_ = result.size();
+}
 
 void HttpResponse::sendResponse(EventManager &event_manager) {
-  creatingResponse();
   const char *response = response_.c_str();
   std::cout << "sending response \n";
   int size = response_size_ - sending_response_size_;

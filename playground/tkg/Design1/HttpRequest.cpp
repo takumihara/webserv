@@ -33,10 +33,11 @@ void HttpRequest::readRequest(EventManager &event_manager) {
         DEBUG_PUTS("parsing startline done");
       } else if (state_ == ReadHeaders) {
         // parseHeaders()
+        // todo: handle when body doesn't exist
         refresh();
         DEBUG_PUTS("parsing headers done");
       } else if (state_ == ReadBody) {
-        // process()
+        body_ = raw_data_;
         state_ = Free;
         event_manager.addChangedEvents((struct kevent){fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
         event_manager.addChangedEvents((struct kevent){fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
@@ -91,3 +92,7 @@ void HttpRequest::refresh() {
   raw_data_ = rest_;
   rest_ = "";
 }
+
+  const std::string &HttpRequest::getBody() const {
+    return body_;
+  }

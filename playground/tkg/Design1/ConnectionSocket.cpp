@@ -21,11 +21,15 @@
 ConnectionSocket::ConnectionSocket(int fd) : fd_(fd), request_(HttpRequest(fd)), response_(HttpResponse(fd)) {}
 
 void ConnectionSocket::handle_response(EventManager &event_manager) {
-  response_.raw_data_ = request_.raw_data_;
-  response_.response_size_ = response_.raw_data_.size();
+  std::string result = process();
   request_.refresh();
-  std::cout << "response: " << response_.raw_data_ << std::endl;
+
+  response_.createResponse(result);
   response_.sendResponse(event_manager);
+}
+
+std::string ConnectionSocket::process() {
+  return request_.getBody();
 }
 
 void ConnectionSocket::handle_request(EventManager &event_manager) { request_.readRequest(event_manager); }

@@ -23,6 +23,7 @@ class ConnectionSocket {
   void notify(EventManager &event_manager);
   void send_response(EventManager &event_manager);
   void setToReadingState(EventManager &em);
+  std::string process();
 
  private:
   int fd_;

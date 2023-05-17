@@ -14,11 +14,11 @@ class HttpResponse {
  public:
   HttpResponse(int fd) : fd_(fd), raw_data_(""), response_(""), response_size_(0), sending_response_size_(0) {}
   ~HttpResponse(){};
-  void creatingResponse();
+  void createResponse(const std::string &result);
   void sendResponse(EventManager &em);
   void refresh(EventManager &em);
 
-  // private:
+ private:
   int fd_;
   std::string raw_data_;
   std::string response_;
