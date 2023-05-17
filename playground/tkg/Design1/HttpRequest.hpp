@@ -8,14 +8,14 @@
 #include <iostream>
 #include <string>
 
-#include "EventManager.hpp"
 class EventManager;
 
 class HttpRequest {
  public:
   HttpRequest(int fd) : fd_(fd) {}
-  ~HttpRequest();
+  ~HttpRequest(){};
   void readRequest(EventManager &em);
+  void refresh();
 
   // private:
   int fd_;

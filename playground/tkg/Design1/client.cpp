@@ -53,7 +53,6 @@ int main(int argc, char **argv) {
     char request[100];
     strcpy(request, argv[i]);
     strcat(request, "\r\n\r\n");
-    request[strlen(argv[i]) + 4];
     int write_res = sendto(sock, request, strlen(request), 0, NULL, 0);
     if (write_res == -1) {
       perror("write");
