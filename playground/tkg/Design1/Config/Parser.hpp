@@ -33,9 +33,9 @@ class Parser {
  private:
   bool isSpace(char c);
   bool isReserveChar(char c);
-  std::string &skipSpaces(std::string &itr);
-  std::string &addReserveToken(std::string &itr);
-  std::string &addStringToken(std::string &itr);
+  void skipSpaces(std::string &itr);
+  void addReserveToken(std::string &itr);
+  void addStringToken(std::string &itr);
 };
 
 #endif

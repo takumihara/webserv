@@ -37,11 +37,11 @@ void Parser::lexer(std::string &input) {
   }
   while (input.size() != 0) {
     if (isSpace(input[0])) {
-      input = skipSpaces(input);
+      skipSpaces(input);
     } else if (isReserveChar(input[0])) {
-      input = addReserveToken(input);
+      addReserveToken(input);
     } else {
-      input = addStringToken(input);
+      addStringToken(input);
     }
   }
 }
@@ -53,26 +53,23 @@ bool Parser::isReserveChar(char c) {
   return reserve.find(c) != std::string::npos;
 }
 
-std::string &Parser::skipSpaces(std::string &input) {
+void Parser::skipSpaces(std::string &input) {
   size_t i = 0;
   while (isspace(input[i])) i++;
   input.erase(0, i);
-  return input;
 }
 
-std::string &Parser::addReserveToken(std::string &input) {
+void Parser::addReserveToken(std::string &input) {
   std::string str = input.substr(0, 1);
   input.erase(0, 1);
   tokens_.push_back(Token(Token::SEMICOLON, str));
-  return input;
 }
 
-std::string &Parser::addStringToken(std::string &input) {
+void Parser::addStringToken(std::string &input) {
   size_t i = 0;
   while (!isSpace(input[i]) && !isReserveChar(input[i])) i++;
   std::string str = input.substr(0, i);
   std::cout << "str: " << str << std::endl;
   tokens_.push_back(Token(Token::SEMICOLON, str));
   input.erase(0, i);
-  return input;
 }
