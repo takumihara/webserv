@@ -1,8 +1,13 @@
+#include <iostream>
+
 #include "Config.hpp"
 #include "Parser.hpp"
 
 int main() {
-  const char *path = "conf";
+  const char *path = "conf.conf";
   Parser parser;
-  parser.parser(path);
+  Config conf = parser.parser(path);
+  conf.makePortServConfMap();
+  std::cout << "-----------port conf map-------------\n";
+  conf.printPortServConfMap();
 }

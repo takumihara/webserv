@@ -6,30 +6,39 @@
 
 class Config {
  public:
-  Config() : connectionlimits_(1024) {}
+  Config() : limit_connection_(1024) {}
   class ServerConf {
    public:
-    ServerConf() : listen_(8080), server_name_("localhost"), root_("./") {}
+    ServerConf() : root_("./") {}
     class LocationConf {
      public:
-      LocationConf() : root_("html"), path_("/"), index_("index.html") {}
+      LocationConf() : root_("html"), path_("/") {}
+      LocationConf(std::string &path) : path_(path), root_("html") {}
 
       // private:
-      std::string root_;
       std::string path_;
-      std::string index_;
+      std::string root_;
+      std::vector<std::string> index_;
     };
+    void printServConf();
 
     // private:
-    int listen_;
-    std::string server_name_;
+    std::vector<std::string> host_;
+    std::vector<int> port_;
+    std::vector<std::string> server_names_;
     std::string root_;
+    std::vector<std::string> index_;
     std::vector<LocationConf> location_confs_;
+    static const int kDefaultPort = 80;
   };
+  void makePortServConfMap();
+  void printConfig();
+  void printPortServConfMap();
 
   // private:
-  int connectionlimits_;
+  int limit_connection_;
   std::vector<ServerConf> server_confs_;
+  std::map<int, std::vector<ServerConf *>> port_servConf_map_;
 };
 
 #endif
