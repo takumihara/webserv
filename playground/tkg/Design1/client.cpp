@@ -18,7 +18,8 @@
 int main(int argc, char **argv) {
   std::string hostname = "localhost";
   // can be "http"
-  std::string service = "80";
+
+  std::string service = argv[1];
   struct addrinfo hints, *res;
   int err;
   int sock;
@@ -49,7 +50,7 @@ int main(int argc, char **argv) {
   } else
     printf("connection success!\n");
 
-  for (int i = 1; i < argc; i++) {
+  for (int i = 2; i < argc; i++) {
     char request[100] = "start-line\r\nheaders\r\n\r\n";
     strcat(request, argv[i]);
     strcat(request, "\r\n");
