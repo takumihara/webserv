@@ -63,7 +63,6 @@ class Parser {
 
  private:
   void lexer(std::string &input);
-  bool isSpace(char c);
   bool isReservedChar(char c);
   bool isDirective(Token &tok);
   void skipSpaces(std::string &itr);

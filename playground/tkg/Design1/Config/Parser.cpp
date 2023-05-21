@@ -227,7 +227,7 @@ void Parser::lexer(std::string &input) {
     throw std::runtime_error("conf file is empty");
   }
   while (idx_ < input.size()) {
-    if (isSpace(input[idx_])) {
+    if (isspace(input[idx_])) {
       skipSpaces(input);
     } else if (isReservedChar(input[idx_])) {
       addReservedToken(input);
@@ -237,8 +237,6 @@ void Parser::lexer(std::string &input) {
   }
   idx_ = 0;
 }
-
-bool Parser::isSpace(char c) { return isspace(c); }
 
 bool Parser::isReservedChar(char c) { return Parser::kReserved.find(c) != std::string::npos; }
 
@@ -264,7 +262,7 @@ void Parser::addReservedToken(std::string &input) {
 
 void Parser::addStringToken(std::string &input) {
   size_t i = 0;
-  while (!isSpace(input[idx_ + i]) && !isReservedChar(input[idx_ + i])) i++;
+  while (!isspace(input[idx_ + i]) && !isReservedChar(input[idx_ + i])) i++;
   std::string str = input.substr(idx_, i);
   addToken(Token::STRING, str);
   idx_ += i;
