@@ -26,7 +26,7 @@ void HttpRequest::readRequest(EventManager &event_manager) {
     raw_data_ += req_str;
 
     std::cout << "read from socket(fd:" << sock_fd_ << ")"
-              << ":" << raw_data_ << std::endl;
+              << ":'" << raw_data_ << "'" << std::endl;
 
     while (trimToEndingChars()) {
       moveToNextState();
@@ -44,8 +44,8 @@ void HttpRequest::readRequest(EventManager &event_manager) {
       } else if (state_ == ReadBody) {
         body_ = raw_data_;
         state_ = Free;
-        event_manager.addChangedEvents((struct kevent){fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-        event_manager.addChangedEvents((struct kevent){fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+        event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
+        event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
         break;
       }
     }
@@ -57,7 +57,7 @@ void HttpRequest::parseStartline() {
 
   std::getline(ss, request_line_.method, SP);
   std::getline(ss, request_line_.requestTarget, SP);
-  request_line_.version = ss.str();
+  ss >> request_line_.version;
 
   validateStartLine();
 
