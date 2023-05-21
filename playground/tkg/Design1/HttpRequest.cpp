@@ -57,7 +57,7 @@ void HttpRequest::parseStartline() {
 
   std::getline(ss, request_line_.method, SP);
   std::getline(ss, request_line_.requestTarget, SP);
-  std::getline(ss, request_line_.version);
+  request_line_.version = ss.str();
 
   validateStartLine();
 
