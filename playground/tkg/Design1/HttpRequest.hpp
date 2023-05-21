@@ -31,7 +31,7 @@ class HttpRequest {
   // private:
   int sock_fd_;
   int port_;
-  Config conf_;
+  Config &conf_;
   std::string raw_data_;
   std::string rest_;
   State state_;

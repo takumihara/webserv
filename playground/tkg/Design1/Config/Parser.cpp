@@ -12,6 +12,10 @@
 #include "Parser.hpp"
 #include "validation.h"
 
+const std::string Parser::kReserved = ";{}";
+const std::string Parser::kDefaultIP = "0.0.0.0";
+const int Parser::kDefaultPort = 8080;
+
 std::string readFile(const char *filename) {
   std::ifstream ifs(filename);
   if (ifs.fail()) {
@@ -55,18 +59,20 @@ void Parser::analyseServer() {
   return;
 }
 
-void Parser::setHost(std::string &host, ServConf &conf) {
+void Parser::setHost(std::string &host) {
+  ServConf &serv_conf = conf_.server_confs_.back();
   if (host == "")
-    conf.host_.push_back("0.0.0.0");
+    serv_conf.host_.push_back(kDefaultIP);
   else
-    conf.host_.push_back(host);
+    serv_conf.host_.push_back(host);
 }
 
-void Parser::setPort(std::string &port, ServConf &conf) {
+void Parser::setPort(std::string &port) {
+  ServConf &serv_conf = conf_.server_confs_.back();
   if (port == "")
-    conf.port_.push_back(8080);
+    serv_conf.port_.push_back(kDefaultPort);
   else
-    conf.port_.push_back(atoi(port.c_str()));
+    serv_conf.port_.push_back(atoi(port.c_str()));
 }
 
 void Parser::analyseListen() {
@@ -86,13 +92,12 @@ void Parser::analyseListen() {
     std::string host = tok.str_.substr(0, pos);
     std::string port = tok.str_.erase(0, pos + 1);
     std::cout << "host port " << host << " " << port << std::endl;
-    ServConf &serv = conf_.server_confs_.back();
     if (!validateHost(host) || !validatePort(port)) {
       // todo: invalid port or host handle
       std::cout << "invalid host or port\n";
     }
-    setHost(host, serv);
-    setPort(port, serv);
+    setHost(host);
+    setPort(port);
     tok = readToken();
   }
   if (!expectTokenType(tok, Token::SEMICOLON)) {
@@ -149,12 +154,12 @@ void Parser::analyseLocation() {
     // todo: invalid grammar
   }
   Token tok = readToken();
-  if (expectTokenType(tok, Token::STRING)) {
+  if (!expectTokenType(tok, Token::STRING)) {
     // invalid grammar handle
   }
   std::string path = tok.str_;
   tok = readToken();
-  if (expectTokenType(tok, Token::OPEN_BRACE)) {
+  if (!expectTokenType(tok, Token::OPEN_BRACE)) {
     // invalid grammar handle
   }
   ServConf &serv = conf_.server_confs_.back();
@@ -183,6 +188,8 @@ void Parser::analyseIndex() {
       loc.index_.push_back(tok.str_);
       tok = readToken();
     }
+  } else {
+    // todo: when scope is GENERAL
   }
   if (!expectTokenType(tok, Token::SEMICOLON)) {
     // todo: invalid grammae handle (need semicolon but not)
@@ -190,16 +197,15 @@ void Parser::analyseIndex() {
   }
 }
 
-Config Parser::parser(const char *conf_file) {
+Config Parser::parse(const char *conf_file) {
   std::string content = readFile(conf_file);
   lexer(content);
-  std::cout << "idx: " << idx_ << std::endl;
   while (idx_ != tokens_.size()) {
     Token cur = readToken();
     std::cout << cur.str_ << std::endl;
     if (isDirective(cur)) {
-      void (Parser::*po)() = directives_[cur.str_];
-      (this->*po)();
+      void (Parser::*direct)() = directives_[cur.str_];
+      (this->*direct)();
     } else if (expectTokenType(cur, Token::CLOSE_BRACE)) {
       if (scope_.size() == 0) break;
       scope_.pop();
@@ -220,28 +226,24 @@ void Parser::lexer(std::string &input) {
   if (input.empty()) {
     throw std::runtime_error("conf file is empty");
   }
-  while (input.size() != 0) {
-    if (isSpace(input[0])) {
+  while (idx_ < input.size()) {
+    if (isSpace(input[idx_])) {
       skipSpaces(input);
-    } else if (isReserveChar(input[0])) {
-      addReserveToken(input);
+    } else if (isReservedChar(input[idx_])) {
+      addReservedToken(input);
     } else {
       addStringToken(input);
     }
   }
+  idx_ = 0;
 }
 
 bool Parser::isSpace(char c) { return isspace(c); }
 
-bool Parser::isReserveChar(char c) {
-  std::string reserve(";{}");
-  return reserve.find(c) != std::string::npos;
-}
+bool Parser::isReservedChar(char c) { return Parser::kReserved.find(c) != std::string::npos; }
 
 void Parser::skipSpaces(std::string &input) {
-  size_t i = 0;
-  while (isspace(input[i])) i++;
-  input.erase(0, i);
+  while (isspace(input[idx_])) idx_++;
 }
 
 Token::t_TK_type Parser::getReserveCharType(std::string &str) {
@@ -254,18 +256,18 @@ Token::t_TK_type Parser::getReserveCharType(std::string &str) {
 
 void Parser::addToken(Token::t_TK_type type, std::string &str) { tokens_.push_back(Token(type, str)); }
 
-void Parser::addReserveToken(std::string &input) {
-  std::string str = input.substr(0, 1);
-  input.erase(0, 1);
+void Parser::addReservedToken(std::string &input) {
+  std::string str = input.substr(idx_, 1);
+  idx_++;
   addToken(getReserveCharType(str), str);
 }
 
 void Parser::addStringToken(std::string &input) {
   size_t i = 0;
-  while (!isSpace(input[i]) && !isReserveChar(input[i])) i++;
-  std::string str = input.substr(0, i);
+  while (!isSpace(input[idx_ + i]) && !isReservedChar(input[idx_ + i])) i++;
+  std::string str = input.substr(idx_, i);
   addToken(Token::STRING, str);
-  input.erase(0, i);
+  idx_ += i;
 }
 
 Token &Parser::readToken(void) { return tokens_[idx_++]; }

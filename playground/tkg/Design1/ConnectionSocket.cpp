@@ -25,17 +25,14 @@ ConnectionSocket::ConnectionSocket(int fd, int port, Config &conf)
       request_(HttpRequest(fd, port, conf)),
       response_(HttpResponse(fd, port, conf)) {}
 
-void ConnectionSocket::handle_response(EventManager &event_manager, Config &conf) {
-  std::string result = process(conf);
+void ConnectionSocket::handle_response(EventManager &event_manager) {
+  std::string result = process();
   request_.refresh();
 
   response_.createResponse(result);
   response_.sendResponse(event_manager);
 }
 
-std::string ConnectionSocket::process(Config &conf) {
-  (void)conf;
-  return request_.getBody();
-}
+std::string ConnectionSocket::process() { return request_.getBody(); }
 
 void ConnectionSocket::handle_request(EventManager &event_manager) { request_.readRequest(event_manager); }

@@ -40,11 +40,9 @@ class Parser {
     SERVER,
     LOCATION,
   };
-  Config parser(const char *conf_file);
-  void lexer(std::string &input);
+  Config parse(const char *conf_file);
   void printTokens();
   // void printConf();
-  bool isDirective(Token &tok);
   bool expectTokenType(Token &tok, Token::t_TK_type type);
   void analyseLimitConnection();
   void analyseServer();
@@ -53,8 +51,8 @@ class Parser {
   void analyseRoot();
   void analyseLocation();
   void analyseIndex();
-  void setHost(std::string &host, ServConf &conf);
-  void setPort(std::string &port, ServConf &conf);
+  void setHost(std::string &host);
+  void setPort(std::string &port);
 
   Config conf_;
   std::vector<Token> tokens_;
@@ -64,14 +62,19 @@ class Parser {
   // static std::string kReserveChars;
 
  private:
+  void lexer(std::string &input);
   bool isSpace(char c);
-  bool isReserveChar(char c);
+  bool isReservedChar(char c);
+  bool isDirective(Token &tok);
   void skipSpaces(std::string &itr);
-  void addReserveToken(std::string &itr);
+  void addReservedToken(std::string &itr);
   void addStringToken(std::string &itr);
   void addToken(Token::t_TK_type type, std::string &str);
   Token::t_TK_type getReserveCharType(std::string &str);
   Token &readToken(void);
+  static const std::string kReserved;
+  static const std::string kDefaultIP;
+  static const int kDefaultPort;
 };
 
 #endif

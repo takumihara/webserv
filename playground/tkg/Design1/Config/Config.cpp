@@ -59,7 +59,7 @@ void Config::printPortServConfMap() {
   }
 }
 
-Config::ServerConf *Config::getServConfig(int port, std::string &host) {
+const Config::ServerConf *Config::getServConfig(int port, std::string &host) {
   std::vector<ServConf *> servs = port_servConf_map_[port];
   for (std::vector<ServerConf *>::iterator serv_itr = servs.begin(); serv_itr != servs.end(); serv_itr++) {
     std::vector<std::string> &names = (*serv_itr)->getServerNames();
@@ -70,7 +70,8 @@ Config::ServerConf *Config::getServConfig(int port, std::string &host) {
   return servs[0];
 }
 
-Config::ServerConf::LocationConf &Config::getLocationConfig(Config::ServerConf *serv_conf, std::string &path) {
+const Config::ServerConf::LocationConf &Config::getLocationConfig(Config::ServerConf *serv_conf,
+                                                                  std::string &path) const {
   std::vector<Config::ServerConf::LocationConf> locs = serv_conf->location_confs_;
   LocConf &ret = locs[0];
   size_t match_len = 0;
@@ -83,7 +84,7 @@ Config::ServerConf::LocationConf &Config::getLocationConfig(Config::ServerConf *
   return ret;
 }
 
-int Config::getLimitConnection() { return limit_connection_; }
+int Config::getLimitConnection() const { return limit_connection_; }
 
 std::vector<std::string> &Config::ServerConf::getHostNames() { return host_; }
 

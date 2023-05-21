@@ -30,7 +30,7 @@ class HttpResponse {
  private:
   int sock_fd_;
   int port_;
-  Config conf_;
+  Config &conf_;
   std::string raw_data_;
   std::string response_;
   int response_size_;

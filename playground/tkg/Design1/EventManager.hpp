@@ -33,7 +33,7 @@ class EventManager {
   typedef std::vector<struct kevent>::const_iterator changed_events_const_iterator;
 
   EventManager();
-  void eventLoop(Config &conf);
+  void eventLoop();
   void addServerSocket(int fd, int port, Config &conf);
   void removeServerSocket(int fd);
   void addConnectionSocket(int fd, int port, Config &conf);
@@ -45,7 +45,7 @@ class EventManager {
 
  private:
   void updateKqueue();
-  void handleEvent(struct kevent ev, Config &conf);
+  void handleEvent(struct kevent ev);
   bool isServerFd(int fd);
   void clearEvlist(struct kevent *evlist);
   void handleTimeout(struct kevent ev);

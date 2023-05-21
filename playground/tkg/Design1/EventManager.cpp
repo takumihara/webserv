@@ -58,7 +58,7 @@ void EventManager::updateKqueue() {
 
 bool EventManager::isServerFd(int fd) { return server_sockets_.find(fd) != server_sockets_.end(); }
 
-void EventManager::handleEvent(struct kevent ev, Config &conf) {
+void EventManager::handleEvent(struct kevent ev) {
   if (ev.filter == EVFILT_TIMER) {
     DEBUG_PUTS("timeout");
     handleTimeout(ev);
@@ -74,7 +74,7 @@ void EventManager::handleEvent(struct kevent ev, Config &conf) {
     }
   } else if (ev.filter == EVFILT_WRITE) {
     std::cout << "response connection fd " << std::endl;
-    connection_sockets_[ev.ident]->handle_response(*this, conf);
+    connection_sockets_[ev.ident]->handle_response(*this);
   }
 }
 
@@ -86,7 +86,7 @@ void EventManager::handleTimeout(struct kevent ev) {
 
 void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(struct kevent) * kMaxEventSize); }
 
-void EventManager::eventLoop(Config &conf) {  // confファイルを引数として渡す？
+void EventManager::eventLoop() {  // confファイルを引数として渡す？
 
   struct kevent evlist[kMaxEventSize];
   DEBUG_PUTS("server setup finished!");
@@ -100,7 +100,7 @@ void EventManager::eventLoop(Config &conf) {  // confファイルを引数とし
     else if (nev == -1)
       perror("kevent");
     for (int i = 0; i < nev; i++) {
-      handleEvent(evlist[i], conf);
+      handleEvent(evlist[i]);
     }
     DEBUG_PUTS("----------------------");
   }

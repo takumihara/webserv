@@ -36,6 +36,7 @@ void HttpResponse::sendResponse(EventManager &event_manager) {
 }
 
 void HttpResponse::refresh(EventManager &em) {
+  (void)conf_;
   sending_response_size_ = 0;
   response_size_ = 0;
   (void)port_;

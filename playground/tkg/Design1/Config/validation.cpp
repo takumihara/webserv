@@ -12,15 +12,14 @@ size_t skipSep(std::string &str, std::string sep, size_t pos) {
   return pos;
 }
 
-std::vector<std::string> split(std::string &str, std::string &sep) {
+std::vector<std::string> split(std::string &str, const std::string &sep) {
   size_t head = 0;
-  size_t end = str.find(".");
+  size_t end = str.find(sep);
   std::vector<std::string> ret;
 
   while (head < str.size()) {
     ret.push_back(str.substr(head, end - head));
     head = end + sep.size();
-    // head = skipSep(str, sep, head);
     end = str.find(sep, head);
     if (end == std::string::npos) {
       end = str.size();
@@ -41,8 +40,7 @@ bool isAllDigit(const std::string &str) {
 
 bool validateHost(std::string &host) {
   if (host == "") return true;
-  std::string sep(".");
-  std::vector<std::string> split_host = split(host, sep);
+  std::vector<std::string> split_host = split(host, ".");
   if (split_host.size() != 4) return false;
   for (std::vector<std::string>::const_iterator itr = split_host.cbegin(); itr != split_host.cend(); itr++) {
     if (!isAllDigit(*itr)) return false;

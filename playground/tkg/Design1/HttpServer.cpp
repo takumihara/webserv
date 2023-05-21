@@ -30,7 +30,7 @@ int HttpServer::openPort() {
 void HttpServer::setup() {
   const char *file = "./Config/conf.conf";
   Parser parser;
-  conf_ = parser.parser(file);
+  conf_ = parser.parse(file);
   // todo: check servername duplication
   conf_.makePortServConfMap();
   std::cout << "-----------port conf map-------------\n";
@@ -41,5 +41,5 @@ void HttpServer::start() {
   setup();
   int port_fd = openPort();
   (void)port_fd;
-  em_.eventLoop(conf_);
+  em_.eventLoop();
 }

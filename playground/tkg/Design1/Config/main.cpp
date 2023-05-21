@@ -6,7 +6,7 @@
 int main() {
   const char *file = "conf.conf";
   Parser parser;
-  Config conf = parser.parser(file);
+  Config conf = parser.parse(file);
   // todo: check servername duplication
   conf.makePortServConfMap();
   std::cout << "-----------port conf map-------------\n";
