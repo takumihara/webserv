@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     request += "\r\n";
     request += argv[i];
     request += "\r\n";
-    int write_res = sendto(sock, request, strlen(request), 0, NULL, 0);
+    int write_res = sendto(sock, request.c_str(), request.size(), 0, NULL, 0);
     if (write_res == -1) {
       perror("write");
     } else {
