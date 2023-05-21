@@ -157,7 +157,8 @@ void Parser::analyseLocation() {
   if (expectTokenType(tok, Token::OPEN_BRACE)) {
     // invalid grammar handle
   }
-  conf_.server_confs_.back().location_confs_.push_back(LocConf(path));
+  ServConf &serv = conf_.server_confs_.back();
+  serv.location_confs_.push_back(LocConf(path, getRoot(&serv)));
   scope_.push(LOCATION);
   return;
 }

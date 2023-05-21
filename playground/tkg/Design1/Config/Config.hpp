@@ -13,7 +13,7 @@ class Config {
     class LocationConf {
      public:
       LocationConf() : path_("/"), root_("html") {}
-      LocationConf(std::string &path) : path_(path), root_("html") {}
+      LocationConf(std::string &path, std::string root) : path_(path), root_(root) {}
 
       // private:
       std::string path_;
@@ -21,7 +21,9 @@ class Config {
       std::vector<std::string> index_;
     };
     void printServConf();
-    std::vector<std::string> &getServerName();
+    std::vector<std::string> &getServerNames();
+    std::vector<std::string> &getHostNames();
+    std::vector<int> &getPorts();
 
     // private:
     std::vector<std::string> host_;
@@ -39,10 +41,21 @@ class Config {
   void printPortServConfMap();
   ServerConf *getServConfig(int port, std::string &host);
   LocConf &getLocationConfig(ServerConf *serv_conf, std::string &path);
+  int getLimitConnection();
   // private:
   int limit_connection_;
   std::vector<ServerConf> server_confs_;
   std::map<int, std::vector<ServerConf *> > port_servConf_map_;
 };
+
+template <class T>
+std::vector<std::string> &getIndex(T conf) {
+  return conf->index_;
+}
+
+template <class T>
+std::string &getRoot(T conf) {
+  return conf->root_;
+}
 
 #endif

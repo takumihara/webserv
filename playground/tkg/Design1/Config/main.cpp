@@ -11,8 +11,8 @@ int main() {
   conf.makePortServConfMap();
   std::cout << "-----------port conf map-------------\n";
   conf.printPortServConfMap();
-  std::string name = "/test";
-  Config::ServConf *serv = conf.getServConfig(80, name);
+  std::string name = "/test22";
+  Config::ServConf *serv = conf.getServConfig(8080, name);
   std::string path = "/hello";
   Config::LocConf loc = conf.getLocationConfig(serv, path);
   std::cout << "getLoc path:" << loc.path_ << " root: " << loc.root_ << std::endl;
