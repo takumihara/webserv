@@ -12,15 +12,17 @@ EventManager::EventManager() {
   }
 }
 
-void EventManager::addServerSocket(int fd, Config &conf) { server_sockets_[fd] = new ServerSocket(fd, conf); }
+void EventManager::addServerSocket(int fd, int port, Config &conf) {
+  server_sockets_[fd] = new ServerSocket(fd, port, conf);
+}
 
 void EventManager::removeServerSocket(int fd) {
   delete server_sockets_[fd];
   server_sockets_.erase(fd);
 }
 
-void EventManager::addConnectionSocket(int fd, Config &conf) {
-  connection_sockets_[fd] = new ConnectionSocket(fd, conf);
+void EventManager::addConnectionSocket(int fd, int port, Config &conf) {
+  connection_sockets_[fd] = new ConnectionSocket(fd, port, conf);
 }
 
 void EventManager::removeConnectionSocket(int fd) {
@@ -30,14 +32,14 @@ void EventManager::removeConnectionSocket(int fd) {
 
 void EventManager::addChangedEvents(struct kevent kevent) { changed_events_.push_back(kevent); }
 
-void EventManager::registerServerEvent(int fd, Config &conf) {
+void EventManager::registerServerEvent(int fd, int port, Config &conf) {
   struct kevent chlist;
   bzero(&chlist, sizeof(struct kevent));
   DEBUG_PRINTF("server fd: %d, ", fd);
   EV_SET(&chlist, fd, EVFILT_READ, EV_ADD, 0, 0, 0);
   DEBUG_PUTS("");
   kevent(kq_, &chlist, 1, NULL, 0, NULL);
-  addServerSocket(fd, conf);
+  addServerSocket(fd, port, conf);
 }
 
 void EventManager::updateKqueue() {

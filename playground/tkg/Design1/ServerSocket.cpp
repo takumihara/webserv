@@ -26,13 +26,13 @@ void ServerSocket::notify(EventManager &event_manager) {
 void ServerSocket::make_client_connection(EventManager &event_manager) {
   struct sockaddr_in add;
   int addlen;
-  int connection_fd = accept(fd_, (struct sockaddr *)&add, (socklen_t *)&addlen);
+  int connection_fd = accept(sock_fd_, (struct sockaddr *)&add, (socklen_t *)&addlen);
   if (connection_fd == -1) {
     throw std::runtime_error("accept error");
   }
   event_manager.addChangedEvents((struct kevent){connection_fd, EVFILT_READ, EV_ADD, 0, 0, 0});
   event_manager.addChangedEvents((struct kevent){connection_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS,
                                                  EventManager::kTimeoutDuration, 0});
-  event_manager.addConnectionSocket(connection_fd, conf_);
+  event_manager.addConnectionSocket(connection_fd, port_, conf_);
   return;
 }

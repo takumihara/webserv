@@ -9,6 +9,8 @@
 #include <map>
 #include <string>
 
+#include "./Config/Config.hpp"
+
 class EventManager;
 
 class HttpRequest {
@@ -20,14 +22,16 @@ class HttpRequest {
     std::string version;
   };
 
-  HttpRequest(int fd) : fd_(fd), state_(Free) { headers_["host"] = "localhost"; }
+  HttpRequest(int fd, int port, Config &conf) : sock_fd_(fd), port_(port), conf_(conf), state_(Free) {}
   ~HttpRequest(){};
   void readRequest(EventManager &em);
   void refresh();
   const std::string &getBody() const;
 
   // private:
-  int fd_;
+  int sock_fd_;
+  int port_;
+  Config conf_;
   std::string raw_data_;
   std::string rest_;
   State state_;

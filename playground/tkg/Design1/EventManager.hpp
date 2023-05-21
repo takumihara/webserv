@@ -34,12 +34,12 @@ class EventManager {
 
   EventManager();
   void eventLoop(Config &conf);
-  void addServerSocket(int fd, Config &conf);
+  void addServerSocket(int fd, int port, Config &conf);
   void removeServerSocket(int fd);
-  void addConnectionSocket(int fd, Config &conf);
+  void addConnectionSocket(int fd, int port, Config &conf);
   void removeConnectionSocket(int fd);
   void addChangedEvents(struct kevent kevent);
-  void registerServerEvent(int fd, Config &conf);
+  void registerServerEvent(int fd, int port, Config &conf);
 
   static const int kTimeoutDuration = 10;
 

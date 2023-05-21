@@ -18,8 +18,12 @@
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 
-ConnectionSocket::ConnectionSocket(int fd, Config &conf)
-    : fd_(fd), conf_(conf), request_(HttpRequest(fd)), response_(HttpResponse(fd)) {}
+ConnectionSocket::ConnectionSocket(int fd, int port, Config &conf)
+    : sock_fd_(fd),
+      port_(port),
+      conf_(conf),
+      request_(HttpRequest(fd, port, conf)),
+      response_(HttpResponse(fd, port, conf)) {}
 
 void ConnectionSocket::handle_response(EventManager &event_manager, Config &conf) {
   std::string result = process(conf);
