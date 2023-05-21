@@ -18,17 +18,19 @@
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 
-ConnectionSocket::ConnectionSocket(int fd) : fd_(fd), request_(HttpRequest(fd)), response_(HttpResponse(fd)) {}
+ConnectionSocket::ConnectionSocket(int fd, Config &conf)
+    : fd_(fd), conf_(conf), request_(HttpRequest(fd)), response_(HttpResponse(fd)) {}
 
-void ConnectionSocket::handle_response(EventManager &event_manager) {
-  std::string result = process();
+void ConnectionSocket::handle_response(EventManager &event_manager, Config &conf) {
+  std::string result = process(conf);
   request_.refresh();
 
   response_.createResponse(result);
   response_.sendResponse(event_manager);
 }
 
-std::string ConnectionSocket::process() {
+std::string ConnectionSocket::process(Config &conf) {
+  (void)conf;
   return request_.getBody();
 }
 

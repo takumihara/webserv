@@ -22,7 +22,7 @@ void Config::makePortServConfMap() {
 void Config::printConfig() {
   std::cout << "connection limits: " << limit_connection_ << std::endl;
   int i = 0;
-  for (auto itr = server_confs_.begin(); itr != server_confs_.end(); itr++, i++) {
+  for (std::vector<ServConf>::iterator itr = server_confs_.begin(); itr != server_confs_.end(); itr++, i++) {
     std::cout << "server" << i << std::endl;
     itr->printServConf();
   }
@@ -33,23 +33,23 @@ void Config::ServerConf::printServConf() {
   printStrings("    server_name: ", server_names_);
   printStrings("    index: ", index_);
 
-  for (int i = 0; i < host_.size(); i++) {
+  for (size_t i = 0; i < host_.size(); i++) {
     std::cout << "    listen host: " << std::setw(15) << std::left << host_[i];
     std::cout << "    port: " << port_[i] << std::endl;
   }
   int j = 0;
-  for (auto itr2 = location_confs_.begin(); itr2 != location_confs_.end(); itr2++, j++) {
+  for (std::vector<LocConf>::iterator itr2 = location_confs_.begin(); itr2 != location_confs_.end(); itr2++, j++) {
     std::cout << "    location" << j << std::endl;
     std::cout << "      path: " << itr2->path_ << std::endl;
     std::cout << "      root: " << itr2->root_ << std::endl;
-    for (auto itr3 = itr2->index_.begin(); itr3 != itr2->index_.end(); itr3++) {
+    for (std::vector<std::string>::iterator itr3 = itr2->index_.begin(); itr3 != itr2->index_.end(); itr3++) {
       std::cout << "      index: " << *itr3 << std::endl;
     }
   }
 }
 
 void Config::printPortServConfMap() {
-  for (std::map<int, std::vector<ServerConf *>>::iterator map_itr = port_servConf_map_.begin();
+  for (std::map<int, std::vector<ServerConf *> >::iterator map_itr = port_servConf_map_.begin();
        map_itr != port_servConf_map_.end(); map_itr++) {
     std::cout << "port: " << map_itr->first << std::endl;
     for (std::vector<ServerConf *>::iterator serv_itr = map_itr->second.begin(); serv_itr != map_itr->second.end();

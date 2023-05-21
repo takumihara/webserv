@@ -1,5 +1,6 @@
 #include "EventManager.hpp"
 
+#include "./Config/Config.hpp"
 #include "ConnectionSocket.hpp"
 #include "ServerSocket.hpp"
 #include "debug.hpp"
@@ -11,14 +12,16 @@ EventManager::EventManager() {
   }
 }
 
-void EventManager::addServerSocket(int fd) { server_sockets_[fd] = new ServerSocket(fd); }
+void EventManager::addServerSocket(int fd, Config &conf) { server_sockets_[fd] = new ServerSocket(fd, conf); }
 
 void EventManager::removeServerSocket(int fd) {
   delete server_sockets_[fd];
   server_sockets_.erase(fd);
 }
 
-void EventManager::addConnectionSocket(int fd) { connection_sockets_[fd] = new ConnectionSocket(fd); }
+void EventManager::addConnectionSocket(int fd, Config &conf) {
+  connection_sockets_[fd] = new ConnectionSocket(fd, conf);
+}
 
 void EventManager::removeConnectionSocket(int fd) {
   delete connection_sockets_[fd];
@@ -27,14 +30,14 @@ void EventManager::removeConnectionSocket(int fd) {
 
 void EventManager::addChangedEvents(struct kevent kevent) { changed_events_.push_back(kevent); }
 
-void EventManager::registerServerEvent(int fd) {
+void EventManager::registerServerEvent(int fd, Config &conf) {
   struct kevent chlist;
   bzero(&chlist, sizeof(struct kevent));
   DEBUG_PRINTF("server fd: %d, ", fd);
   EV_SET(&chlist, fd, EVFILT_READ, EV_ADD, 0, 0, 0);
   DEBUG_PUTS("");
   kevent(kq_, &chlist, 1, NULL, 0, NULL);
-  addServerSocket(fd);
+  addServerSocket(fd, conf);
 }
 
 void EventManager::updateKqueue() {
@@ -53,7 +56,7 @@ void EventManager::updateKqueue() {
 
 bool EventManager::isServerFd(int fd) { return server_sockets_.find(fd) != server_sockets_.end(); }
 
-void EventManager::handleEvent(struct kevent ev) {
+void EventManager::handleEvent(struct kevent ev, Config &conf) {
   if (ev.filter == EVFILT_TIMER) {
     DEBUG_PUTS("timeout");
     handleTimeout(ev);
@@ -69,7 +72,7 @@ void EventManager::handleEvent(struct kevent ev) {
     }
   } else if (ev.filter == EVFILT_WRITE) {
     std::cout << "response connection fd " << std::endl;
-    connection_sockets_[ev.ident]->handle_response(*this);
+    connection_sockets_[ev.ident]->handle_response(*this, conf);
   }
 }
 
@@ -81,7 +84,7 @@ void EventManager::handleTimeout(struct kevent ev) {
 
 void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(struct kevent) * kMaxEventSize); }
 
-void EventManager::eventLoop() {  // confファイルを引数として渡す？
+void EventManager::eventLoop(Config &conf) {  // confファイルを引数として渡す？
 
   struct kevent evlist[kMaxEventSize];
   DEBUG_PUTS("server setup finished!");
@@ -95,7 +98,7 @@ void EventManager::eventLoop() {  // confファイルを引数として渡す？
     else if (nev == -1)
       perror("kevent");
     for (int i = 0; i < nev; i++) {
-      handleEvent(evlist[i]);
+      handleEvent(evlist[i], conf);
     }
     DEBUG_PUTS("----------------------");
   }

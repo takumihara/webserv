@@ -93,6 +93,4 @@ void HttpRequest::refresh() {
   rest_ = "";
 }
 
-  const std::string &HttpRequest::getBody() const {
-    return body_;
-  }
+const std::string &HttpRequest::getBody() const { return body_; }

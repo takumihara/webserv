@@ -12,7 +12,7 @@ class Config {
     ServerConf() : root_("./") {}
     class LocationConf {
      public:
-      LocationConf() : root_("html"), path_("/") {}
+      LocationConf() : path_("/"), root_("html") {}
       LocationConf(std::string &path) : path_(path), root_("html") {}
 
       // private:
@@ -30,7 +30,6 @@ class Config {
     std::string root_;
     std::vector<std::string> index_;
     std::vector<LocationConf> location_confs_;
-    static const int kDefaultPort = 80;
   };
   typedef Config::ServerConf ServConf;
   typedef Config::ServerConf::LocationConf LocConf;
@@ -43,7 +42,7 @@ class Config {
   // private:
   int limit_connection_;
   std::vector<ServerConf> server_confs_;
-  std::map<int, std::vector<ServerConf *>> port_servConf_map_;
+  std::map<int, std::vector<ServerConf *> > port_servConf_map_;
 };
 
 #endif

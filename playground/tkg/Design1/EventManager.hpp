@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "./Config/Config.hpp"
 #include "ConnectionSocket.hpp"
 #include "ServerSocket.hpp"
 
@@ -32,19 +33,19 @@ class EventManager {
   typedef std::vector<struct kevent>::const_iterator changed_events_const_iterator;
 
   EventManager();
-  void eventLoop();
-  void addServerSocket(int fd);
+  void eventLoop(Config &conf);
+  void addServerSocket(int fd, Config &conf);
   void removeServerSocket(int fd);
-  void addConnectionSocket(int fd);
+  void addConnectionSocket(int fd, Config &conf);
   void removeConnectionSocket(int fd);
   void addChangedEvents(struct kevent kevent);
-  void registerServerEvent(int fd);
+  void registerServerEvent(int fd, Config &conf);
 
   static const int kTimeoutDuration = 10;
 
  private:
   void updateKqueue();
-  void handleEvent(struct kevent ev);
+  void handleEvent(struct kevent ev, Config &conf);
   bool isServerFd(int fd);
   void clearEvlist(struct kevent *evlist);
   void handleTimeout(struct kevent ev);

@@ -6,8 +6,8 @@
 #include <unistd.h>
 
 #include <iostream>
-#include <string>
 #include <map>
+#include <string>
 
 class EventManager;
 
@@ -20,13 +20,13 @@ class HttpRequest {
     std::string version;
   };
 
-  HttpRequest(int fd) : fd_(fd), state_(Free) {}
+  HttpRequest(int fd) : fd_(fd), state_(Free) { headers_["host"] = "localhost"; }
   ~HttpRequest(){};
   void readRequest(EventManager &em);
   void refresh();
   const std::string &getBody() const;
 
- private:
+  // private:
   int fd_;
   std::string raw_data_;
   std::string rest_;

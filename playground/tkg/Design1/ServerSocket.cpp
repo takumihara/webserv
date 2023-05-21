@@ -33,6 +33,6 @@ void ServerSocket::make_client_connection(EventManager &event_manager) {
   event_manager.addChangedEvents((struct kevent){connection_fd, EVFILT_READ, EV_ADD, 0, 0, 0});
   event_manager.addChangedEvents((struct kevent){connection_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS,
                                                  EventManager::kTimeoutDuration, 0});
-  event_manager.addConnectionSocket(connection_fd);
+  event_manager.addConnectionSocket(connection_fd, conf_);
   return;
 }

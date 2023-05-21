@@ -18,7 +18,7 @@
 int main(int argc, char **argv) {
   std::string hostname = "localhost";
   // can be "http"
-  std::string service = "80";
+  std::string service = "8080";
   struct addrinfo hints, *res;
   int err;
   int sock;

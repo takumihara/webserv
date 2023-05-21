@@ -64,7 +64,7 @@ void Parser::setHost(std::string &host, ServConf &conf) {
 
 void Parser::setPort(std::string &port, ServConf &conf) {
   if (port == "")
-    conf.port_.push_back(80);
+    conf.port_.push_back(8080);
   else
     conf.port_.push_back(atoi(port.c_str()));
 }
