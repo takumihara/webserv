@@ -211,7 +211,6 @@ Config Parser::parser(const char *conf_file) {
     // todo: invalid grammar(unbalanced braces) handle
     std::cout << "error: unbalanced braces" << std::endl;
   }
-  // printTokens();
   conf_.printConfig();
   return conf_;
 }

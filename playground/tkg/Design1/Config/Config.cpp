@@ -58,3 +58,29 @@ void Config::printPortServConfMap() {
     }
   }
 }
+
+std::vector<std::string> &Config::ServerConf::getServerName() { return server_names_; }
+
+Config::ServerConf *Config::getServConfig(int port, std::string &host) {
+  std::vector<Config::ServerConf *> servs = port_servConf_map_[port];
+  for (std::vector<ServerConf *>::iterator serv_itr = servs.begin(); serv_itr != servs.end(); serv_itr++) {
+    std::vector<std::string> &names = (*serv_itr)->getServerName();
+    for (std::vector<std::string>::iterator name_itr = names.begin(); name_itr != names.end(); name_itr++) {
+      if (*name_itr == host) return *serv_itr;
+    }
+  }
+  return servs[0];
+}
+
+Config::ServerConf::LocationConf &Config::getLocationConfig(Config::ServerConf *serv_conf, std::string &path) {
+  std::vector<Config::ServerConf::LocationConf> locs = serv_conf->location_confs_;
+  LocConf &ret = locs[0];
+  size_t match_len = 0;
+  for (std::vector<LocConf>::iterator loc_itr = locs.begin(); loc_itr != locs.end(); loc_itr++) {
+    if (path.find(loc_itr->path_) == 0 && match_len < loc_itr->path_.size()) {
+      ret = *loc_itr;
+      match_len = loc_itr->path_.size();
+    }
+  }
+  return ret;
+}

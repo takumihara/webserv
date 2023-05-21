@@ -21,6 +21,7 @@ class Config {
       std::vector<std::string> index_;
     };
     void printServConf();
+    std::vector<std::string> &getServerName();
 
     // private:
     std::vector<std::string> host_;
@@ -31,10 +32,14 @@ class Config {
     std::vector<LocationConf> location_confs_;
     static const int kDefaultPort = 80;
   };
+  typedef Config::ServerConf ServConf;
+  typedef Config::ServerConf::LocationConf LocConf;
+
   void makePortServConfMap();
   void printConfig();
   void printPortServConfMap();
-
+  ServerConf *getServConfig(int port, std::string &host);
+  LocConf &getLocationConfig(ServerConf *serv_conf, std::string &path);
   // private:
   int limit_connection_;
   std::vector<ServerConf> server_confs_;
