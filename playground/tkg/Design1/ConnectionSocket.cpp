@@ -18,7 +18,12 @@
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 
-ConnectionSocket::ConnectionSocket(int fd) : fd_(fd), request_(HttpRequest(fd)), response_(HttpResponse(fd)) {}
+ConnectionSocket::ConnectionSocket(int fd, int port, Config &conf)
+    : sock_fd_(fd),
+      port_(port),
+      conf_(conf),
+      request_(HttpRequest(fd, port, conf)),
+      response_(HttpResponse(fd, port, conf)) {}
 
 void ConnectionSocket::handle_response(EventManager &event_manager) {
   std::string result = process();
@@ -28,8 +33,6 @@ void ConnectionSocket::handle_response(EventManager &event_manager) {
   response_.sendResponse(event_manager);
 }
 
-std::string ConnectionSocket::process() {
-  return request_.getBody();
-}
+std::string ConnectionSocket::process() { return request_.getBody(); }
 
 void ConnectionSocket::handle_request(EventManager &event_manager) { request_.readRequest(event_manager); }

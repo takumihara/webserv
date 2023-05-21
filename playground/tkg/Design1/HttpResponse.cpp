@@ -20,7 +20,7 @@ void HttpResponse::sendResponse(EventManager &event_manager) {
   if (size > kWriteSize) {
     size = kWriteSize;
   }
-  int res = sendto(fd_, &response[sending_response_size_], size, 0, NULL, 0);
+  int res = sendto(sock_fd_, &response[sending_response_size_], size, 0, NULL, 0);
   if (res == -1) {
     perror("sendto");
     throw std::runtime_error("send error");
@@ -36,10 +36,12 @@ void HttpResponse::sendResponse(EventManager &event_manager) {
 }
 
 void HttpResponse::refresh(EventManager &em) {
+  (void)conf_;
   sending_response_size_ = 0;
   response_size_ = 0;
-  em.addChangedEvents((struct kevent){fd_, EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
-  em.addChangedEvents((struct kevent){fd_, EVFILT_READ, EV_ENABLE, 0, 0, 0});
+  (void)port_;
+  em.addChangedEvents((struct kevent){sock_fd_, EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
+  em.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_ENABLE, 0, 0, 0});
   response_ = "";
   raw_data_ = "";
 }

@@ -18,7 +18,8 @@
 int main(int argc, char **argv) {
   std::string hostname = "localhost";
   // can be "http"
-  std::string service = "80";
+
+  std::string service = argv[1];
   struct addrinfo hints, *res;
   int err;
   int sock;
@@ -49,16 +50,16 @@ int main(int argc, char **argv) {
   } else
     printf("connection success!\n");
 
-  for (int i = 1; i < argc; i++) {
+  for (int i = 2; i < argc; i++) {
     std::string request = "";
     request += "POST / HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
     request += "Content-Type: text/plain\r\n";
     request += "Content-Length: 5\r\n";
     request += "\r\n";
-    request += argv[1];
+    request += argv[i];
     request += "\r\n";
-    int write_res = sendto(sock, request.c_str(), request.size(), 0, NULL, 0);
+    int write_res = sendto(sock, request, strlen(request), 0, NULL, 0);
     if (write_res == -1) {
       perror("write");
     } else {

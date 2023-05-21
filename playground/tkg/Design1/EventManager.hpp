@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "./Config/Config.hpp"
 #include "ConnectionSocket.hpp"
 #include "ServerSocket.hpp"
 
@@ -33,12 +34,12 @@ class EventManager {
 
   EventManager();
   void eventLoop();
-  void addServerSocket(int fd);
+  void addServerSocket(int fd, int port, Config &conf);
   void removeServerSocket(int fd);
-  void addConnectionSocket(int fd);
+  void addConnectionSocket(int fd, int port, Config &conf);
   void removeConnectionSocket(int fd);
   void addChangedEvents(struct kevent kevent);
-  void registerServerEvent(int fd);
+  void registerServerEvent(int fd, int port, Config &conf);
 
   static const int kTimeoutDuration = 10;
 

@@ -1,6 +1,7 @@
 
 CXXFLAGS	= -Wall -Werror -Wextra -std=c++98
-SERVER_SRC	= HttpServer.cpp HttpRequest.cpp HttpResponse.cpp ServerSocket.cpp EventManager.cpp ConnectionSocket.cpp main.cpp helper.cpp
+SERVER_SRC	= HttpServer.cpp HttpRequest.cpp HttpResponse.cpp ServerSocket.cpp EventManager.cpp ConnectionSocket.cpp \
+Config/Config.cpp Config/Parser.cpp Config/validation.cpp helper.cpp main.cpp
 
 ifdef DEBUG
 	CXXFLAGS += -D DEBUG

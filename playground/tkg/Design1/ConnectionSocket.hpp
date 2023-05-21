@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "./Config/Config.hpp"
 #include "EventManager.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
@@ -16,7 +17,7 @@ class ConnectionSocket {
   //   kSocReading,
   //   kSocWriting,
   // };
-  ConnectionSocket(int fd);
+  ConnectionSocket(int fd, int port, Config &conf);
   ~ConnectionSocket() {}
   void handle_request(EventManager &event_manager);
   void handle_response(EventManager &event_manager);
@@ -26,7 +27,9 @@ class ConnectionSocket {
   std::string process();
 
  private:
-  int fd_;
+  int sock_fd_;
+  int port_;
+  Config &conf_;
   // SocketState state_;
   HttpRequest request_;
   HttpResponse response_;

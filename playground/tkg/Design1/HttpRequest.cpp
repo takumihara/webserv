@@ -13,26 +13,26 @@ void HttpRequest::readRequest(EventManager &event_manager) {
   char request[kReadSize + 1];
   bzero(request, kReadSize + 1);
   std::string req_str;
-  int size = read(fd_, request, kReadSize);
+  int size = read(sock_fd_, request, kReadSize);
   if (size == -1) {
     // todo: no exception
     throw std::runtime_error("read error");
   } else if (size == 0) {
-    printf("closed fd = %d\n", fd_);
-    close(fd_);
-    event_manager.removeConnectionSocket(fd_);
+    printf("closed fd = %d\n", sock_fd_);
+    close(sock_fd_);
+    event_manager.removeConnectionSocket(sock_fd_);
   } else {
     req_str = std::string(request);
     raw_data_ += req_str;
 
-    std::cout << "read from socket(fd:" << fd_ << ")"
+    std::cout << "read from socket(fd:" << sock_fd_ << ")"
               << ":" << raw_data_ << std::endl;
 
     while (trimToEndingChars()) {
       moveToNextState();
 
       std::cout << "request received"
-                << "(fd:" << fd_ << "): '" << raw_data_ << "'" << std::endl;
+                << "(fd:" << sock_fd_ << "): '" << raw_data_ << "'" << std::endl;
 
       if (state_ == ReadStartLine) {
         parseStartline();
