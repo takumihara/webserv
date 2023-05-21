@@ -1,6 +1,13 @@
 #include "HttpRequest.hpp"
 
+#include <algorithm>
+#include <sstream>
+
 #include "EventManager.hpp"
+#include "helper.hpp"
+
+const std::string HttpRequest::kSupportedMethods[] = {"GET", "POST"};
+const std::string HttpRequest::kSupportedVersions[] = {"HTTP/1.1"};
 
 void HttpRequest::readRequest(EventManager &event_manager) {
   char request[kReadSize + 1];
@@ -28,24 +35,114 @@ void HttpRequest::readRequest(EventManager &event_manager) {
                 << "(fd:" << sock_fd_ << "): '" << raw_data_ << "'" << std::endl;
 
       if (state_ == ReadStartLine) {
-        // parseStartline(raw_data_);
+        parseStartline();
         refresh();
-        DEBUG_PUTS("parsing startline done");
       } else if (state_ == ReadHeaders) {
-        // parseHeaders()
+        parseHeaders();
         // todo: handle when body doesn't exist
         refresh();
-        DEBUG_PUTS("parsing headers done");
       } else if (state_ == ReadBody) {
         body_ = raw_data_;
         state_ = Free;
-        event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-        event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
-        DEBUG_PUTS("processing done");
+        event_manager.addChangedEvents((struct kevent){fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
+        event_manager.addChangedEvents((struct kevent){fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
         break;
       }
     }
   }
+}
+
+void HttpRequest::parseStartline() {
+  std::stringstream ss = std::stringstream(raw_data_);
+
+  std::getline(ss, request_line_.method, SP);
+  std::getline(ss, request_line_.requestTarget, SP);
+  request_line_.version = ss.str();
+
+  validateStartLine();
+
+  DEBUG_PUTS("REQUEST LINE PARSED");
+  DEBUG_PRINTF("method: '%s' request target: '%s' version: '%s'\n", request_line_.method.c_str(),
+               request_line_.requestTarget.c_str(), request_line_.version.c_str());
+}
+
+void HttpRequest::validateStartLine() {
+  if (!isValidMethod()) {
+    throw std::runtime_error("Http Request: invalid method");
+  }
+  if (!isValidRequestTarget()) {
+    throw std::runtime_error("Http Request: invalid request target");
+  }
+  if (!isValidVersion()) {
+    throw std::runtime_error("Http Request: invalid version");
+  }
+}
+
+bool HttpRequest::isValidMethod() {
+  return in(request_line_.method, kSupportedMethods, sizeof(kSupportedMethods) / sizeof(std::string));
+}
+
+bool HttpRequest::isValidRequestTarget() {
+  // todo: add validation
+  return request_line_.requestTarget[0] == '/';
+}
+
+bool HttpRequest::isValidVersion() {
+  return in(request_line_.version, kSupportedVersions, sizeof(kSupportedVersions) / sizeof(std::string));
+}
+
+void HttpRequest::parseHeaders() {
+  std::stringstream ss(raw_data_);
+
+  std::string::size_type start = 0;
+  std::string::size_type end = raw_data_.find("\r\n", start);
+
+  while (end != std::string::npos) {
+    std::string line = raw_data_.substr(start, end - start);
+    std::stringstream lineStream(line);
+    std::string name, value;
+
+    if (std::getline(lineStream, name, ':')) {
+      if (std::getline(lineStream, value)) {
+        size_t value_start = value.find_first_not_of(" \t");
+        if (value_start != std::string::npos) {
+          value = value.substr(value_start);
+        } else {
+          value = "";
+        }
+
+        toLower(name);
+
+        validateHeaderName(name);
+        validateHeaderValue(value);
+
+        if (headers_.find(name) == headers_.end()) {
+          headers_[name] = value;
+        } else {
+          headers_[name] += "," + value;
+        }
+      }
+    }
+
+    start = end + 2;  // Skip the \r\n
+    end = raw_data_.find("\r\n", start);
+  }
+
+  DEBUG_PUTS("HEADER PARSED");
+  for (std::map<std::string, std::string>::iterator itr = headers_.begin(); itr != headers_.end(); itr++) {
+    DEBUG_PRINTF("'%s' : '%s'\n", itr->first.c_str(), itr->second.c_str());
+  }
+}
+
+void HttpRequest::validateHeaderName(const std::string &name) {
+  if (name == "" || *name.rbegin() == SP) {
+    throw std::runtime_error("Http Request: invalid header name");
+  }
+}
+
+void HttpRequest::validateHeaderValue(const std::string &value) {
+  (void)value;
+  // todo
 }
 
 bool HttpRequest::trimToEndingChars() {
@@ -62,11 +159,11 @@ bool HttpRequest::trimToEndingChars() {
 std::string HttpRequest::getEndingChars() const {
   switch (state_) {
     case Free:
-      return "\r\n";
+      return CRLF;
     case ReadStartLine:
-      return "\r\n\r\n";
+      return std::string(CRLF) + CRLF;
     case ReadHeaders:
-      return "\r\n";
+      return CRLF;
     default:
       throw std::runtime_error("invalid HttpRequest state");
   }

@@ -8,8 +8,10 @@
 #include <iostream>
 #include <map>
 #include <string>
-
 #include "./Config/Config.hpp"
+
+#define SP ' '
+#define CRLF "\r\n"
 
 class EventManager;
 
@@ -42,10 +44,22 @@ class HttpRequest {
   std::string body_;
 
   static const int kReadSize = 3;
+  static const std::string kSupportedMethods[];
+  static const std::string kSupportedVersions[];
 
   std::string getEndingChars() const;
   bool trimToEndingChars();
   void moveToNextState();
+
+  void parseStartline();
+  void validateStartLine();
+  bool isValidMethod();
+  bool isValidVersion();
+  bool isValidRequestTarget();
+
+  void parseHeaders();
+  void validateHeaderName(const std::string &name);
+  void validateHeaderValue(const std::string &value);
 };
 
 #endif

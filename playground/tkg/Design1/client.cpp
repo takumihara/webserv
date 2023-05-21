@@ -51,9 +51,14 @@ int main(int argc, char **argv) {
     printf("connection success!\n");
 
   for (int i = 2; i < argc; i++) {
-    char request[100] = "start-line\r\nheaders\r\n\r\n";
-    strcat(request, argv[i]);
-    strcat(request, "\r\n");
+    std::string request = "";
+    request += "POST / HTTP/1.1\r\n";
+    request += "Host: localhost\r\n";
+    request += "Content-Type: text/plain\r\n";
+    request += "Content-Length: 5\r\n";
+    request += "\r\n";
+    request += argv[i];
+    request += "\r\n";
     int write_res = sendto(sock, request, strlen(request), 0, NULL, 0);
     if (write_res == -1) {
       perror("write");

@@ -70,7 +70,15 @@ void EventManager::handleEvent(struct kevent ev) {
       //   // handle cgi response
     } else {
       std::cout << "request connection fd " << std::endl;
-      connection_sockets_[ev.ident]->handle_request(*this);
+      try {
+        connection_sockets_[ev.ident]->handle_request(*this);
+      } catch (std::runtime_error &e) {
+        std::cout << e.what() << std::endl;
+        // todo: handle what's necessary(return some response)
+        close(ev.ident);
+        removeConnectionSocket(ev.ident);
+        addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+      }
     }
   } else if (ev.filter == EVFILT_WRITE) {
     std::cout << "response connection fd " << std::endl;
