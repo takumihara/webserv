@@ -29,37 +29,36 @@ bool HttpRequest::readRequest(EventManager &event_manager) {
     raw_data_ += req_str;
 
     std::cout << "read from socket(fd:" << sock_fd_ << ")"
-              << ":'" << raw_data_ << "'" << std::endl;
+              << ":'" << escape(raw_data_) << "'" << std::endl;
 
-    while (trimToEndingChars()) {
+    if (state_ == ReadingStartLine && isActionable()) {
+      trimToEndingChars();
+      parseStartline();
+      refresh();
       moveToNextState();
-
-      std::cout << "request received"
-                << "(fd:" << sock_fd_ << "): '" << raw_data_ << "'" << std::endl;
-
-      if (state_ == ReadStartLine) {
-        parseStartline();
-        refresh();
-      } else if (state_ == ReadHeaders) {
-        parseHeaders();
-        // todo: handle when body doesn't exist
-        refresh();
-        if (!isReceivingBody()) {
-          finishedReading = true;
-          break;
-        }
-      } else if (state_ == ReadBody) {
-        body_ = raw_data_;
+    }
+    if (state_ == ReadingHeaders && isActionable()) {
+      trimToEndingChars();
+      parseHeaders();
+      refresh();
+      if (!isReceivingBody()) {
         finishedReading = true;
-        break;
+      } else {
+        moveToNextState();
       }
     }
-  }
+    if (state_ == ReadingChunkedBody) {
+      finishedReading = readChunkedBody();
+    } else if (state_ == ReadingBody && isActionable()) {
+      body_ = raw_data_;
+      finishedReading = true;
+    }
 
-  if (finishedReading) {
-    state_ = Free;
-    event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
-    event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL});
+    if (finishedReading) {
+      DEBUG_PRINTF("FINISHED READING: %s \n", escape(body_).c_str());
+      event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+      event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL});
+    }
   }
 
   return finishedReading;
@@ -164,24 +163,68 @@ void HttpRequest::validateHeaderValue(const std::string &value) {
   // todo
 }
 
-bool HttpRequest::trimToEndingChars() {
-  size_t end_pos;
-  const std::string ending_chars = getEndingChars();
+bool HttpRequest::readChunkedBody() {
+  while (true) {
+    if (chunked_reading_state_ == ReadingChunkedSize) {
+      std::string::size_type end = raw_data_.find(CRLF);
+      if (end == std::string::npos) {
+        return false;
+      }
 
-  if ((end_pos = raw_data_.find(ending_chars)) != std::string::npos) {
-    rest_ = raw_data_.substr(end_pos + ending_chars.size());
-    raw_data_ = raw_data_.substr(0, end_pos);
+      std::string hex = raw_data_.substr(0, end);
+      std::stringstream ss(hex);
+      ss >> std::hex >> chunked_size_;
+
+      if (chunked_size_ == 0) {
+        return true;
+      }
+
+      raw_data_ = raw_data_.substr(end + 2);
+      chunked_reading_state_ = ReadingChunkedData;
+    }
+
+    if (chunked_reading_state_ == ReadingChunkedData) {
+      if (raw_data_.size() < (chunked_size_ + 2)) {
+        return false;
+      }
+      if (raw_data_.substr(chunked_size_, 2) != CRLF) {
+        throw std::runtime_error("Http Request: invalid chunked body");
+      }
+
+      body_ += raw_data_.substr(0, chunked_size_);
+      raw_data_ = raw_data_.substr(chunked_size_ + 2);
+
+      chunked_reading_state_ = ReadingChunkedSize;
+    }
   }
-  return end_pos != std::string::npos;
+  return false;
+}
+
+void HttpRequest::readBody() { body_ = raw_data_; }
+
+bool HttpRequest::isActionable() {
+  if (state_ == ReadingStartLine || state_ == ReadingHeaders || state_ == ReadingBody) {
+    return raw_data_.find(getEndingChars()) != std::string::npos;
+  } else {
+    throw std::runtime_error("invalid HttpRequest state");
+  }
+}
+
+void HttpRequest::trimToEndingChars() {
+  const std::string ending_chars = getEndingChars();
+  size_t end_pos = raw_data_.find(ending_chars);
+
+  rest_ = raw_data_.substr(end_pos + ending_chars.size());
+  raw_data_ = raw_data_.substr(0, end_pos);
 }
 
 std::string HttpRequest::getEndingChars() const {
   switch (state_) {
-    case Free:
+    case ReadingStartLine:
       return CRLF;
-    case ReadStartLine:
+    case ReadingHeaders:
       return std::string(CRLF) + CRLF;
-    case ReadHeaders:
+    case ReadingBody:
       return CRLF;
     default:
       throw std::runtime_error("invalid HttpRequest state");
@@ -190,14 +233,15 @@ std::string HttpRequest::getEndingChars() const {
 
 void HttpRequest::moveToNextState() {
   switch (state_) {
-    case Free:
-      state_ = ReadStartLine;
+    case ReadingStartLine:
+      state_ = ReadingHeaders;
       break;
-    case ReadStartLine:
-      state_ = ReadHeaders;
-      break;
-    case ReadHeaders:
-      state_ = ReadBody;
+    case ReadingHeaders:
+      if (getHeaderValue("transfer-encoding") == "chunked") {
+        state_ = ReadingChunkedBody;
+      } else {
+        state_ = ReadingBody;
+      }
       break;
     default:
       throw std::runtime_error("invalid HttpRequest state");

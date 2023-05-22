@@ -13,7 +13,7 @@ server:
 	clang++ $(CXXFLAGS) $(SERVER_SRC) -o server
 
 client:
-	clang++ $(CXXFLAGS) client.cpp -o client
+	clang++ $(CXXFLAGS) client.cpp helper.cpp -o client
 
 clean:
 	rm -rf server client

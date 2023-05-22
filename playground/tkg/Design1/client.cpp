@@ -15,6 +15,10 @@
 #include <iostream>
 #include <string>
 
+#include "helper.hpp"
+
+std::string getRequest(const std::string &arg);
+
 int main(int argc, char **argv) {
   std::string hostname = "localhost";
   // can be "http"
@@ -51,21 +55,13 @@ int main(int argc, char **argv) {
     printf("connection success!\n");
 
   for (int i = 2; i < argc; i++) {
-    std::string request = "";
-    request += "POST /a.cgi HTTP/1.1\r\n";
-    // request += "POST /index.html HTTP/1.1\r\n";
-    request += "Host: localhost\r\n";
-    request += "Content-Type: text/plain\r\n";
-    request += "Content-Length: 5\r\n";
-    request += "\r\n";
-    request += argv[i];
-    request += "\r\n";
+    std::string request = getRequest(argv[i]);
     int write_res = sendto(sock, request.c_str(), request.size(), 0, NULL, 0);
     if (write_res == -1) {
       perror("write");
     } else {
       std::cout << "request sent: "
-                << "'" << request << "'"
+                << "'" << escape(request) << "'"
                 << "(fd:" << sock << "): '"
                 << " (size:" << write_res << ")" << std::endl;
     }
@@ -77,7 +73,7 @@ int main(int argc, char **argv) {
       exit(1);
     }
     std::cout << "response received"
-              << "(fd:" << sock << "): '" << response << "' (size: " << res << ")" << std::endl;
+              << "(fd:" << sock << "): '" << escape(response) << "' (size: " << res << ")" << std::endl;
     sleep(3);
   }
 
@@ -85,4 +81,44 @@ int main(int argc, char **argv) {
   close(sock);
 
   return 0;
+}
+
+/*
+4␍␊            (chunk size is four octets)
+Wiki           (four octets of data)
+␍␊             (end of chunk)
+
+7␍␊            (chunk size is seven octets)
+pedia i        (seven octets of data)
+␍␊             (end of chunk)
+
+B␍␊            (chunk size is eleven octets)
+n ␍␊chunks.    (eleven octets of data)
+␍␊             (end of chunk)
+
+0␍␊            (chunk size is zero octets, no more chunks)
+␍␊
+*/
+
+std::string getRequest(const std::string &arg) {
+  std::string request = "";
+  if (arg == "chunked") {
+    request += "POST /a.cgi HTTP/1.1\r\n";
+    request += "Host: localhost\r\n";
+    request += "Transfer-Encoding: chunked\r\n ";
+    request += "Content-Type: text/plain\r\n";
+    request += "\r\n";
+    request += "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n\r\n";
+    request += "\r\n";
+  } else {
+    request += "POST /a.cgi HTTP/1.1\r\n";
+    // request += "POST /index.html HTTP/1.1\r\n";
+    request += "Host: localhost\r\n";
+    request += "Content-Type: text/plain\r\n";
+    request += "Content-Length: 5\r\n";
+    request += "\r\n";
+    request += arg;
+    request += "\r\n";
+  }
+  return request;
 }
