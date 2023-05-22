@@ -23,7 +23,7 @@ bool HttpRequest::readRequest(EventManager &event_manager) {
   } else if (size == 0) {
     printf("closed fd = %d\n", sock_fd_);
     close(sock_fd_);
-    event_manager.removeConnectionSocket(sock_fd_);
+    event_manager.remove(std::pair<t_id, t_type>(sock_fd_, FD));
   } else {
     req_str = std::string(request);
     raw_data_ += req_str;

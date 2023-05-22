@@ -19,10 +19,7 @@
 #include <vector>
 
 #include "./Config/Config.hpp"
-#include "ConnectionSocket.hpp"
-#include "ServerSocket.hpp"
-
-class ConnectionSocket;
+#include "AbstractObservee.hpp"
 
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
@@ -34,6 +31,8 @@ class EventManager {
 
   EventManager();
   void eventLoop();
+  void add(const std::pair<t_id, t_type> &key, AbstractObservee *obs);
+  void remove(const std::pair<t_id, t_type> &key);
   void addServerSocket(int fd, int port, Config &conf);
   void removeServerSocket(int fd);
   void addConnectionSocket(int fd, int port, Config &conf);
@@ -60,9 +59,7 @@ class EventManager {
 
   int kq_;
   std::vector<struct kevent> changed_events_;
-  std::map<int, ServerSocket *> server_sockets_;
-  std::map<int, ConnectionSocket *> connection_sockets_;
-  std::map<int, ConnectionSocket *> cgi_connection_pair_;
+  std::map<std::pair<t_id, t_type>, AbstractObservee *> observees_;
   static const int kMaxEventSize = 100;
 };
 

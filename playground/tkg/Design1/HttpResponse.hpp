@@ -15,12 +15,7 @@ class EventManager;
 class HttpResponse {
  public:
   HttpResponse(int fd, int port)
-      : sock_fd_(fd),
-        port_(port),
-        raw_data_(""),
-        response_(""),
-        response_size_(0),
-        sending_response_size_(0) {}
+      : sock_fd_(fd), port_(port), raw_data_(""), response_(""), response_size_(0), sending_response_size_(0) {}
   ~HttpResponse(){};
   void createResponse(const std::string &result);
   void sendResponse(EventManager &em);

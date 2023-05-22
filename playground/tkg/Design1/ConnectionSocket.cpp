@@ -1,5 +1,3 @@
-#include "ConnectionSocket.hpp"
-
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -16,24 +14,8 @@
 #include <map>
 #include <stdexcept>
 
-#include "HttpRequest.hpp"
-#include "HttpResponse.hpp"
-#include "const.hpp"
-
-ConnectionSocket::ConnectionSocket(int fd, int port, Config &conf)
-    : sock_fd_(fd),
-      port_(port),
-      conf_(conf),
-      result_(""),
-      request_(HttpRequest(fd, port)),
-      response_(HttpResponse(fd, port)) {}
-
-void ConnectionSocket::handle_response(EventManager &event_manager) {
-  DEBUG_PUTS("handle_response() called");
-  request_.refresh();
-  response_.createResponse(result_);
-  response_.sendResponse(event_manager);
-}
+#include "AbstractObservee.hpp"
+#include "EventManager.hpp"
 
 static std::string readFile(const char *filename) {
   std::ifstream ifs(filename);
@@ -43,26 +25,20 @@ static std::string readFile(const char *filename) {
   return std::string((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 }
 
-void ConnectionSocket::process(EventManager &event_manager) {
-  const Config::ServerConf *serv_conf = conf_.getServConfig(port_, request_.getHeaderValue("host"));
-  const Config::LocConf &loc_conf = conf_.getLocationConfig(serv_conf, request_.getRequestTarget());
-
-  // todo: check if file exists
-  const std::string path = "." + loc_conf.root_ + request_.getRequestTarget();
-  DEBUG_PRINTF("path: %s\n", path.c_str());
-  std::string content;
-  if (path.find(".cgi") != std::string::npos) {
-    execCgi(path, event_manager);
-  } else {
-    event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-    event_manager.addChangedEvents(
-        (struct kevent){sock_fd_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
-    result_ = readFile(path.c_str());
+void ConnectionSocket::shutdown() {
+  for (std::set<AbstractObservee *>::iterator child = children_.begin(); child != children_.end(); child++) {
+    (*child)->shutdown();
   }
-  DEBUG_PUTS("PROCESSING FINISHED");
+  close(id_);
 }
 
-void ConnectionSocket::execCgi(const std::string &path, EventManager &event_manager) {
+CGI *ConnectionSocket::makeCGI(int id, int pid) {
+  CGI *obs = new CGI(id, pid, this, &result_);
+  this->monitorChild(obs);
+  return obs;
+}
+
+void ConnectionSocket::execCGI(const std::string &path, EventManager &event_manager) {
   extern char **environ;
   char *argv[2];
   argv[0] = const_cast<char *>(path.c_str());
@@ -83,32 +59,48 @@ void ConnectionSocket::execCgi(const std::string &path, EventManager &event_mana
     }
   } else {
     close(fd[1]);
-    event_manager.addCgiConnectionPair(need_fd, this);
-
+    std::cout << "pid: " << pid << std::endl;
+    CGI *obs = makeCGI(need_fd, pid);
+    monitorChild(obs);
+    event_manager.add(std::pair<t_id, t_type>(need_fd, FD), obs);
     event_manager.addChangedEvents((struct kevent){need_fd, EVFILT_READ, EV_ADD, 0, 0, 0});
     event_manager.addChangedEvents(
         (struct kevent){need_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
   }
 }
 
-void ConnectionSocket::handleCGI(EventManager &event_manager, int cgi_fd) {
-  std::cout << "handle CGI" << std::endl;
-  char buff[SOCKET_READ_SIZE + 1];
-  int res = read(cgi_fd, buff, FILE_READ_SIZE);
-  buff[res] = '\0';
-  result_ += buff;
-  std::cout << "cgi wip result: '" << result_ << "'" << std::endl;
+void ConnectionSocket::process(EventManager &event_manager) {
+  const Config::ServerConf *serv_conf = conf_.getServConfig(port_, request_.getHeaderValue("host"));
+  const Config::LocConf &loc_conf = conf_.getLocationConfig(serv_conf, request_.getRequestTarget());
 
-  if (res == 0) {
-    close(cgi_fd);
-    event_manager.removeCgiConnectionPair(cgi_fd);
+  // todo: check if file exists
+  const std::string path = "." + loc_conf.root_ + request_.getRequestTarget();
+  DEBUG_PRINTF("path: %s\n", path.c_str());
+  std::string content;
+  if (path.find(".cgi") != std::string::npos) {
+    execCGI(path, event_manager);
+  } else {
+    event_manager.addChangedEvents((struct kevent){id_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
     event_manager.addChangedEvents(
-        (struct kevent){cgi_fd, EVFILT_TIMER, EV_DELETE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
-    event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-    event_manager.addChangedEvents(
-        (struct kevent){sock_fd_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
-    std::cout << "CGI LAST RESULT: '" << result_ << "'" << std::endl;
+        (struct kevent){id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+    result_ = readFile(path.c_str());
   }
+  DEBUG_PUTS("PROCESSING FINISHED");
 }
 
-bool ConnectionSocket::handle_request(EventManager &event_manager) { return request_.readRequest(event_manager); }
+void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
+  DEBUG_PUTS("ConnectionSocket notify");
+  if (ev.filter == EVFILT_READ) {
+    DEBUG_PUTS("handle_response() called");
+    bool finished = request_.readRequest(event_manager);
+    if (finished) {
+      this->process(event_manager);
+    }
+  }
+  if (ev.filter == EVFILT_WRITE) {
+    DEBUG_PUTS("handle_response() called");
+    request_.refresh();
+    response_.createResponse(result_);
+    response_.sendResponse(event_manager);
+  }
+}
