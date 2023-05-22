@@ -18,14 +18,15 @@ class EventManager;
 
 class HttpRequest {
  public:
-  enum State { Free, ReadStartLine, ReadHeaders, ReadBody, Processing };
+  enum State { ReadingStartLine, ReadingHeaders, ReadingChunkedBody, ReadingBody };
+  enum ReadingChunkedState { ReadingChunkedSize, ReadingChunkedData };
   struct RequestLine {
     std::string method;
     std::string requestTarget;
     std::string version;
   };
 
-  HttpRequest(int fd, int port) : sock_fd_(fd), port_(port), state_(Free) {}
+  HttpRequest(int fd, int port) : sock_fd_(fd), port_(port), state_(ReadingStartLine), chunked_size_(0), chunked_reading_state_(ReadingChunkedSize) {}
   ~HttpRequest(){};
   bool readRequest(EventManager &em);
   void refresh();
@@ -45,12 +46,14 @@ class HttpRequest {
   // todo: lowercase key
   std::map<std::string, std::string> headers_;
   std::string body_;
+  size_t chunked_size_;
+  ReadingChunkedState chunked_reading_state_;
 
   static const std::string kSupportedMethods[];
   static const std::string kSupportedVersions[];
 
   std::string getEndingChars() const;
-  bool trimToEndingChars();
+  void trimToEndingChars();
   void moveToNextState();
 
   void parseStartline();
@@ -63,7 +66,11 @@ class HttpRequest {
   void validateHeaderName(const std::string &name);
   void validateHeaderValue(const std::string &value);
 
+  void readBody();
+  bool readChunkedBody();
+
   bool isReceivingBody();
+  bool isActionable();
 };
 
 #endif

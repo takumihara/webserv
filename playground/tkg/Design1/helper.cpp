@@ -12,3 +12,23 @@ char asciitolower(char in) {
 }
 
 void toLower(std::string &str) { std::transform(str.begin(), str.end(), str.begin(), asciitolower); }
+
+std::string escape(const std::string &str) {
+  std::string res;
+  for (size_t i = 0; i < str.size(); i++) {
+    switch (str[i]) {
+      case '\n':
+        res += "\\n";
+        break;
+      case '\r':
+        res += "\\r";
+        break;
+      case '\t':
+        res += "\\t";
+        break;
+      default:
+        res += str[i];
+    }
+  }
+  return res;
+}
