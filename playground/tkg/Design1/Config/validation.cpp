@@ -28,6 +28,8 @@ std::vector<std::string> split(std::string &str, const std::string &sep) {
   return ret;
 }
 
+bool isStatusCode(const std::string &status) { return status.size() == 3 && isAllDigit(status); }
+
 bool isAllDigit(const std::string &str) {
   if (str == "") {
     return false;
@@ -36,6 +38,11 @@ bool isAllDigit(const std::string &str) {
     if (*itr < '0' || '9' < *itr) return false;
   }
   return true;
+}
+
+bool isPath(const std::string &path) {
+  // todo: verify valid path
+  return path.size() != 0;
 }
 
 bool validateHost(std::string &host) {

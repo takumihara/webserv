@@ -34,6 +34,7 @@ class Parser {
     directives_["root"] = &Parser::analyseRoot;
     directives_["location"] = &Parser::analyseLocation;
     directives_["index"] = &Parser::analyseIndex;
+    directives_["error_page"] = &Parser::analyseErrorPage;
   }
   enum scope {
     GENERAL,
@@ -51,8 +52,11 @@ class Parser {
   void analyseRoot();
   void analyseLocation();
   void analyseIndex();
+  void analyseErrorPage();
   void setHost(std::string &host);
   void setPort(std::string &port);
+  void setErrorPageStatus(std::string &status);
+  void setErrorPagePath(std::string &path);
 
   Config conf_;
   std::vector<Token> tokens_;

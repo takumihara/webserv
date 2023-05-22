@@ -174,7 +174,12 @@ void Parser::analyseIndex() {
   if (!expectTokenType(tok, Token::STRING)) {
     // invalid grammar handle
   }
-  if (scope_.top() == SERVER) {
+  if (scope_.top() == GENERAL) {
+    while (expectTokenType(tok, Token::STRING)) {
+      conf_.index_.push_back(tok.str_);
+      tok = readToken();
+    }
+  } else if (scope_.top() == SERVER) {
     // when scope is server
     while (expectTokenType(tok, Token::STRING)) {
       ServConf &serv = conf_.server_confs_.back();
@@ -193,6 +198,60 @@ void Parser::analyseIndex() {
   }
   if (!expectTokenType(tok, Token::SEMICOLON)) {
     // todo: invalid grammae handle (need semicolon but not)
+    std::cout << "need semicolon\n";
+  }
+}
+
+void Parser::setErrorPageStatus(std::string &status) {
+  if (scope_.top() == GENERAL) {
+    // when scope is server
+    conf_.error_page_status_.push_back(status);
+  } else if (scope_.top() == SERVER) {
+    // when scope is server
+    ServConf &serv = conf_.server_confs_.back();
+    serv.error_page_status_.push_back(status);
+  } else if (scope_.top() == LOCATION) {
+    // when scope is location
+    LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+    loc.error_page_status_.push_back(status);
+  }
+}
+
+void Parser::setErrorPagePath(std::string &path) {
+  if (scope_.top() == GENERAL) {
+    // when scope is server
+    conf_.error_page_path_ = path;
+  } else if (scope_.top() == SERVER) {
+    // when scope is server
+    ServConf &serv = conf_.server_confs_.back();
+    serv.error_page_path_ = path;
+  } else if (scope_.top() == LOCATION) {
+    // when scope is location
+    LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+    loc.error_page_path_ = path;
+  }
+}
+
+void Parser::analyseErrorPage() {
+  std::cout << "Analyse Error page\n";
+  Token tok = readToken();
+  if (!expectTokenType(tok, Token::STRING)) {
+    // todo: invalid grammar handle
+  }
+  while (isStatusCode(tok.str_)) {
+    setErrorPageStatus(tok.str_);
+    tok = readToken();
+    if (!expectTokenType(tok, Token::STRING)) {
+      // todo: invalid grammar handle
+    }
+  }
+  if (!isPath(tok.str_)) {
+    // todo: invalid grammar handle
+  }
+  setErrorPagePath(tok.str_);
+  tok = readToken();
+  if (!expectTokenType(tok, Token::SEMICOLON)) {
+    // todo: invalid grammae handle
     std::cout << "need semicolon\n";
   }
 }
