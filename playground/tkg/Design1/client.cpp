@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
   for (int i = 2; i < argc; i++) {
     std::string request = "";
-    request += "POST / HTTP/1.1\r\n";
+    request += "POST /index.html HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
     request += "Content-Type: text/plain\r\n";
     request += "Content-Length: 5\r\n";
@@ -68,9 +68,9 @@ int main(int argc, char **argv) {
                 << "(fd:" << sock << "): '"
                 << " (size:" << write_res << ")" << std::endl;
     }
-    char response[100];
-    memset(response, 0, 100);
-    ssize_t res = read(sock, response, 100);
+    char response[1000];
+    memset(response, 0, 1000);
+    ssize_t res = read(sock, response, 1000);
     if (res == -1) {
       perror("read");
       exit(1);

@@ -41,6 +41,12 @@ void HttpRequest::readRequest(EventManager &event_manager) {
         parseHeaders();
         // todo: handle when body doesn't exist
         refresh();
+        if (!isReceivingBody()) {
+          state_ = Free;
+          event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
+          event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+          break;
+        }
       } else if (state_ == ReadBody) {
         body_ = raw_data_;
         state_ = Free;
@@ -50,6 +56,11 @@ void HttpRequest::readRequest(EventManager &event_manager) {
       }
     }
   }
+}
+
+bool HttpRequest::isReceivingBody() {
+  // todo: check content length
+  return  request_line_.method != "GET";
 }
 
 void HttpRequest::parseStartline() {
@@ -191,3 +202,6 @@ void HttpRequest::refresh() {
 }
 
 const std::string &HttpRequest::getBody() const { return body_; }
+
+const std::string &HttpRequest::getRequestTarget() const { return request_line_.requestTarget; }
+const std::string &HttpRequest::getHeaderValue(const std::string &name) const { return headers_.find(name)->second; }
