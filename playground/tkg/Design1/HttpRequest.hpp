@@ -8,6 +8,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+
 #include "./Config/Config.hpp"
 
 #define SP ' '
@@ -29,6 +30,8 @@ class HttpRequest {
   void readRequest(EventManager &em);
   void refresh();
   const std::string &getBody() const;
+  const std::string &getHeaderValue(const std::string &name) const;
+  const std::string &getRequestTarget() const;
 
   // private:
   int sock_fd_;
@@ -60,6 +63,8 @@ class HttpRequest {
   void parseHeaders();
   void validateHeaderName(const std::string &name);
   void validateHeaderValue(const std::string &value);
+
+  bool isReceivingBody();
 };
 
 #endif

@@ -10,7 +10,8 @@
 void HttpResponse::createResponse(const std::string &result) {
   raw_data_ = result;
   response_ = result;
-  response_size_ = result.size();
+  // response_ = "HTTP/1.1 200 Ok\r\nContent-Length: " + std::to_string(result.size()) + "\r\n\r\n" + result + "\r\n";
+  response_size_ = response_.size();
 }
 
 void HttpResponse::sendResponse(EventManager &event_manager) {

@@ -39,8 +39,8 @@ class Config {
   void makePortServConfMap();
   void printConfig();
   void printPortServConfMap();
-  const ServerConf *getServConfig(int port, std::string &host);
-  const LocConf &getLocationConfig(ServerConf *serv_conf, std::string &path) const;
+  const ServerConf *getServConfig(int port, const std::string &host);
+  const LocConf &getLocationConfig(const ServerConf *serv_conf, const std::string &path) const;
   int getLimitConnection() const;
   // private:
   int limit_connection_;
