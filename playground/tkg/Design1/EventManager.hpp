@@ -38,6 +38,8 @@ class EventManager {
   void removeServerSocket(int fd);
   void addConnectionSocket(int fd, int port, Config &conf);
   void removeConnectionSocket(int fd);
+  void addCgiConnectionPair(int fd, ConnectionSocket *con);
+  void removeCgiConnectionPair(int fd);
   void addChangedEvents(struct kevent kevent);
   void registerServerEvent(int fd, int port, Config &conf);
 
@@ -47,6 +49,7 @@ class EventManager {
   void updateKqueue();
   void handleEvent(struct kevent ev);
   bool isServerFd(int fd);
+  bool isCGIFd(int fd);
   void clearEvlist(struct kevent *evlist);
   void handleTimeout(struct kevent ev);
   struct s_eventInfo {
@@ -59,6 +62,7 @@ class EventManager {
   std::vector<struct kevent> changed_events_;
   std::map<int, ServerSocket *> server_sockets_;
   std::map<int, ConnectionSocket *> connection_sockets_;
+  std::map<int, ConnectionSocket *> cgi_connection_pair_;
   static const int kMaxEventSize = 100;
 };
 

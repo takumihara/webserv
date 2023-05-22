@@ -25,9 +25,9 @@ class HttpRequest {
     std::string version;
   };
 
-  HttpRequest(int fd, int port, Config &conf) : sock_fd_(fd), port_(port), conf_(conf), state_(Free) {}
+  HttpRequest(int fd, int port) : sock_fd_(fd), port_(port), state_(Free) {}
   ~HttpRequest(){};
-  void readRequest(EventManager &em);
+  bool readRequest(EventManager &em);
   void refresh();
   const std::string &getBody() const;
   const std::string &getHeaderValue(const std::string &name) const;
@@ -36,7 +36,7 @@ class HttpRequest {
   // private:
   int sock_fd_;
   int port_;
-  Config &conf_;
+  // Config &conf_;
   std::string raw_data_;
   std::string rest_;
   State state_;
@@ -46,7 +46,6 @@ class HttpRequest {
   std::map<std::string, std::string> headers_;
   std::string body_;
 
-  static const int kReadSize = 3;
   static const std::string kSupportedMethods[];
   static const std::string kSupportedVersions[];
 

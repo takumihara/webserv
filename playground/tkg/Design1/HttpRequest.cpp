@@ -4,16 +4,19 @@
 #include <sstream>
 
 #include "EventManager.hpp"
+#include "const.hpp"
 #include "helper.hpp"
 
 const std::string HttpRequest::kSupportedMethods[] = {"GET", "POST"};
 const std::string HttpRequest::kSupportedVersions[] = {"HTTP/1.1"};
 
-void HttpRequest::readRequest(EventManager &event_manager) {
-  char request[kReadSize + 1];
-  bzero(request, kReadSize + 1);
+bool HttpRequest::readRequest(EventManager &event_manager) {
+  char request[SOCKET_READ_SIZE + 1];
+  bzero(request, SOCKET_READ_SIZE + 1);
   std::string req_str;
-  int size = read(sock_fd_, request, kReadSize);
+  int size = read(sock_fd_, request, SOCKET_READ_SIZE);
+  bool finishedReading = false;
+
   if (size == -1) {
     // todo: no exception
     throw std::runtime_error("read error");
@@ -42,25 +45,30 @@ void HttpRequest::readRequest(EventManager &event_manager) {
         // todo: handle when body doesn't exist
         refresh();
         if (!isReceivingBody()) {
-          state_ = Free;
-          event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-          event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+          finishedReading = true;
           break;
         }
       } else if (state_ == ReadBody) {
         body_ = raw_data_;
-        state_ = Free;
-        event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-        event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+        finishedReading = true;
         break;
       }
     }
   }
+
+  if (finishedReading) {
+    state_ = Free;
+    event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+    event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL});
+  }
+
+  return finishedReading;
 }
 
 bool HttpRequest::isReceivingBody() {
   // todo: check content length
-  return  request_line_.method != "GET";
+  DEBUG_PUTS("receiving body");
+  return request_line_.method != "GET";
 }
 
 void HttpRequest::parseStartline() {
