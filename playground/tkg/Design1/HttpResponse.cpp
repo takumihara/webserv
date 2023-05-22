@@ -6,6 +6,7 @@
 #include <sys/types.h>
 
 #include "EventManager.hpp"
+#include "const.hpp"
 
 void HttpResponse::createResponse(const std::string &result) {
   raw_data_ = result;
@@ -18,8 +19,8 @@ void HttpResponse::sendResponse(EventManager &event_manager) {
   const char *response = response_.c_str();
   std::cout << "sending response \n";
   int size = response_size_ - sending_response_size_;
-  if (size > kWriteSize) {
-    size = kWriteSize;
+  if (size > SOCKET_WRITE_SIZE) {
+    size = SOCKET_WRITE_SIZE;
   }
   int res = sendto(sock_fd_, &response[sending_response_size_], size, 0, NULL, 0);
   if (res == -1) {
@@ -37,7 +38,6 @@ void HttpResponse::sendResponse(EventManager &event_manager) {
 }
 
 void HttpResponse::refresh(EventManager &em) {
-  (void)conf_;
   sending_response_size_ = 0;
   response_size_ = 0;
   (void)port_;

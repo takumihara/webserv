@@ -30,6 +30,10 @@ void EventManager::removeConnectionSocket(int fd) {
   connection_sockets_.erase(fd);
 }
 
+void EventManager::addCgiConnectionPair(int fd, ConnectionSocket *con) { cgi_connection_pair_[fd] = con; }
+
+void EventManager::removeCgiConnectionPair(int fd) { cgi_connection_pair_.erase(fd); }
+
 void EventManager::addChangedEvents(struct kevent kevent) { changed_events_.push_back(kevent); }
 
 void EventManager::registerServerEvent(int fd, int port, Config &conf) {
@@ -42,13 +46,37 @@ void EventManager::registerServerEvent(int fd, int port, Config &conf) {
   addServerSocket(fd, port, conf);
 }
 
+std::string getEventFilter(int flag) {
+  switch (flag) {
+    case EVFILT_READ:
+      return "EVFILT_READ";
+    case EVFILT_WRITE:
+      return "EVFILT_WRITE";
+    case EVFILT_TIMER:
+      return "EVFILT_TIMER";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+std::string getEventFlags(int state) {
+  std::string res;
+
+  if (state & EV_ADD) res += "EV_ADD, ";
+  if (state & EV_DELETE) res += "EV_DELETE, ";
+  if (state & EV_ENABLE) res += "EV_ENABLE, ";
+  if (state & EV_DISABLE) res += "EV_DISABLE, ";
+
+  return res;
+}
+
 void EventManager::updateKqueue() {
   int size = changed_events_.size();
   struct kevent chlist[size];
   bzero(chlist, sizeof(struct kevent) * size);
   int i = 0;
   for (changed_events_const_iterator itr = changed_events_.begin(); itr != changed_events_.end(); itr++, i++) {
-    DEBUG_PRINTF("fd: %lu, ", (*itr).ident);
+    DEBUG_PRINTF("fd: %lu(%s:%s), ", (*itr).ident, getEventFilter((*itr).filter).c_str(), getEventFlags((*itr).flags).c_str());
     EV_SET(&chlist[i], (*itr).ident, (*itr).filter, (*itr).flags, (*itr).fflags, (*itr).data, (*itr).udata);
   }
   DEBUG_PUTS("");
@@ -58,6 +86,8 @@ void EventManager::updateKqueue() {
 
 bool EventManager::isServerFd(int fd) { return server_sockets_.find(fd) != server_sockets_.end(); }
 
+bool EventManager::isCGIFd(int fd) { return cgi_connection_pair_.find(fd) != cgi_connection_pair_.end(); }
+
 void EventManager::handleEvent(struct kevent ev) {
   if (ev.filter == EVFILT_TIMER) {
     DEBUG_PUTS("timeout");
@@ -66,12 +96,15 @@ void EventManager::handleEvent(struct kevent ev) {
     if (isServerFd(ev.ident)) {
       DEBUG_PUTS("request to make connection");
       server_sockets_[ev.ident]->make_client_connection(*this);
-      // } else if (isCGIFd()) {
-      //   // handle cgi response
+    } else if (isCGIFd(ev.ident)) {
+      cgi_connection_pair_[ev.ident]->handleCGI(*this, ev.ident);
     } else {
       std::cout << "request connection fd " << std::endl;
       try {
-        connection_sockets_[ev.ident]->handle_request(*this);
+        bool finished_reading = connection_sockets_[ev.ident]->handle_request(*this);
+        if (finished_reading) {
+          connection_sockets_[ev.ident]->process(*this);
+        }
       } catch (std::runtime_error &e) {
         std::cout << e.what() << std::endl;
         // todo: handle what's necessary(return some response)
@@ -95,7 +128,6 @@ void EventManager::handleTimeout(struct kevent ev) {
 void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(struct kevent) * kMaxEventSize); }
 
 void EventManager::eventLoop() {  // confファイルを引数として渡す？
-
   struct kevent evlist[kMaxEventSize];
   DEBUG_PUTS("server setup finished!");
   while (1) {

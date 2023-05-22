@@ -19,18 +19,21 @@ class ConnectionSocket {
   // };
   ConnectionSocket(int fd, int port, Config &conf);
   ~ConnectionSocket() {}
-  void handle_request(EventManager &event_manager);
+  bool handle_request(EventManager &event_manager);
   void handle_response(EventManager &event_manager);
+  void handleCGI(EventManager &event_manager, int cgi_fd);
   void notify(EventManager &event_manager);
   void send_response(EventManager &event_manager);
   void setToReadingState(EventManager &em);
-  std::string process();
+  void process(EventManager &event_manager);
+  void execCgi(const std::string &path, EventManager &event_manager);
 
  private:
   int sock_fd_;
   int port_;
   Config &conf_;
   // SocketState state_;
+  std::string result_;
   HttpRequest request_;
   HttpResponse response_;
 };

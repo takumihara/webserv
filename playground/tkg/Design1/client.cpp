@@ -52,7 +52,8 @@ int main(int argc, char **argv) {
 
   for (int i = 2; i < argc; i++) {
     std::string request = "";
-    request += "POST /index.html HTTP/1.1\r\n";
+    request += "POST /a.cgi HTTP/1.1\r\n";
+    // request += "POST /index.html HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
     request += "Content-Type: text/plain\r\n";
     request += "Content-Length: 5\r\n";

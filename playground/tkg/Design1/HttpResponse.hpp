@@ -14,10 +14,9 @@ class EventManager;
 
 class HttpResponse {
  public:
-  HttpResponse(int fd, int port, Config &conf)
+  HttpResponse(int fd, int port)
       : sock_fd_(fd),
         port_(port),
-        conf_(conf),
         raw_data_(""),
         response_(""),
         response_size_(0),
@@ -30,12 +29,11 @@ class HttpResponse {
  private:
   int sock_fd_;
   int port_;
-  Config &conf_;
+  // Config &conf_;
   std::string raw_data_;
   std::string response_;
   int response_size_;
   int sending_response_size_;
-  static const int kWriteSize = 100;
 };
 
 #endif
