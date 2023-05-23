@@ -15,7 +15,10 @@
 
 #include "EventManager.hpp"
 
-void ServerSocket::shutdown() { close(id_); }
+void ServerSocket::shutdown(EventManager &em) {
+  close(id_);
+  em.remove(std::pair<t_id, t_type>(id_, FD));
+}
 
 void ServerSocket::notify(EventManager &event_manager, struct kevent ev) {
   (void)ev;

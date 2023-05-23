@@ -31,7 +31,7 @@ class AbstractObservee {
   AbstractObservee(int id, const std::string &type, AbstractObservee *parent) : id_(id), type_(type), parent_(parent) {}
   virtual ~AbstractObservee() {}
   virtual void notify(EventManager &event_manager, struct kevent ev) = 0;
-  virtual void shutdown() = 0;
+  virtual void shutdown(EventManager &em) = 0;
   virtual void obliviateChild(AbstractObservee *child) {
     if (parent_) parent_->children_.erase(child);
   };
@@ -57,7 +57,7 @@ class ConnectionSocket : public AbstractObservee {
         response_(HttpResponse(id, port)) {}
   ~ConnectionSocket() {}
   void notify(EventManager &event_manager, struct kevent ev);
-  void shutdown();
+  void shutdown(EventManager &em);
   void send_response(EventManager &event_manager);
   void process(EventManager &em);
   void execCGI(const std::string &path, EventManager &event_manager);
@@ -78,7 +78,7 @@ class ServerSocket : public AbstractObservee {
   ServerSocket(int id, int port, Config &conf) : AbstractObservee(id, "server", NULL), port_(port), conf_(conf) {}
   ~ServerSocket() {}
   void notify(EventManager &event_manager, struct kevent ev);
-  void shutdown();
+  void shutdown(EventManager &em);
 
  private:
   int port_;
@@ -91,7 +91,7 @@ class CGI : public AbstractObservee {
       : AbstractObservee(id, "cgi", parent), pid_(pid), result_(result) {}
   ~CGI() {}
   void notify(EventManager &event_manager, struct kevent ev);
-  void shutdown();
+  void shutdown(EventManager &em);
 
  private:
   int pid_;

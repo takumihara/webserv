@@ -28,7 +28,7 @@ int HttpServer::openPort() {
 }
 
 void HttpServer::setup() {
-  const char *file = "./Config/conf.conf";
+  const char *file = "./Config/con.conf";
   Parser parser;
   conf_ = parser.parse(file);
   // todo: check servername duplication

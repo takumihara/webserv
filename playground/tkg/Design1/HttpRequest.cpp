@@ -22,7 +22,9 @@ bool HttpRequest::readRequest(EventManager &event_manager) {
     throw std::runtime_error("read error");
   } else if (size == 0) {
     printf("closed fd = %d\n", sock_fd_);
+    // closeとEVFILT_TIMERのDELETEはワンセット
     close(sock_fd_);
+    event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
     event_manager.remove(std::pair<t_id, t_type>(sock_fd_, FD));
   } else {
     req_str = std::string(request);

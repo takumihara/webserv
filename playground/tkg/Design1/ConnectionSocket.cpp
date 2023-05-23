@@ -25,11 +25,14 @@ static std::string readFile(const char *filename) {
   return std::string((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 }
 
-void ConnectionSocket::shutdown() {
-  for (std::set<AbstractObservee *>::iterator child = children_.begin(); child != children_.end(); child++) {
-    (*child)->shutdown();
-  }
+void ConnectionSocket::shutdown(EventManager &em) {
+  // for (std::set<AbstractObservee *>::iterator child = children_.begin(); child != children_.end(); child++) {
+  //   (*child)->shutdown(em);
+  // }
+  DEBUG_PUTS("ConnectionSocket shutdown");
   close(id_);
+  em.addChangedEvents((struct kevent){id_, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+  em.remove(std::pair<t_id, t_type>(id_, FD));
 }
 
 CGI *ConnectionSocket::makeCGI(int id, int pid) {
@@ -62,7 +65,10 @@ void ConnectionSocket::execCGI(const std::string &path, EventManager &event_mana
     std::cout << "pid: " << pid << std::endl;
     CGI *obs = makeCGI(need_fd, pid);
     monitorChild(obs);
+    std::cout << "need_fd: " << need_fd << "  pid: " << pid << std::endl;
     event_manager.add(std::pair<t_id, t_type>(need_fd, FD), obs);
+    event_manager.addChangedEvents((struct kevent){id_, EVFILT_TIMER, EV_DISABLE, 0, 0, 0});
+    event_manager.addChangedEvents((struct kevent){id_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
     event_manager.addChangedEvents((struct kevent){need_fd, EVFILT_READ, EV_ADD, 0, 0, 0});
     event_manager.addChangedEvents(
         (struct kevent){need_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
@@ -80,10 +86,11 @@ void ConnectionSocket::process(EventManager &event_manager) {
   if (path.find(".cgi") != std::string::npos) {
     execCGI(path, event_manager);
   } else {
+    result_ = readFile(path.c_str());
+    event_manager.addChangedEvents((struct kevent){id_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
     event_manager.addChangedEvents((struct kevent){id_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
     event_manager.addChangedEvents(
         (struct kevent){id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
-    result_ = readFile(path.c_str());
   }
   DEBUG_PUTS("PROCESSING FINISHED");
 }

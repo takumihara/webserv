@@ -15,7 +15,10 @@ void EventManager::addChangedEvents(struct kevent kevent) { changed_events_.push
 
 void EventManager::add(const std::pair<t_id, t_type> &key, AbstractObservee *obs) { observees_[key] = obs; }
 
-void EventManager::remove(const std::pair<t_id, t_type> &key) { observees_[key]->shutdown(); }
+void EventManager::remove(const std::pair<t_id, t_type> &key) {
+  delete observees_[key];
+  observees_.erase(key);
+}
 
 void EventManager::registerServerEvent(int fd, int port, Config &conf) {
   struct kevent chlist;
@@ -93,10 +96,7 @@ void EventManager::handleEvent(struct kevent ev) {
 }
 
 void EventManager::handleTimeout(struct kevent ev) {
-  close(ev.ident);
-  // removeConnectionSocket(ev.ident);
-  remove(std::pair<t_id, t_type>(ev.ident, FD));
-  addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+  observees_[std::pair<t_id, t_type>(ev.ident, FD)]->shutdown(*this);
 }
 
 void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(struct kevent) * kMaxEventSize); }
