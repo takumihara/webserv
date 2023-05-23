@@ -34,6 +34,7 @@ class Parser {
     directives_["root"] = &Parser::analyseRoot;
     directives_["location"] = &Parser::analyseLocation;
     directives_["index"] = &Parser::analyseIndex;
+    directives_["autoindex"] = &Parser::analyseAutoindex;
     directives_["error_page"] = &Parser::analyseErrorPage;
   }
   enum scope {
@@ -52,6 +53,7 @@ class Parser {
   void analyseRoot();
   void analyseLocation();
   void analyseIndex();
+  void analyseAutoindex();
   void analyseErrorPage();
   void setHost(std::string &host);
   void setPort(std::string &port);

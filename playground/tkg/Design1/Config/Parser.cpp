@@ -54,7 +54,7 @@ void Parser::analyseServer() {
   if (expectTokenType(tok, Token::OPEN_BRACE)) {
     // todo: invalid grammar handle
   }
-  conf_.server_confs_.push_back(ServConf());
+  conf_.server_confs_.push_back(ServConf(conf_));
   scope_.push(SERVER);
   return;
 }
@@ -163,7 +163,7 @@ void Parser::analyseLocation() {
     // invalid grammar handle
   }
   ServConf &serv = conf_.server_confs_.back();
-  serv.location_confs_.push_back(LocConf(path, getRoot(&serv)));
+  serv.location_confs_.push_back(LocConf(path, serv));
   scope_.push(LOCATION);
   return;
 }
@@ -196,6 +196,31 @@ void Parser::analyseIndex() {
   } else {
     // todo: when scope is GENERAL
   }
+  if (!expectTokenType(tok, Token::SEMICOLON)) {
+    // todo: invalid grammae handle (need semicolon but not)
+    std::cout << "need semicolon\n";
+  }
+}
+
+void Parser::analyseAutoindex() {
+  std::cout << "Analyse autoindex\n";
+  Token tok = readToken();
+  if (!expectTokenType(tok, Token::STRING)) {
+    // invalid grammar handle
+  }
+  if (scope_.top() == GENERAL) {
+    conf_.autoindex_ = tok.str_ == "on";
+  } else if (scope_.top() == SERVER) {
+    // when scope is server
+    ServConf &serv = conf_.server_confs_.back();
+    serv.autoindex_ = tok.str_ == "on";
+
+  } else if (scope_.top() == LOCATION) {
+    // when scope is location
+    LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+    loc.autoindex_ = tok.str_ == "on";
+  }
+  tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
     // todo: invalid grammae handle (need semicolon but not)
     std::cout << "need semicolon\n";
