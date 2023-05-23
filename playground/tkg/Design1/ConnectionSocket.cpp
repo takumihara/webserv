@@ -44,7 +44,7 @@ static std::string readFile(const char *filename) {
 }
 
 void ConnectionSocket::process(EventManager &event_manager) {
-  const Config::ServerConf *serv_conf = conf_.getServConfig(port_, request_.getHeaderValue("host"));
+  const Config::ServerConf *serv_conf = conf_.getServConfig(port_, request_.getHost().uri_host);
   const Config::LocConf &loc_conf = conf_.getLocationConfig(serv_conf, request_.getRequestTarget().absolutePath);
 
   // todo: check if file exists

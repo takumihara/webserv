@@ -1,8 +1,13 @@
 #include "HttpRequest.hpp"
 
 #include <algorithm>
+#include <cstdlib>
+#include <ctime>
+#include <iomanip>
+#include <regex>
 #include <sstream>
 
+#include "Config/validation.h"
 #include "EventManager.hpp"
 #include "const.hpp"
 #include "helper.hpp"
@@ -75,7 +80,8 @@ void HttpRequest::parseStartline() {
 
   std::getline(ss, method, SP);
   std::getline(ss, requestTarget, SP);
-  ss >> version;
+  std::getline(ss, version, '\r');
+  // ss >> version;
 
   assignAndValidateMethod(method);
   assignAndValidateRequestTarget(requestTarget);
@@ -99,6 +105,7 @@ void HttpRequest::assignAndValidateMethod(const std::string &method) {
 
 void HttpRequest::assignAndValidateRequestTarget(const std::string &requestTarget) {
   if (requestTarget[0] == '/') {
+    // todo(thara): more validation
     request_line_.requestTarget.type = OriginForm;
     size_t pos = requestTarget.find_first_of('?');
     request_line_.requestTarget.absolutePath = requestTarget.substr(0, pos);
@@ -118,11 +125,21 @@ void HttpRequest::assignAndValidateVersion(const std::string &version) {
   }
 }
 
+void initAnalyzeFuncs(std::map<std::string, void (HttpRequest::*)(const std::string &)> &analyze_funcs) {
+  analyze_funcs["host"] = &HttpRequest::analyzeHost;
+  analyze_funcs["content-length"] = &HttpRequest::analyzeContentLength;
+  analyze_funcs["transfer-encoding"] = &HttpRequest::analyzeTransferEncoding;
+  analyze_funcs["date"] = &HttpRequest::analyzeDate;
+}
+
 void HttpRequest::parseHeaders() {
   std::stringstream ss(raw_data_);
 
   std::string::size_type start = 0;
   std::string::size_type end = raw_data_.find("\r\n", start);
+
+  std::map<std::string, void (HttpRequest::*)(const std::string &)> analyze_funcs;
+  initAnalyzeFuncs(analyze_funcs);
 
   while (end != std::string::npos) {
     std::string line = raw_data_.substr(start, end - start);
@@ -141,24 +158,95 @@ void HttpRequest::parseHeaders() {
         toLower(name);
 
         validateHeaderName(name);
-        validateHeaderValue(value);
-
-        if (headers_.find(name) == headers_.end()) {
-          headers_[name] = value;
-        } else {
-          headers_[name] += "," + value;
+        if (analyze_funcs.find(name) != analyze_funcs.end()) {
+          (this->*analyze_funcs[name])(value);
         }
       }
     }
 
-    start = end + 2;  // Skip the \r\n
+    start = end + 2;
     end = raw_data_.find("\r\n", start);
   }
 
   DEBUG_PUTS("HEADER PARSED");
-  for (std::map<std::string, std::string>::iterator itr = headers_.begin(); itr != headers_.end(); itr++) {
-    DEBUG_PRINTF("'%s' : '%s'\n", itr->first.c_str(), itr->second.c_str());
+  DEBUG_PRINTF("host: %s \n", (headers_.host.uri_host + ":" + headers_.host.port).c_str());
+  DEBUG_PRINTF("content-length: %zu \n", headers_.content_length);
+  DEBUG_PRINTF("transfer-encoding: %s \n", isChunked() ? "chunked" : "none");
+  char buf[30];
+  std::strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S", &headers_.date);
+  DEBUG_PRINTF("date: %s \n", buf);
+}
+
+void HttpRequest::analyzeHost(const std::string &value) {
+  std::string hostHeader = value.substr(0, value.find(CRLF));
+
+  // todo: check if there is no duplication
+  std::regex hostPattern(
+      "^(([a-zA-Z0-9-]+\\.)*[a-zA-Z0-9-]+|([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}))(\\:[0-9]{1,5})?$");
+  if (!std::regex_match(hostHeader, hostPattern)) {
+    throw std::runtime_error("Http Request: invalid or unsupported host header");
   }
+
+  std::size_t colonPos = hostHeader.find(':');
+
+  if (colonPos != std::string::npos) {
+    // If there is a colon in the string, split it into hostname and port
+    headers_.host.uri_host = hostHeader.substr(0, colonPos);
+    headers_.host.port = hostHeader.substr(colonPos + 1);
+  } else {
+    // If there is no colon, the whole string is the hostname
+    headers_.host.uri_host = hostHeader;
+  }
+}
+
+void HttpRequest::analyzeContentLength(const std::string &value) {
+  // todo: check if there is no duplication
+  if (!isAllDigit(value)) {
+    throw std::runtime_error("Http Request: invalid content-length");
+  }
+  headers_.content_length = std::atoi(value.c_str());
+  // todo: check if content length is too big
+}
+
+void HttpRequest::analyzeTransferEncoding(const std::string &value) {
+  std::stringstream ss(value);
+  std::string encoding;
+  while (std::getline(ss, encoding, ',')) {
+    toLower(encoding);
+    if (encoding == "chunked") {
+      headers_.transferEncodings.push_back(Chunked);
+    } else {
+      throw std::runtime_error("Http Request: invalid or unsupported transfer-encoding");
+    }
+  }
+}
+
+void HttpRequest::analyzeDate(const std::string &value) {
+  std::string dateStr = value.substr(0, value.find(CRLF));
+
+  std::istringstream ss(dateStr);
+
+  ss >> std::get_time(&headers_.date, "%a, %d %b %Y %H:%M:%S");
+  if (ss.fail()) {
+    std::cout << "ss.fail()" << std::endl;
+    throw std::runtime_error("Http Request: invalid date");
+  }
+
+  std::time_t t = std::mktime(&headers_.date);
+  if (t == -1) {
+    std::cout << "t == -1" << std::endl;
+    throw std::runtime_error("Http Request: invalid date");
+  }
+
+  // this validation might be too strict
+  // char buf[30];
+  // std::strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S", &headers_.date);
+
+  // if (dateStr != std::string(buf) + " GMT") {
+  //   std::cout << "dateStr: '" << dateStr << "'" << std::endl;
+  //   std::cout << "buf: '" << buf << "'" << std::endl;
+  //   throw std::runtime_error("Http Request: invalid date");
+  // }
 }
 
 void HttpRequest::validateHeaderName(const std::string &name) {
@@ -224,7 +312,7 @@ void HttpRequest::trimToEndingChars() {
   size_t end_pos = raw_data_.find(ending_chars);
 
   rest_ = raw_data_.substr(end_pos + ending_chars.size());
-  raw_data_ = raw_data_.substr(0, end_pos);
+  raw_data_ = raw_data_.substr(0, end_pos + ending_chars.size());
 }
 
 std::string HttpRequest::getEndingChars() const {
@@ -246,7 +334,7 @@ void HttpRequest::moveToNextState() {
       state_ = ReadingHeaders;
       break;
     case ReadingHeaders:
-      if (getHeaderValue("transfer-encoding") == "chunked") {
+      if (isChunked()) {
         state_ = ReadingChunkedBody;
       } else {
         state_ = ReadingBody;
@@ -265,4 +353,8 @@ void HttpRequest::refresh() {
 const std::string &HttpRequest::getBody() const { return body_; }
 
 const HttpRequest::RequestTarget &HttpRequest::getRequestTarget() const { return request_line_.requestTarget; }
-const std::string &HttpRequest::getHeaderValue(const std::string &name) const { return headers_.find(name)->second; }
+const HttpRequest::Host &HttpRequest::getHost() const { return headers_.host; }
+bool HttpRequest::isChunked() {
+  std::vector<TransferEncoding> &transferEncodings = headers_.transferEncodings;
+  return std::find(transferEncodings.begin(), transferEncodings.end(), HttpRequest::Chunked) != transferEncodings.end();
+}
