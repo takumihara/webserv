@@ -36,6 +36,9 @@ class Parser {
     directives_["index"] = &Parser::analyseIndex;
     directives_["autoindex"] = &Parser::analyseAutoindex;
     directives_["error_page"] = &Parser::analyseErrorPage;
+    directives_["limit_except"] = &Parser::analyseLimitExcept;
+    directives_["redirect"] = &Parser::analyseRedirect;
+    directives_["max_body_size"] = &Parser::analyseMaxBodySize;
   }
   enum scope {
     GENERAL,
@@ -55,6 +58,9 @@ class Parser {
   void analyseIndex();
   void analyseAutoindex();
   void analyseErrorPage();
+  void analyseLimitExcept();
+  void analyseRedirect();
+  void analyseMaxBodySize();
   void setHost(std::string &host);
   void setPort(std::string &port);
   void setErrorPages(std::vector<std::string> &status, std::string &path);

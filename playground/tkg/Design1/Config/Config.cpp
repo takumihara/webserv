@@ -13,6 +13,18 @@ void printStrings(const char *prefix, std::vector<std::string> &strs) {
   std::cout << std::endl;
 }
 
+void Config::LocConf::printAllowedMethod() {
+  std::cout << "      Method: ";
+  if (allowed_methods_.empty())
+    std::cout << "All";
+  else {
+    for (std::map<std::string, bool>::iterator itr = allowed_methods_.begin(); itr != allowed_methods_.end(); itr++) {
+      std::cout << itr->first << " ";
+    }
+  }
+  std::cout << std::endl;
+}
+
 void Config::makePortServConfMap() {
   for (std::vector<ServerConf>::iterator serv_itr = server_confs_.begin(); serv_itr != server_confs_.end();
        serv_itr++) {
@@ -59,6 +71,7 @@ void Config::ServerConf::LocationConf::printLocationConf() {
   std::cout << "      root: " << this->root_ << std::endl;
   printStrings("      index: ", this->index_);
   printAutoindex(this, 3);
+  printAllowedMethod();
   for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
     std::cout << "      error_status and path: " << itr->first << " " << itr->second << std::endl;
   }

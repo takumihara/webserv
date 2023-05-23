@@ -45,6 +45,11 @@ bool isPath(const std::string &path) {
   return path.size() != 0;
 }
 
+bool isMethod(const std::string &method) {
+  if (method == "GET" || method == "POST" || method == "DELETE" || method == "HEAD") return true;
+  return false;
+}
+
 bool validateHost(std::string &host) {
   if (host == "") return true;
   std::vector<std::string> split_host = split(host, ".");

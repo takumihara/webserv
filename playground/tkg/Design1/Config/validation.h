@@ -8,5 +8,6 @@ bool validatePort(std::string &port);
 bool isAllDigit(const std::string &str);
 bool isStatusCode(const std::string &status);
 bool isPath(const std::string &path);
+bool isMethod(const std::string &method);
 
 #endif

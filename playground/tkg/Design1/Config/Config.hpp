@@ -22,8 +22,10 @@ class Config {
             autoindex_(conf.autoindex_),
             error_pages_(conf.error_pages_) {}
       void printLocationConf();
+      void printAllowedMethod();
       // private:
       std::string path_;
+      std::map<std::string, bool> allowed_methods_;
       std::string root_;
       std::vector<std::string> index_;
       bool autoindex_;

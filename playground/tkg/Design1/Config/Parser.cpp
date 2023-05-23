@@ -282,6 +282,34 @@ void Parser::analyseErrorPage() {
   }
 }
 
+void Parser::analyseRedirect() {
+  // todo:
+  ;
+}
+
+void Parser::analyseMaxBodySize() {
+  // todo:
+  ;
+}
+
+void Parser::analyseLimitExcept() {
+  std::cout << "Analyse limit_except\n";
+  if (scope_.top() != LOCATION) {
+    // todo: invalid grammar
+  }
+  LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+  Token tok = readToken();
+  while (expectTokenType(tok, Token::STRING) && isMethod(tok.str_)) {
+    loc.allowed_methods_[tok.str_] = true;
+    tok = readToken();
+  }
+  if (!expectTokenType(tok, Token::SEMICOLON)) {
+    // todo: invalid grammar handle
+  }
+  loc.allowed_methods_["HEAD"] = true;
+  return;
+}
+
 Config Parser::parse(const char *conf_file) {
   std::string content = readFile(conf_file);
   lexer(content);
