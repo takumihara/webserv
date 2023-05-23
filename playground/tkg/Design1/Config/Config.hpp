@@ -6,17 +6,24 @@
 #include <string>
 #include <vector>
 
+#define MiB 1048576
+
 class Config {
  public:
-  Config() : limit_connection_(1024), autoindex_(false) {}
+  Config() : limit_connection_(1024), max_body_size(MiB), autoindex_(false) {}
   class ServerConf {
    public:
     ServerConf(Config &conf)
-        : root_(conf.root_), index_(conf.index_), autoindex_(conf.autoindex_), error_pages_(conf.error_pages_) {}
+        : max_body_size(conf.max_body_size),
+          root_(conf.root_),
+          index_(conf.index_),
+          autoindex_(conf.autoindex_),
+          error_pages_(conf.error_pages_) {}
     class LocationConf {
      public:
       LocationConf(std::string &path, ServerConf &conf)
           : path_(path),
+            max_body_size(conf.max_body_size),
             root_(conf.root_),
             index_(conf.index_),
             autoindex_(conf.autoindex_),
@@ -26,6 +33,7 @@ class Config {
       // private:
       std::string path_;
       std::map<std::string, bool> allowed_methods_;
+      std::size_t max_body_size;
       std::string root_;
       std::vector<std::string> index_;
       bool autoindex_;
@@ -40,6 +48,7 @@ class Config {
     std::vector<std::string> host_;
     std::vector<int> port_;
     std::vector<std::string> server_names_;
+    std::size_t max_body_size;
     std::string root_;
     std::vector<std::string> index_;
     bool autoindex_;
@@ -57,6 +66,7 @@ class Config {
   int getLimitConnection() const;
   // private:
   int limit_connection_;
+  std::size_t max_body_size;
   std::string root_;
   std::vector<std::string> index_;
   bool autoindex_;

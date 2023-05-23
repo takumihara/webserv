@@ -36,6 +36,7 @@ void Config::makePortServConfMap() {
 
 void Config::printConfig() {
   std::cout << "connection limits: " << limit_connection_ << std::endl;
+  std::cout << "max_body_size: " << max_body_size << std::endl;
   printAutoindex(this, 0);
   for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
     std::cout << "error_status and path: " << itr->first << " " << itr->second << std::endl;
@@ -50,6 +51,7 @@ void Config::printConfig() {
 void Config::ServerConf::printServConf() {
   std::cout << "  server" << std::endl;
   printStrings("    server_name: ", server_names_);
+  std::cout << "    max_body_size: " << max_body_size << std::endl;
   printStrings("    index: ", index_);
   printAutoindex(this, 2);
   for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
@@ -68,6 +70,7 @@ void Config::ServerConf::printServConf() {
 
 void Config::ServerConf::LocationConf::printLocationConf() {
   std::cout << "      path: " << this->path_ << std::endl;
+  std::cout << "      max_body_size: " << max_body_size << std::endl;
   std::cout << "      root: " << this->root_ << std::endl;
   printStrings("      index: ", this->index_);
   printAutoindex(this, 3);

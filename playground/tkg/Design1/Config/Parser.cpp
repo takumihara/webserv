@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <ios>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "Config.hpp"
@@ -288,8 +289,29 @@ void Parser::analyseRedirect() {
 }
 
 void Parser::analyseMaxBodySize() {
-  // todo:
-  ;
+  std::cout << "Analyse max body size\n";
+  Token tok = readToken();
+  if (!expectTokenType(tok, Token::STRING) || !isAllDigit(tok.str_)) {
+    // invalid grammar handle
+  }
+  std::cout << tok.str_ << std::endl;
+  std::stringstream sstream(tok.str_);
+  if (scope_.top() == GENERAL) {
+    sstream >> conf_.max_body_size;
+  } else if (scope_.top() == SERVER) {
+    // when scope is server
+    ServConf &serv = conf_.server_confs_.back();
+    sstream >> serv.max_body_size;
+  } else if (scope_.top() == LOCATION) {
+    // when scope is location
+    LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+    sstream >> loc.max_body_size;
+  }
+  tok = readToken();
+  if (!expectTokenType(tok, Token::SEMICOLON)) {
+    // todo: invalid grammae handle (need semicolon but not)
+    std::cout << "need semicolon\n";
+  }
 }
 
 void Parser::analyseLimitExcept() {
