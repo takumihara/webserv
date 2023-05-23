@@ -19,8 +19,7 @@ class Config {
       std::string path_;
       std::string root_;
       std::vector<std::string> index_;
-      std::vector<std::string> error_page_status_;
-      std::string error_page_path_;
+      std::map<std::string, std::string> error_pages_;
     };
     void printServConf();
     std::vector<std::string> &getServerNames();
@@ -33,8 +32,7 @@ class Config {
     std::vector<std::string> server_names_;
     std::string root_;
     std::vector<std::string> index_;
-    std::vector<std::string> error_page_status_;
-    std::string error_page_path_;
+    std::map<std::string, std::string> error_pages_;
     std::vector<LocationConf> location_confs_;
   };
   typedef Config::ServerConf ServConf;
@@ -50,8 +48,7 @@ class Config {
   int limit_connection_;
   std::string root_;
   std::vector<std::string> index_;
-  std::vector<std::string> error_page_status_;
-  std::string error_page_path_;
+  std::map<std::string, std::string> error_pages_;
   std::vector<ServerConf> server_confs_;
   std::map<int, std::vector<ServerConf *> > port_servConf_map_;
 };

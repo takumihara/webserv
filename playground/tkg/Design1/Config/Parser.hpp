@@ -55,8 +55,7 @@ class Parser {
   void analyseErrorPage();
   void setHost(std::string &host);
   void setPort(std::string &port);
-  void setErrorPageStatus(std::string &status);
-  void setErrorPagePath(std::string &path);
+  void setErrorPages(std::vector<std::string> &status, std::string &path);
 
   Config conf_;
   std::vector<Token> tokens_;

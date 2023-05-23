@@ -202,33 +202,33 @@ void Parser::analyseIndex() {
   }
 }
 
-void Parser::setErrorPageStatus(std::string &status) {
+void Parser::setErrorPages(std::vector<std::string> &status, std::string &path) {
   if (scope_.top() == GENERAL) {
     // when scope is server
-    conf_.error_page_status_.push_back(status);
+    for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
+      if (conf_.error_pages_.find(*itr) != conf_.error_pages_.end()) {
+        // invalid grammar handle
+      }
+      conf_.error_pages_[*itr] = path;
+    }
   } else if (scope_.top() == SERVER) {
     // when scope is server
     ServConf &serv = conf_.server_confs_.back();
-    serv.error_page_status_.push_back(status);
+    for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
+      if (serv.error_pages_.find(*itr) != serv.error_pages_.end()) {
+        // invalid grammar handle
+      }
+      serv.error_pages_[*itr] = path;
+    }
   } else if (scope_.top() == LOCATION) {
     // when scope is location
     LocConf &loc = conf_.server_confs_.back().location_confs_.back();
-    loc.error_page_status_.push_back(status);
-  }
-}
-
-void Parser::setErrorPagePath(std::string &path) {
-  if (scope_.top() == GENERAL) {
-    // when scope is server
-    conf_.error_page_path_ = path;
-  } else if (scope_.top() == SERVER) {
-    // when scope is server
-    ServConf &serv = conf_.server_confs_.back();
-    serv.error_page_path_ = path;
-  } else if (scope_.top() == LOCATION) {
-    // when scope is location
-    LocConf &loc = conf_.server_confs_.back().location_confs_.back();
-    loc.error_page_path_ = path;
+    for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
+      if (loc.error_pages_.find(*itr) != loc.error_pages_.end()) {
+        // invalid grammar handle
+      }
+      loc.error_pages_[*itr] = path;
+    }
   }
 }
 
@@ -238,8 +238,9 @@ void Parser::analyseErrorPage() {
   if (!expectTokenType(tok, Token::STRING)) {
     // todo: invalid grammar handle
   }
+  std::vector<std::string> status;
   while (isStatusCode(tok.str_)) {
-    setErrorPageStatus(tok.str_);
+    status.push_back(tok.str_);
     tok = readToken();
     if (!expectTokenType(tok, Token::STRING)) {
       // todo: invalid grammar handle
@@ -248,7 +249,7 @@ void Parser::analyseErrorPage() {
   if (!isPath(tok.str_)) {
     // todo: invalid grammar handle
   }
-  setErrorPagePath(tok.str_);
+  setErrorPages(status, tok.str_);
   tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
     // todo: invalid grammae handle

@@ -24,9 +24,9 @@ void Config::makePortServConfMap() {
 
 void Config::printConfig() {
   std::cout << "connection limits: " << limit_connection_ << std::endl;
-  printStrings("error_status: ", this->error_page_status_);
-  if (error_page_path_.size()) std::cout << "error_path: " << this->error_page_path_ << std::endl;
-
+  for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
+    std::cout << "error_status and path: " << itr->first << " " << itr->second << std::endl;
+  }
   int i = 0;
   for (std::vector<ServConf>::iterator itr = server_confs_.begin(); itr != server_confs_.end(); itr++, i++) {
     std::cout << "server" << i << std::endl;
@@ -38,9 +38,9 @@ void Config::ServerConf::printServConf() {
   std::cout << "  server" << std::endl;
   printStrings("    server_name: ", server_names_);
   printStrings("    index: ", index_);
-  printStrings("    error_status: ", this->error_page_status_);
-  if (error_page_path_.size()) std::cout << "    error_path: " << this->error_page_path_ << std::endl;
-
+  for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
+    std::cout << "    error_status and path: " << itr->first << " " << itr->second << std::endl;
+  }
   for (size_t i = 0; i < host_.size(); i++) {
     std::cout << "    listen host: " << std::setw(15) << std::left << host_[i];
     std::cout << "    port: " << port_[i] << std::endl;
@@ -56,8 +56,9 @@ void Config::ServerConf::LocationConf::printLocationConf() {
   std::cout << "      path: " << this->path_ << std::endl;
   std::cout << "      root: " << this->root_ << std::endl;
   printStrings("      index: ", this->index_);
-  printStrings("      error_status: ", this->error_page_status_);
-  if (error_page_path_.size()) std::cout << "      error_path: " << this->error_page_path_ << std::endl;
+  for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
+    std::cout << "      error_status and path: " << itr->first << " " << itr->second << std::endl;
+  }
 }
 
 void Config::printPortServConfMap() {
