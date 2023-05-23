@@ -7,9 +7,6 @@
 #include "const.hpp"
 #include "helper.hpp"
 
-const std::string HttpRequest::kSupportedMethods[] = {"GET", "POST"};
-const std::string HttpRequest::kSupportedVersions[] = {"HTTP/1.1"};
-
 bool HttpRequest::readRequest(EventManager &event_manager) {
   char request[SOCKET_READ_SIZE + 1];
   bzero(request, SOCKET_READ_SIZE + 1);
@@ -67,46 +64,58 @@ bool HttpRequest::readRequest(EventManager &event_manager) {
 bool HttpRequest::isReceivingBody() {
   // todo: check content length
   DEBUG_PUTS("receiving body");
-  return request_line_.method != "GET";
+  return request_line_.method != GET;
 }
 
 void HttpRequest::parseStartline() {
   std::stringstream ss = std::stringstream(raw_data_);
+  std::string method;
+  std::string requestTarget;
+  std::string version;
 
-  std::getline(ss, request_line_.method, SP);
-  std::getline(ss, request_line_.requestTarget, SP);
-  ss >> request_line_.version;
+  std::getline(ss, method, SP);
+  std::getline(ss, requestTarget, SP);
+  ss >> version;
 
-  validateStartLine();
+  assignAndValidateMethod(method);
+  assignAndValidateRequestTarget(requestTarget);
+  assignAndValidateVersion(version);
 
   DEBUG_PUTS("REQUEST LINE PARSED");
-  DEBUG_PRINTF("method: '%s' request target: '%s' version: '%s'\n", request_line_.method.c_str(),
-               request_line_.requestTarget.c_str(), request_line_.version.c_str());
+  DEBUG_PRINTF("method: '%s' request target: absolute_path -'%s' query - '%s' version: '%s'\n", method.c_str(),
+               request_line_.requestTarget.absolutePath.c_str(), request_line_.requestTarget.query.c_str(),
+               version.c_str());
 }
 
-void HttpRequest::validateStartLine() {
-  if (!isValidMethod()) {
-    throw std::runtime_error("Http Request: invalid method");
+void HttpRequest::assignAndValidateMethod(const std::string &method) {
+  if (method == "GET") {
+    request_line_.method = GET;
+  } else if (method == "POST") {
+    request_line_.method = POST;
+  } else {
+    throw std::runtime_error("Http Request: invalid or unsupported method");
   }
-  if (!isValidRequestTarget()) {
-    throw std::runtime_error("Http Request: invalid request target");
+}
+
+void HttpRequest::assignAndValidateRequestTarget(const std::string &requestTarget) {
+  if (requestTarget[0] == '/') {
+    request_line_.requestTarget.type = OriginForm;
+    size_t pos = requestTarget.find_first_of('?');
+    request_line_.requestTarget.absolutePath = requestTarget.substr(0, pos);
+    if (pos != std::string::npos) {
+      request_line_.requestTarget.query = requestTarget.substr(requestTarget.find_first_of('?') + 1);
+    }
+  } else {
+    throw std::runtime_error("Http Request: invalid or unsupported request target");
   }
-  if (!isValidVersion()) {
-    throw std::runtime_error("Http Request: invalid version");
+}
+
+void HttpRequest::assignAndValidateVersion(const std::string &version) {
+  if (version == "HTTP/1.1") {
+    request_line_.version = HTTP1_1;
+  } else {
+    throw std::runtime_error("Http Request: invalid or unsupported version");
   }
-}
-
-bool HttpRequest::isValidMethod() {
-  return in(request_line_.method, kSupportedMethods, sizeof(kSupportedMethods) / sizeof(std::string));
-}
-
-bool HttpRequest::isValidRequestTarget() {
-  // todo: add validation
-  return request_line_.requestTarget[0] == '/';
-}
-
-bool HttpRequest::isValidVersion() {
-  return in(request_line_.version, kSupportedVersions, sizeof(kSupportedVersions) / sizeof(std::string));
 }
 
 void HttpRequest::parseHeaders() {
@@ -255,5 +264,5 @@ void HttpRequest::refresh() {
 
 const std::string &HttpRequest::getBody() const { return body_; }
 
-const std::string &HttpRequest::getRequestTarget() const { return request_line_.requestTarget; }
+const HttpRequest::RequestTarget &HttpRequest::getRequestTarget() const { return request_line_.requestTarget; }
 const std::string &HttpRequest::getHeaderValue(const std::string &name) const { return headers_.find(name)->second; }

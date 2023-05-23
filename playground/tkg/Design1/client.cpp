@@ -111,7 +111,7 @@ std::string getRequest(const std::string &arg) {
     request += "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n\r\n";
     request += "\r\n";
   } else {
-    request += "POST /a.cgi HTTP/1.1\r\n";
+    request += "POST /a.cgi?query HTTP/1.1\r\n";
     // request += "POST /index.html HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
     request += "Content-Type: text/plain\r\n";
