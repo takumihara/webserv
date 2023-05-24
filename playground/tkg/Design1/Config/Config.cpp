@@ -23,7 +23,6 @@ void Config::LocConf::printAllowedMethod() {
     }
   }
   std::cout << std::endl;
-
 }
 
 void Config::makePortServConfMap() {
@@ -73,6 +72,7 @@ void Config::ServerConf::printServConf() {
 
 void Config::ServerConf::LocationConf::printLocationConf() {
   std::cout << "      path: " << this->path_ << std::endl;
+  printStrings("      cgi_ext: ", this->cgi_exts_);
   printRedirect(this, 3);
   std::cout << "      max_body_size: " << max_body_size << std::endl;
   std::cout << "      root: " << this->root_ << std::endl;

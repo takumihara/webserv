@@ -58,6 +58,11 @@ bool isMethod(const std::string &method) {
   return false;
 }
 
+bool isCGIExtension(const std::string &ext) {
+  if (ext == ".cgi" || ext == ".php" || ext == ".py") return true;
+  return false;
+}
+
 bool validateHost(std::string &host) {
   if (host == "") return true;
   std::vector<std::string> split_host = split(host, ".");

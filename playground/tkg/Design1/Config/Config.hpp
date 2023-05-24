@@ -35,12 +35,13 @@ class Config {
       std::string path_;
       std::pair<std::string, std::string> redirect_;
       std::map<std::string, bool> allowed_methods_;
+      std::vector<std::string> cgi_exts_;
       std::size_t max_body_size;
       std::string root_;
       std::vector<std::string> index_;
       bool autoindex_;
       std::map<std::string, std::string> error_pages_;
-    };
+    };  // Location Config
     void printServConf();
     std::vector<std::string> &getServerNames();
     std::vector<std::string> &getHostNames();
@@ -56,7 +57,7 @@ class Config {
     bool autoindex_;
     std::map<std::string, std::string> error_pages_;
     std::vector<LocationConf> location_confs_;
-  };
+  };  // Server Config
   typedef Config::ServerConf ServConf;
   typedef Config::ServerConf::LocationConf LocConf;
 
@@ -75,7 +76,7 @@ class Config {
   std::map<std::string, std::string> error_pages_;
   std::vector<ServerConf> server_confs_;
   std::map<int, std::vector<ServerConf *> > port_servConf_map_;
-};
+};  // Config
 
 template <class T>
 void printAutoindex(T conf, int indent) {

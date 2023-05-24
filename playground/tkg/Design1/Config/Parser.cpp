@@ -333,6 +333,22 @@ void Parser::analyseLimitExcept() {
   return;
 }
 
+void Parser::analyseCGIExtension() {
+  DEBUG_PUTS("Analyse CGI Extension");
+  if (scope_.top() != LOCATION) {
+    throw std::runtime_error("cgi_extension: invalid scope");
+  }
+  LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+  Token tok = readToken();
+  while (expectTokenType(tok, Token::STRING) && isCGIExtension(tok.str_)) {
+    loc.cgi_exts_.push_back(tok.str_);
+    tok = readToken();
+  }
+  if (!expectTokenType(tok, Token::SEMICOLON)) {
+    throw std::runtime_error("cgi_extension: invalid grammar, need semicolon");
+  }
+}
+
 Config Parser::parse(const char *conf_file) {
   std::string content = readFile(conf_file);
   lexer(content);

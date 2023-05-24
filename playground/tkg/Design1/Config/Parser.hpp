@@ -39,6 +39,7 @@ class Parser {
     directives_["limit_except"] = &Parser::analyseLimitExcept;
     directives_["redirect"] = &Parser::analyseRedirect;
     directives_["max_body_size"] = &Parser::analyseMaxBodySize;
+    directives_["cgi_extension"] = &Parser::analyseCGIExtension;
   }
   enum scope {
     GENERAL,
@@ -47,7 +48,6 @@ class Parser {
   };
   Config parse(const char *conf_file);
   void printTokens();
-  // void printConf();
 
   Config conf_;
   std::vector<Token> tokens_;
@@ -70,9 +70,11 @@ class Parser {
   void analyseLimitExcept();
   void analyseRedirect();
   void analyseMaxBodySize();
+  void analyseCGIExtension();
   void setHost(std::string &host);
   void setPort(std::string &port);
   void setRedirect(std::string &status, std::string &uri, scope scp);
+  bool isCGIExtention(std::string &str);
 
   Token &readToken(void);
   bool isReservedChar(char c);
