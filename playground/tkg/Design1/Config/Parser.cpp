@@ -203,6 +203,17 @@ void Parser::analyseIndex() {
   }
 }
 
+template <class T>
+void setAutoindex(T conf, const std::string &flag) {
+  if (flag == "on")
+    conf.autoindex_ = true;
+  else if (flag == "off")
+    conf.autoindex_ = false;
+  else {
+    // todo: invalid grammar handle
+  }
+}
+
 void Parser::analyseAutoindex() {
   std::cout << "Analyse autoindex\n";
   Token tok = readToken();
@@ -210,16 +221,16 @@ void Parser::analyseAutoindex() {
     // invalid grammar handle
   }
   if (scope_.top() == GENERAL) {
-    conf_.autoindex_ = tok.str_ == "on";
+    setAutoindex(conf_, tok.str_);
   } else if (scope_.top() == SERVER) {
     // when scope is server
     ServConf &serv = conf_.server_confs_.back();
-    serv.autoindex_ = tok.str_ == "on";
+    setAutoindex(serv, tok.str_);
 
   } else if (scope_.top() == LOCATION) {
     // when scope is location
     LocConf &loc = conf_.server_confs_.back().location_confs_.back();
-    loc.autoindex_ = tok.str_ == "on";
+    setAutoindex(loc, tok.str_);
   }
   tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
