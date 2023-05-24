@@ -13,6 +13,7 @@
 
 #define SP ' '
 #define CRLF "\r\n"
+#define OWS " \t"
 
 class EventManager;
 
@@ -37,7 +38,7 @@ class HttpRequest {
   };
   struct Host {
     std::string uri_host;
-    std::string port;
+    int port;
   };
   struct Headers {
     Host host;

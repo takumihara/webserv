@@ -105,7 +105,7 @@ std::string getRequest(const std::string &arg) {
   if (arg == "chunked") {
     request += "POST /a.cgi HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
-    request += "Transfer-Encoding: chunked\r\n ";
+    request += "Transfer-Encoding: chunked     ,  chunked,     chunked\r\n ";
     request += "\r\n";
     request += "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n\r\n";
     request += "\r\n";

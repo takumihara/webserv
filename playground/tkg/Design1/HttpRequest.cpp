@@ -4,13 +4,15 @@
 #include <cstdlib>
 #include <ctime>
 #include <iomanip>
-#include <regex>
 #include <sstream>
 
 #include "Config/validation.h"
 #include "EventManager.hpp"
 #include "const.hpp"
 #include "helper.hpp"
+
+#define MIN_PORT_NUM 0
+#define MAX_PORT_NUM 65535
 
 bool HttpRequest::readRequest(EventManager &event_manager) {
   char request[SOCKET_READ_SIZE + 1];
@@ -169,7 +171,7 @@ void HttpRequest::parseHeaders() {
   }
 
   DEBUG_PUTS("HEADER PARSED");
-  DEBUG_PRINTF("host: %s \n", (headers_.host.uri_host + ":" + headers_.host.port).c_str());
+  DEBUG_PRINTF("host: %s \n", (headers_.host.uri_host + ":" + std::to_string(headers_.host.port)).c_str());
   DEBUG_PRINTF("content-length: %zu \n", headers_.content_length);
   DEBUG_PRINTF("transfer-encoding: %s \n", isChunked() ? "chunked" : "none");
   char buf[30];
@@ -181,21 +183,33 @@ void HttpRequest::analyzeHost(const std::string &value) {
   std::string hostHeader = value.substr(0, value.find(CRLF));
 
   // todo: check if there is no duplication
-  std::regex hostPattern(
-      "^(([a-zA-Z0-9-]+\\.)*[a-zA-Z0-9-]+|([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}))(\\:[0-9]{1,5})?$");
-  if (!std::regex_match(hostHeader, hostPattern)) {
-    throw std::runtime_error("Http Request: invalid or unsupported host header");
-  }
 
+  // parse host
+  std::string port;
   std::size_t colonPos = hostHeader.find(':');
-
   if (colonPos != std::string::npos) {
     // If there is a colon in the string, split it into hostname and port
     headers_.host.uri_host = hostHeader.substr(0, colonPos);
-    headers_.host.port = hostHeader.substr(colonPos + 1);
+    port = hostHeader.substr(colonPos + 1);
   } else {
     // If there is no colon, the whole string is the hostname
     headers_.host.uri_host = hostHeader;
+    headers_.host.port = 80;
+  }
+
+  // validate uri-host
+
+  // validate port
+  if (!port.empty()) {
+    // Check if all characters are digits
+    if (isAllDigit(port) == false) {
+      throw std::runtime_error("Http Request: invalid port");
+    }
+
+    headers_.host.port = std::atoi(port.c_str());
+    if (headers_.host.port <= MIN_PORT_NUM || headers_.host.port > MAX_PORT_NUM) {
+      throw std::runtime_error("Http Request: invalid port");
+    }
   }
 }
 
@@ -213,6 +227,9 @@ void HttpRequest::analyzeTransferEncoding(const std::string &value) {
   std::string encoding;
   while (std::getline(ss, encoding, ',')) {
     toLower(encoding);
+    std::string::size_type start = encoding.find_first_not_of(OWS);
+    std::string::size_type end = encoding.find_last_not_of(OWS);
+    encoding = encoding.substr(start, end - start + 1);
     if (encoding == "chunked") {
       headers_.transferEncodings.push_back(Chunked);
     } else {
