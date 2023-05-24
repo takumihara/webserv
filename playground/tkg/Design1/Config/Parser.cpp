@@ -28,20 +28,16 @@ std::string readFile(const char *filename) {
 void Parser::analyseLimitConnection(void) {
   std::cout << "Analyse limit connection\n";
   if (scope_.top() != GENERAL) {
-    // todo: invalid grammar
+    throw std::runtime_error("limit_connection: invalid scope");
   }
   Token tok = readToken();
-  if (!expectTokenType(tok, Token::STRING)) {
-    // todo: invalid grammar handle
-  }
-  if (!isAllDigit(tok.str_)) {
-    // todo: invalid limit connection value handling
+  if (!expectTokenType(tok, Token::STRING) || !isAllDigit(tok.str_)) {
+    throw std::runtime_error("limit_connection: invalid type or Not AllDigit");
   }
   conf_.limit_connection_ = atoi(tok.str_.c_str());
   tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
-    // todo: invalid grammae handle
-    std::cout << "need semicolon\n";
+    throw std::runtime_error("limit_connection: invalid grammer. need semicolon");
   }
   return;
 }
@@ -49,11 +45,11 @@ void Parser::analyseLimitConnection(void) {
 void Parser::analyseServer() {
   std::cout << "Analyse server\n";
   if (scope_.top() != GENERAL) {
-    // todo: invalid grammar
+    throw std::runtime_error("server: invalid scope");
   }
   Token tok = readToken();
-  if (expectTokenType(tok, Token::OPEN_BRACE)) {
-    // todo: invalid grammar handle
+  if (!expectTokenType(tok, Token::OPEN_BRACE)) {
+    throw std::runtime_error("server: invalid grammar, need Open brace");
   }
   conf_.server_confs_.push_back(ServConf(conf_));
   scope_.push(SERVER);
@@ -79,42 +75,40 @@ void Parser::setPort(std::string &port) {
 void Parser::analyseListen() {
   std::cout << "Analyse listen\n";
   if (scope_.top() != SERVER) {
-    // todo: invalid grammar
+    throw std::runtime_error("listen: invalid scope");
   }
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
-    // invalid grammar handle
+    throw std::runtime_error("listen: invalid type");
   }
   while (expectTokenType(tok, Token::STRING)) {
     size_t pos = tok.str_.find(":");
     if (pos == std::string::npos) {
-      // todo: invalid value handle
+      throw std::runtime_error("listen: invalid grammar, need colon");
     }
     std::string host = tok.str_.substr(0, pos);
     std::string port = tok.str_.erase(0, pos + 1);
     std::cout << "host port " << host << " " << port << std::endl;
     if (!validateHost(host) || !validatePort(port)) {
-      // todo: invalid port or host handle
-      std::cout << "invalid host or port\n";
+      throw std::runtime_error("listen: invalid host ot port");
     }
     setHost(host);
     setPort(port);
     tok = readToken();
   }
   if (!expectTokenType(tok, Token::SEMICOLON)) {
-    // todo: invalid grammae handle
-    std::cout << "need semicolon\n";
+    throw std::runtime_error("listen: invalid grammar, need semicolon");
   }
 }
 
 void Parser::analyseServerName() {
   std::cout << "Analyse server_name\n";
   if (scope_.top() != SERVER) {
-    // todo: invalid grammar　handle
+    throw std::runtime_error("server_name: invalid scope");
   }
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
-    // invalid grammar handle
+    throw std::runtime_error("server_name: invalid type");
   }
   while (expectTokenType(tok, Token::STRING)) {
     ServConf &serv = conf_.server_confs_.back();
@@ -122,8 +116,7 @@ void Parser::analyseServerName() {
     tok = readToken();
   }
   if (!expectTokenType(tok, Token::SEMICOLON)) {
-    // todo: invalid grammae handle
-    std::cout << "need semicolon\n";
+    throw std::runtime_error("server_name: invalid grammar, need semicolon");
   }
 }
 
@@ -131,7 +124,7 @@ void Parser::analyseRoot() {
   std::cout << "Analyse server_root\n";
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
-    // todo: invalid grammar handle
+    throw std::runtime_error("server_name: invalid type");
   }
   if (scope_.top() == SERVER) {
     // when scope is server
@@ -144,24 +137,23 @@ void Parser::analyseRoot() {
   }
   tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
-    // todo: invalid grammae handle
-    std::cout << "need semicolon\n";
+    throw std::runtime_error("root: invalid grammar, need semicolon");
   }
 }
 
 void Parser::analyseLocation() {
   std::cout << "Analyse location\n";
   if (scope_.top() != SERVER) {
-    // todo: invalid grammar
+    throw std::runtime_error("location: invalid scope");
   }
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
-    // invalid grammar handle
+    throw std::runtime_error("location: invalid type");
   }
   std::string path = tok.str_;
   tok = readToken();
   if (!expectTokenType(tok, Token::OPEN_BRACE)) {
-    // invalid grammar handle
+    throw std::runtime_error("location: invalid grammar, need Open brace");
   }
   ServConf &serv = conf_.server_confs_.back();
   serv.location_confs_.push_back(LocConf(path, serv));
@@ -173,7 +165,7 @@ void Parser::analyseIndex() {
   std::cout << "Analyse index\n";
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
-    // invalid grammar handle
+    throw std::runtime_error("index: invalid type");
   }
   if (scope_.top() == GENERAL) {
     while (expectTokenType(tok, Token::STRING)) {
@@ -195,11 +187,10 @@ void Parser::analyseIndex() {
       tok = readToken();
     }
   } else {
-    // todo: when scope is GENERAL
+    throw std::runtime_error("index: invalid scope");
   }
   if (!expectTokenType(tok, Token::SEMICOLON)) {
-    // todo: invalid grammae handle (need semicolon but not)
-    std::cout << "need semicolon\n";
+    throw std::runtime_error("index: invalid grammar, need semicolon");
   }
 }
 
@@ -210,7 +201,7 @@ void setAutoindex(T conf, const std::string &flag) {
   else if (flag == "off")
     conf.autoindex_ = false;
   else {
-    // todo: invalid grammar handle
+    throw std::runtime_error("autoindex: invalid value");
   }
 }
 
@@ -218,7 +209,7 @@ void Parser::analyseAutoindex() {
   std::cout << "Analyse autoindex\n";
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
-    // invalid grammar handle
+    throw std::runtime_error("autoindex: invalid type");
   }
   if (scope_.top() == GENERAL) {
     setAutoindex(conf_, tok.str_);
@@ -234,8 +225,7 @@ void Parser::analyseAutoindex() {
   }
   tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
-    // todo: invalid grammae handle (need semicolon but not)
-    std::cout << "need semicolon\n";
+    throw std::runtime_error("index: invalid grammar, need semicolon");
   }
 }
 
@@ -244,7 +234,7 @@ void Parser::setErrorPages(std::vector<std::string> &status, std::string &path) 
     // when scope is server
     for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
       if (conf_.error_pages_.find(*itr) != conf_.error_pages_.end()) {
-        // invalid grammar handle
+        throw std::runtime_error("error_page: duplicate erro_page path");
       }
       conf_.error_pages_[*itr] = path;
     }
@@ -253,7 +243,7 @@ void Parser::setErrorPages(std::vector<std::string> &status, std::string &path) 
     ServConf &serv = conf_.server_confs_.back();
     for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
       if (serv.error_pages_.find(*itr) != serv.error_pages_.end()) {
-        // invalid grammar handle
+        throw std::runtime_error("error_page: duplicate erro_page path");
       }
       serv.error_pages_[*itr] = path;
     }
@@ -262,7 +252,7 @@ void Parser::setErrorPages(std::vector<std::string> &status, std::string &path) 
     LocConf &loc = conf_.server_confs_.back().location_confs_.back();
     for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
       if (loc.error_pages_.find(*itr) != loc.error_pages_.end()) {
-        // invalid grammar handle
+        throw std::runtime_error("error_page: duplicate erro_page path");
       }
       loc.error_pages_[*itr] = path;
     }
@@ -273,27 +263,25 @@ void Parser::analyseErrorPage() {
   std::cout << "Analyse Error page\n";
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
-    // todo: invalid grammar handle
+    throw std::runtime_error("error_page: invalid type");
   }
   std::vector<std::string> status;
   while (isStatusCode(tok.str_)) {
     status.push_back(tok.str_);
     tok = readToken();
     if (!expectTokenType(tok, Token::STRING)) {
-      // todo: invalid grammar handle
+      throw std::runtime_error("error_page: invalid type");
     }
   }
   if (!isPath(tok.str_)) {
-    // todo: invalid grammar handle
+    throw std::runtime_error("error_page: invalid path");
   }
   setErrorPages(status, tok.str_);
   tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
-    // todo: invalid grammae handle
-    std::cout << "need semicolon\n";
+    throw std::runtime_error("error_page: invalid grammar, need semicolon");
   }
 }
-
 
 void Parser::addRedirect(std::string &status, std::string &uri, scope scp) {
   if (scp == SERVER) {
@@ -303,7 +291,7 @@ void Parser::addRedirect(std::string &status, std::string &uri, scope scp) {
     Config::LocConf &loc = conf_.server_confs_.back().location_confs_.back();
     loc.redirect_ = std::pair<std::string, std::string>(status, uri);
   } else {
-    // todo: invalid grammar handle
+    throw std::runtime_error("redirect: invalid scope");
   }
 }
 
@@ -314,7 +302,7 @@ void Parser::analyseRedirect() {
     std::string status = tok.str_;
     tok = readToken();
     if (!expectTokenType(tok, Token::STRING) || !isURL(tok.str_)) {
-      // todo: invalid grammar handle
+      throw std::runtime_error("error_page: invalid type or URL");
     }
     addRedirect(status, tok.str_, scope_.top());
     tok = readToken();
@@ -325,7 +313,7 @@ void Parser::analyseMaxBodySize() {
   std::cout << "Analyse max body size\n";
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING) || !isAllDigit(tok.str_)) {
-    // invalid grammar handle
+    throw std::runtime_error("Max_body_size: invalid type or Not AllDigit");
   }
   std::cout << tok.str_ << std::endl;
   std::stringstream sstream(tok.str_);
@@ -342,15 +330,14 @@ void Parser::analyseMaxBodySize() {
   }
   tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
-    // todo: invalid grammae handle (need semicolon but not)
-    std::cout << "need semicolon\n";
+    throw std::runtime_error("error_page: invalid grammar, need semicolon");
   }
 }
 
 void Parser::analyseLimitExcept() {
   std::cout << "Analyse limit_except\n";
   if (scope_.top() != LOCATION) {
-    // todo: invalid grammar
+    throw std::runtime_error("error_page: invalid scope");
   }
   LocConf &loc = conf_.server_confs_.back().location_confs_.back();
   Token tok = readToken();
@@ -359,12 +346,11 @@ void Parser::analyseLimitExcept() {
     tok = readToken();
   }
   if (!expectTokenType(tok, Token::SEMICOLON)) {
-    // todo: invalid grammar handle
+    throw std::runtime_error("error_page: invalid grammar, need semicolon");
   }
   loc.allowed_methods_["HEAD"] = true;
   return;
 }
-
 
 Config Parser::parse(const char *conf_file) {
   std::string content = readFile(conf_file);
@@ -379,13 +365,12 @@ Config Parser::parse(const char *conf_file) {
       if (scope_.size() == 0) break;
       scope_.pop();
     } else {
-      // todo:: invalid grammar handle (no such directive)
+      throw std::runtime_error("parse: no such directive");
       break;
     }
   }
   if (idx_ != tokens_.size() || scope_.size() != 1 || scope_.top() != GENERAL) {
-    // todo: invalid grammar(unbalanced braces) handle
-    std::cout << "error: unbalanced braces" << std::endl;
+    throw std::runtime_error("error_page: unbalanced braces");
   }
   conf_.printConfig();
   return conf_;
