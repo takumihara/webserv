@@ -105,17 +105,16 @@ std::string getRequest(const std::string &arg) {
   if (arg == "chunked") {
     request += "POST /a.cgi HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
-    request += "Transfer-Encoding: chunked\r\n ";
-    request += "Content-Type: text/plain\r\n";
+    request += "Transfer-Encoding: chunked     ,  chunked,     chunked\r\n ";
     request += "\r\n";
     request += "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n\r\n";
     request += "\r\n";
   } else {
-    request += "POST /a.cgi HTTP/1.1\r\n";
+    request += "POST /a.cgi?query HTTP/1.1\r\n";
     // request += "POST /index.html HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
-    request += "Content-Type: text/plain\r\n";
     request += "Content-Length: 5\r\n";
+    request += "Date: Wed, 16 Oct 2019 07:28:00 GMT\r\n";
     request += "\r\n";
     request += arg;
     request += "\r\n";
