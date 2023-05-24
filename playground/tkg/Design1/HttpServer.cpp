@@ -2,6 +2,7 @@
 
 #include "./Config/Config.hpp"
 #include "./Config/Parser.hpp"
+#include "./Config/validation.h"
 
 int HttpServer::openPort() {
   int sock_fd;
@@ -31,10 +32,14 @@ void HttpServer::setup() {
   const char *file = "./Config/conf.conf";
   Parser parser;
   conf_ = parser.parse(file);
-  // todo: check servername duplication
   conf_.makePortServConfMap();
-  std::cout << "-----------port conf map-------------\n";
+  if (!isServernameDuplication(conf_)) {
+    throw std::runtime_error("httpServer::setup: servername is duplicate");
+  }
+#ifdef DEBUG
+  std::cout << "-----------port conf map-------------\n" << std::endl;
   conf_.printPortServConfMap();
+#endif
 }
 
 void HttpServer::start() {

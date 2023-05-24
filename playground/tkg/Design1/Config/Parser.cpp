@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 
+#include "../debug.hpp"
 #include "Config.hpp"
 #include "Parser.hpp"
 #include "validation.h"
@@ -26,7 +27,7 @@ std::string readFile(const char *filename) {
 }
 
 void Parser::analyseLimitConnection(void) {
-  std::cout << "Analyse limit connection\n";
+  DEBUG_PUTS("Analyse limit connection");
   if (scope_.top() != GENERAL) {
     throw std::runtime_error("limit_connection: invalid scope");
   }
@@ -43,7 +44,7 @@ void Parser::analyseLimitConnection(void) {
 }
 
 void Parser::analyseServer() {
-  std::cout << "Analyse server\n";
+  DEBUG_PUTS("Analyse server");
   if (scope_.top() != GENERAL) {
     throw std::runtime_error("server: invalid scope");
   }
@@ -73,7 +74,7 @@ void Parser::setPort(std::string &port) {
 }
 
 void Parser::analyseListen() {
-  std::cout << "Analyse listen\n";
+  DEBUG_PUTS("Analyse listen");
   if (scope_.top() != SERVER) {
     throw std::runtime_error("listen: invalid scope");
   }
@@ -88,7 +89,6 @@ void Parser::analyseListen() {
     }
     std::string host = tok.str_.substr(0, pos);
     std::string port = tok.str_.erase(0, pos + 1);
-    std::cout << "host port " << host << " " << port << std::endl;
     if (!validateHost(host) || !validatePort(port)) {
       throw std::runtime_error("listen: invalid host ot port");
     }
@@ -102,7 +102,7 @@ void Parser::analyseListen() {
 }
 
 void Parser::analyseServerName() {
-  std::cout << "Analyse server_name\n";
+  DEBUG_PUTS("Analyse server_name");
   if (scope_.top() != SERVER) {
     throw std::runtime_error("server_name: invalid scope");
   }
@@ -121,7 +121,7 @@ void Parser::analyseServerName() {
 }
 
 void Parser::analyseRoot() {
-  std::cout << "Analyse server_root\n";
+  DEBUG_PUTS("Analyse server_root");
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
     throw std::runtime_error("server_name: invalid type");
@@ -142,7 +142,7 @@ void Parser::analyseRoot() {
 }
 
 void Parser::analyseLocation() {
-  std::cout << "Analyse location\n";
+  DEBUG_PUTS("Analyse location");
   if (scope_.top() != SERVER) {
     throw std::runtime_error("location: invalid scope");
   }
@@ -162,7 +162,7 @@ void Parser::analyseLocation() {
 }
 
 void Parser::analyseIndex() {
-  std::cout << "Analyse index\n";
+  DEBUG_PUTS("Analyse index");
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
     throw std::runtime_error("index: invalid type");
@@ -206,7 +206,7 @@ void setAutoindex(T conf, const std::string &flag) {
 }
 
 void Parser::analyseAutoindex() {
-  std::cout << "Analyse autoindex\n";
+  DEBUG_PUTS("Analyse autoindex");
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
     throw std::runtime_error("autoindex: invalid type");
@@ -260,7 +260,7 @@ void Parser::setErrorPages(std::vector<std::string> &status, std::string &path) 
 }
 
 void Parser::analyseErrorPage() {
-  std::cout << "Analyse Error page\n";
+  DEBUG_PUTS("Analyse Error page");
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
     throw std::runtime_error("error_page: invalid type");
@@ -283,7 +283,7 @@ void Parser::analyseErrorPage() {
   }
 }
 
-void Parser::addRedirect(std::string &status, std::string &uri, scope scp) {
+void Parser::setRedirect(std::string &status, std::string &uri, scope scp) {
   if (scp == SERVER) {
     Config::ServConf &serv = conf_.server_confs_.back();
     serv.redirect_ = std::pair<std::string, std::string>(status, uri);
@@ -296,7 +296,7 @@ void Parser::addRedirect(std::string &status, std::string &uri, scope scp) {
 }
 
 void Parser::analyseRedirect() {
-  std::cout << "Analyse redirect\n";
+  DEBUG_PUTS("Analyse redirect");
   Token tok = readToken();
   while (expectTokenType(tok, Token::STRING) && is3xxStatus(tok.str_)) {
     std::string status = tok.str_;
@@ -304,18 +304,17 @@ void Parser::analyseRedirect() {
     if (!expectTokenType(tok, Token::STRING) || !isURL(tok.str_)) {
       throw std::runtime_error("error_page: invalid type or URL");
     }
-    addRedirect(status, tok.str_, scope_.top());
+    setRedirect(status, tok.str_, scope_.top());
     tok = readToken();
   }
 }
 
 void Parser::analyseMaxBodySize() {
-  std::cout << "Analyse max body size\n";
+  DEBUG_PUTS("Analyse max body size");
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING) || !isAllDigit(tok.str_)) {
     throw std::runtime_error("Max_body_size: invalid type or Not AllDigit");
   }
-  std::cout << tok.str_ << std::endl;
   std::stringstream sstream(tok.str_);
   if (scope_.top() == GENERAL) {
     sstream >> conf_.max_body_size;
@@ -335,7 +334,7 @@ void Parser::analyseMaxBodySize() {
 }
 
 void Parser::analyseLimitExcept() {
-  std::cout << "Analyse limit_except\n";
+  DEBUG_PUTS("Analyse limit_except");
   if (scope_.top() != LOCATION) {
     throw std::runtime_error("error_page: invalid scope");
   }
@@ -357,7 +356,6 @@ Config Parser::parse(const char *conf_file) {
   lexer(content);
   while (idx_ != tokens_.size()) {
     Token cur = readToken();
-    std::cout << cur.str_ << std::endl;
     if (isDirective(cur)) {
       void (Parser::*direct)() = directives_[cur.str_];
       (this->*direct)();
@@ -372,7 +370,9 @@ Config Parser::parse(const char *conf_file) {
   if (idx_ != tokens_.size() || scope_.size() != 1 || scope_.top() != GENERAL) {
     throw std::runtime_error("error_page: unbalanced braces");
   }
+#ifdef DEBUG
   conf_.printConfig();
+#endif
   return conf_;
 }
 

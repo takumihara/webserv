@@ -39,7 +39,6 @@ class Parser {
     directives_["limit_except"] = &Parser::analyseLimitExcept;
     directives_["redirect"] = &Parser::analyseRedirect;
     directives_["max_body_size"] = &Parser::analyseMaxBodySize;
-
   }
   enum scope {
     GENERAL,
@@ -50,7 +49,7 @@ class Parser {
   void printTokens();
   // void printConf();
   bool expectTokenType(Token &tok, Token::t_TK_type type);
-  void addRedirect(std::string &status, std::string &uri, scope scp);
+  void setRedirect(std::string &status, std::string &uri, scope scp);
   void analyseLimitConnection();
   void analyseServer();
   void analyseListen();
