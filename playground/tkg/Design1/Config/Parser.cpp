@@ -283,6 +283,7 @@ void Parser::analyseErrorPage() {
   }
 }
 
+
 void Parser::addRedirect(std::string &status, std::string &uri, scope scp) {
   if (scp == SERVER) {
     Config::ServConf &serv = conf_.server_confs_.back();
@@ -352,6 +353,7 @@ void Parser::analyseLimitExcept() {
   loc.allowed_methods_["HEAD"] = true;
   return;
 }
+
 
 Config Parser::parse(const char *conf_file) {
   std::string content = readFile(conf_file);

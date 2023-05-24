@@ -31,6 +31,7 @@ class Config {
             error_pages_(conf.error_pages_) {}
       void printLocationConf();
       void printAllowedMethod();
+
       // private:
       std::string path_;
       std::pair<std::string, std::string> redirect_;

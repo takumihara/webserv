@@ -39,6 +39,7 @@ class Parser {
     directives_["limit_except"] = &Parser::analyseLimitExcept;
     directives_["redirect"] = &Parser::analyseRedirect;
     directives_["max_body_size"] = &Parser::analyseMaxBodySize;
+
   }
   enum scope {
     GENERAL,

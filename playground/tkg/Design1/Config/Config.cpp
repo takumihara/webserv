@@ -23,6 +23,7 @@ void Config::LocConf::printAllowedMethod() {
     }
   }
   std::cout << std::endl;
+
 }
 
 void Config::makePortServConfMap() {
@@ -38,6 +39,7 @@ void Config::printConfig() {
   std::cout << "connection limits: " << limit_connection_ << std::endl;
   std::cout << "max_body_size: " << max_body_size << std::endl;
   printAutoindex(this, 0);
+
   for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
     std::cout << "error_status and path: " << itr->first << " " << itr->second << std::endl;
   }
@@ -77,6 +79,7 @@ void Config::ServerConf::LocationConf::printLocationConf() {
   printStrings("      index: ", this->index_);
   printAutoindex(this, 3);
   printAllowedMethod();
+
   for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
     std::cout << "      error_status and path: " << itr->first << " " << itr->second << std::endl;
   }
