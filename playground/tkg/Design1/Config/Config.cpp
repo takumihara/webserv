@@ -51,6 +51,7 @@ void Config::printConfig() {
 void Config::ServerConf::printServConf() {
   std::cout << "  server" << std::endl;
   printStrings("    server_name: ", server_names_);
+  printRedirect(this, 2);
   std::cout << "    max_body_size: " << max_body_size << std::endl;
   printStrings("    index: ", index_);
   printAutoindex(this, 2);
@@ -70,6 +71,7 @@ void Config::ServerConf::printServConf() {
 
 void Config::ServerConf::LocationConf::printLocationConf() {
   std::cout << "      path: " << this->path_ << std::endl;
+  printRedirect(this, 3);
   std::cout << "      max_body_size: " << max_body_size << std::endl;
   std::cout << "      root: " << this->root_ << std::endl;
   printStrings("      index: ", this->index_);

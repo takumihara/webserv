@@ -40,9 +40,19 @@ bool isAllDigit(const std::string &str) {
   return true;
 }
 
+bool is3xxStatus(const std::string &status) {
+  if (isAllDigit(status) && status[0] == '3') return true;
+  return false;
+}
+
 bool isPath(const std::string &path) {
   // todo: verify valid path
   return path.size() != 0;
+}
+
+bool isURL(const std::string &URL) {
+  // todo: verify valid URL
+  return URL.size() != 0;
 }
 
 bool isMethod(const std::string &method) {

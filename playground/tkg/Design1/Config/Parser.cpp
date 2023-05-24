@@ -283,9 +283,30 @@ void Parser::analyseErrorPage() {
   }
 }
 
+void Parser::addRedirect(std::string &status, std::string &uri, scope scp) {
+  if (scp == SERVER) {
+    Config::ServConf &serv = conf_.server_confs_.back();
+    serv.redirect_ = std::pair<std::string, std::string>(status, uri);
+  } else if (scp == LOCATION) {
+    Config::LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+    loc.redirect_ = std::pair<std::string, std::string>(status, uri);
+  } else {
+    // todo: invalid grammar handle
+  }
+}
+
 void Parser::analyseRedirect() {
-  // todo:
-  ;
+  std::cout << "Analyse redirect\n";
+  Token tok = readToken();
+  while (expectTokenType(tok, Token::STRING) && is3xxStatus(tok.str_)) {
+    std::string status = tok.str_;
+    tok = readToken();
+    if (!expectTokenType(tok, Token::STRING) || !isURL(tok.str_)) {
+      // todo: invalid grammar handle
+    }
+    addRedirect(status, tok.str_, scope_.top());
+    tok = readToken();
+  }
 }
 
 void Parser::analyseMaxBodySize() {

@@ -49,6 +49,7 @@ class Parser {
   void printTokens();
   // void printConf();
   bool expectTokenType(Token &tok, Token::t_TK_type type);
+  void addRedirect(std::string &status, std::string &uri, scope scp);
   void analyseLimitConnection();
   void analyseServer();
   void analyseListen();

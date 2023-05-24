@@ -23,6 +23,7 @@ class Config {
      public:
       LocationConf(std::string &path, ServerConf &conf)
           : path_(path),
+            redirect_(conf.redirect_),
             max_body_size(conf.max_body_size),
             root_(conf.root_),
             index_(conf.index_),
@@ -32,6 +33,7 @@ class Config {
       void printAllowedMethod();
       // private:
       std::string path_;
+      std::pair<std::string, std::string> redirect_;
       std::map<std::string, bool> allowed_methods_;
       std::size_t max_body_size;
       std::string root_;
@@ -48,6 +50,7 @@ class Config {
     std::vector<std::string> host_;
     std::vector<int> port_;
     std::vector<std::string> server_names_;
+    std::pair<std::string, std::string> redirect_;
     std::size_t max_body_size;
     std::string root_;
     std::vector<std::string> index_;
@@ -85,6 +88,15 @@ void printAutoindex(T conf, int indent) {
     std::cout << "on" << std::endl;
   else
     std::cout << "off" << std::endl;
+}
+
+template <class T>
+void printRedirect(T conf, int indent) {
+  for (int i = 0; i < indent; i++) {
+    std::cout << "  ";
+  }
+  std::cout << "redirect: "
+            << "code: " << conf->redirect_.first << "  to: " << conf->redirect_.second << std::endl;
 }
 
 template <class T>
