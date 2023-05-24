@@ -32,7 +32,6 @@ class Config {
       void printLocationConf();
       void printAllowedMethod();
 
-      // private:
       std::string path_;
       std::pair<std::string, std::string> redirect_;
       std::map<std::string, bool> allowed_methods_;
@@ -47,7 +46,6 @@ class Config {
     std::vector<std::string> &getHostNames();
     std::vector<int> &getPorts();
 
-    // private:
     std::vector<std::string> host_;
     std::vector<int> port_;
     std::vector<std::string> server_names_;
@@ -68,7 +66,7 @@ class Config {
   const ServerConf *getServConfig(int port, const std::string &host);
   const LocConf &getLocationConfig(const ServerConf *serv_conf, const std::string &path) const;
   int getLimitConnection() const;
-  // private:
+
   int limit_connection_;
   std::size_t max_body_size;
   std::string root_;

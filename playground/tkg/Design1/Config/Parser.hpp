@@ -48,8 +48,16 @@ class Parser {
   Config parse(const char *conf_file);
   void printTokens();
   // void printConf();
+
+  Config conf_;
+  std::vector<Token> tokens_;
+  size_t idx_;
+  std::map<std::string, void (Parser::*)()> directives_;
+  std::stack<enum scope> scope_;
+
+ private:
+  void lexer(std::string &input);
   bool expectTokenType(Token &tok, Token::t_TK_type type);
-  void setRedirect(std::string &status, std::string &uri, scope scp);
   void analyseLimitConnection();
   void analyseServer();
   void analyseListen();
@@ -64,17 +72,9 @@ class Parser {
   void analyseMaxBodySize();
   void setHost(std::string &host);
   void setPort(std::string &port);
-  void setErrorPages(std::vector<std::string> &status, std::string &path);
+  void setRedirect(std::string &status, std::string &uri, scope scp);
 
-  Config conf_;
-  std::vector<Token> tokens_;
-  size_t idx_;
-  std::map<std::string, void (Parser::*)()> directives_;
-  std::stack<enum scope> scope_;
-  // static std::string kReserveChars;
-
- private:
-  void lexer(std::string &input);
+  Token &readToken(void);
   bool isReservedChar(char c);
   bool isDirective(Token &tok);
   void skipSpaces(std::string &itr);
@@ -82,7 +82,7 @@ class Parser {
   void addStringToken(std::string &itr);
   void addToken(Token::t_TK_type type, std::string &str);
   Token::t_TK_type getReserveCharType(std::string &str);
-  Token &readToken(void);
+
   static const std::string kReserved;
   static const std::string kDefaultIP;
   static const int kDefaultPort;

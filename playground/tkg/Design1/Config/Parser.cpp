@@ -173,14 +173,12 @@ void Parser::analyseIndex() {
       tok = readToken();
     }
   } else if (scope_.top() == SERVER) {
-    // when scope is server
     while (expectTokenType(tok, Token::STRING)) {
       ServConf &serv = conf_.server_confs_.back();
       serv.index_.push_back(tok.str_);
       tok = readToken();
     }
   } else if (scope_.top() == LOCATION) {
-    // when scope is location
     while (expectTokenType(tok, Token::STRING)) {
       LocConf &loc = conf_.server_confs_.back().location_confs_.back();
       loc.index_.push_back(tok.str_);
@@ -214,12 +212,10 @@ void Parser::analyseAutoindex() {
   if (scope_.top() == GENERAL) {
     setAutoindex(conf_, tok.str_);
   } else if (scope_.top() == SERVER) {
-    // when scope is server
     ServConf &serv = conf_.server_confs_.back();
     setAutoindex(serv, tok.str_);
 
   } else if (scope_.top() == LOCATION) {
-    // when scope is location
     LocConf &loc = conf_.server_confs_.back().location_confs_.back();
     setAutoindex(loc, tok.str_);
   }
@@ -229,33 +225,13 @@ void Parser::analyseAutoindex() {
   }
 }
 
-void Parser::setErrorPages(std::vector<std::string> &status, std::string &path) {
-  if (scope_.top() == GENERAL) {
-    // when scope is server
-    for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
-      if (conf_.error_pages_.find(*itr) != conf_.error_pages_.end()) {
-        throw std::runtime_error("error_page: duplicate erro_page path");
-      }
-      conf_.error_pages_[*itr] = path;
+template <class T>
+void setErrorPages(T conf, std::vector<std::string> &status, std::string &path) {
+  for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
+    if (conf.error_pages_.find(*itr) != conf.error_pages_.end()) {
+      throw std::runtime_error("error_page: duplicate erro_page path");
     }
-  } else if (scope_.top() == SERVER) {
-    // when scope is server
-    ServConf &serv = conf_.server_confs_.back();
-    for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
-      if (serv.error_pages_.find(*itr) != serv.error_pages_.end()) {
-        throw std::runtime_error("error_page: duplicate erro_page path");
-      }
-      serv.error_pages_[*itr] = path;
-    }
-  } else if (scope_.top() == LOCATION) {
-    // when scope is location
-    LocConf &loc = conf_.server_confs_.back().location_confs_.back();
-    for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
-      if (loc.error_pages_.find(*itr) != loc.error_pages_.end()) {
-        throw std::runtime_error("error_page: duplicate erro_page path");
-      }
-      loc.error_pages_[*itr] = path;
-    }
+    conf.error_pages_[*itr] = path;
   }
 }
 
@@ -276,7 +252,15 @@ void Parser::analyseErrorPage() {
   if (!isPath(tok.str_)) {
     throw std::runtime_error("error_page: invalid path");
   }
-  setErrorPages(status, tok.str_);
+  if (scope_.top() == GENERAL) {
+    setErrorPages(conf_, status, tok.str_);
+  } else if (scope_.top() == SERVER) {
+    ServConf &serv = conf_.server_confs_.back();
+    setErrorPages(serv, status, tok.str_);
+  } else if (scope_.top() == LOCATION) {
+    LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+    setErrorPages(loc, status, tok.str_);
+  }
   tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
     throw std::runtime_error("error_page: invalid grammar, need semicolon");
@@ -319,11 +303,9 @@ void Parser::analyseMaxBodySize() {
   if (scope_.top() == GENERAL) {
     sstream >> conf_.max_body_size;
   } else if (scope_.top() == SERVER) {
-    // when scope is server
     ServConf &serv = conf_.server_confs_.back();
     sstream >> serv.max_body_size;
   } else if (scope_.top() == LOCATION) {
-    // when scope is location
     LocConf &loc = conf_.server_confs_.back().location_confs_.back();
     sstream >> loc.max_body_size;
   }

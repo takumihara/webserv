@@ -85,7 +85,6 @@ bool isServernameDuplication(Config &conf) {
        serv++) {
     for (std::vector<std::string>::iterator name = serv->server_names_.begin(); name != serv->server_names_.end();
          name++) {
-      std::cout << *name << std::endl;
       if (checklist.find(*name) != checklist.end()) return false;
       checklist[*name] = true;
     }
