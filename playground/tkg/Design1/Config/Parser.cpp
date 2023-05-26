@@ -11,7 +11,6 @@
 
 #include "../debug.hpp"
 #include "Config.hpp"
-#include "Parser.hpp"
 #include "validation.h"
 
 const std::string Parser::kReserved = ";{}";
@@ -52,13 +51,13 @@ void Parser::analyseServer() {
   if (!expectTokenType(tok, Token::OPEN_BRACE)) {
     throw std::runtime_error("server: invalid grammar, need Open brace");
   }
-  conf_.server_confs_.push_back(ServConf(conf_));
+  conf_.server_confs_.push_back(ServerConf(conf_.common_));
   scope_.push(SERVER);
   return;
 }
 
 void Parser::setHost(std::string &host) {
-  ServConf &serv_conf = conf_.server_confs_.back();
+  ServerConf &serv_conf = conf_.server_confs_.back();
   if (host == "")
     serv_conf.host_.push_back(kDefaultIP);
   else
@@ -66,7 +65,7 @@ void Parser::setHost(std::string &host) {
 }
 
 void Parser::setPort(std::string &port) {
-  ServConf &serv_conf = conf_.server_confs_.back();
+  ServerConf &serv_conf = conf_.server_confs_.back();
   if (port == "")
     serv_conf.port_.push_back(kDefaultPort);
   else
@@ -111,7 +110,7 @@ void Parser::analyseServerName() {
     throw std::runtime_error("server_name: invalid type");
   }
   while (expectTokenType(tok, Token::STRING)) {
-    ServConf &serv = conf_.server_confs_.back();
+    ServerConf &serv = conf_.server_confs_.back();
     serv.server_names_.push_back(tok.str_);
     tok = readToken();
   }
@@ -128,12 +127,12 @@ void Parser::analyseRoot() {
   }
   if (scope_.top() == SERVER) {
     // when scope is server
-    ServConf &serv = conf_.server_confs_.back();
-    serv.root_ = tok.str_;
+    ServerConf &serv = conf_.server_confs_.back();
+    serv.common_.root_ = tok.str_;
   } else if (scope_.top() == LOCATION) {
     // when scope is location
-    LocConf &loc = conf_.server_confs_.back().location_confs_.back();
-    loc.root_ = tok.str_;
+    LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
+    loc.common_.root_ = tok.str_;
   }
   tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
@@ -155,8 +154,8 @@ void Parser::analyseLocation() {
   if (!expectTokenType(tok, Token::OPEN_BRACE)) {
     throw std::runtime_error("location: invalid grammar, need Open brace");
   }
-  ServConf &serv = conf_.server_confs_.back();
-  serv.location_confs_.push_back(LocConf(path, serv));
+  ServerConf &serv = conf_.server_confs_.back();
+  serv.location_confs_.push_back(LocationConf(path, serv.redirect_, serv.common_));
   scope_.push(LOCATION);
   return;
 }
@@ -169,19 +168,19 @@ void Parser::analyseIndex() {
   }
   if (scope_.top() == GENERAL) {
     while (expectTokenType(tok, Token::STRING)) {
-      conf_.index_.push_back(tok.str_);
+      conf_.common_.index_.push_back(tok.str_);
       tok = readToken();
     }
   } else if (scope_.top() == SERVER) {
     while (expectTokenType(tok, Token::STRING)) {
-      ServConf &serv = conf_.server_confs_.back();
-      serv.index_.push_back(tok.str_);
+      ServerConf &serv = conf_.server_confs_.back();
+      serv.common_.index_.push_back(tok.str_);
       tok = readToken();
     }
   } else if (scope_.top() == LOCATION) {
     while (expectTokenType(tok, Token::STRING)) {
-      LocConf &loc = conf_.server_confs_.back().location_confs_.back();
-      loc.index_.push_back(tok.str_);
+      LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
+      loc.common_.index_.push_back(tok.str_);
       tok = readToken();
     }
   } else {
@@ -195,9 +194,9 @@ void Parser::analyseIndex() {
 template <class T>
 void setAutoindex(T conf, const std::string &flag) {
   if (flag == "on")
-    conf.autoindex_ = true;
+    conf.common_.autoindex_ = true;
   else if (flag == "off")
-    conf.autoindex_ = false;
+    conf.common_.autoindex_ = false;
   else {
     throw std::runtime_error("autoindex: invalid value");
   }
@@ -212,11 +211,11 @@ void Parser::analyseAutoindex() {
   if (scope_.top() == GENERAL) {
     setAutoindex(conf_, tok.str_);
   } else if (scope_.top() == SERVER) {
-    ServConf &serv = conf_.server_confs_.back();
+    ServerConf &serv = conf_.server_confs_.back();
     setAutoindex(serv, tok.str_);
 
   } else if (scope_.top() == LOCATION) {
-    LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+    LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
     setAutoindex(loc, tok.str_);
   }
   tok = readToken();
@@ -228,10 +227,10 @@ void Parser::analyseAutoindex() {
 template <class T>
 void setErrorPages(T conf, std::vector<std::string> &status, std::string &path) {
   for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
-    if (conf.error_pages_.find(*itr) != conf.error_pages_.end()) {
+    if (conf.common_.error_pages_.find(*itr) != conf.common_.error_pages_.end()) {
       throw std::runtime_error("error_page: duplicate erro_page path");
     }
-    conf.error_pages_[*itr] = path;
+    conf.common_.error_pages_[*itr] = path;
   }
 }
 
@@ -255,10 +254,10 @@ void Parser::analyseErrorPage() {
   if (scope_.top() == GENERAL) {
     setErrorPages(conf_, status, tok.str_);
   } else if (scope_.top() == SERVER) {
-    ServConf &serv = conf_.server_confs_.back();
+    ServerConf &serv = conf_.server_confs_.back();
     setErrorPages(serv, status, tok.str_);
   } else if (scope_.top() == LOCATION) {
-    LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+    LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
     setErrorPages(loc, status, tok.str_);
   }
   tok = readToken();
@@ -269,10 +268,10 @@ void Parser::analyseErrorPage() {
 
 void Parser::setRedirect(std::string &status, std::string &uri, scope scp) {
   if (scp == SERVER) {
-    Config::ServConf &serv = conf_.server_confs_.back();
+    ServerConf &serv = conf_.server_confs_.back();
     serv.redirect_ = std::pair<std::string, std::string>(status, uri);
   } else if (scp == LOCATION) {
-    Config::LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+    LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
     loc.redirect_ = std::pair<std::string, std::string>(status, uri);
   } else {
     throw std::runtime_error("redirect: invalid scope");
@@ -301,13 +300,13 @@ void Parser::analyseMaxBodySize() {
   }
   std::stringstream sstream(tok.str_);
   if (scope_.top() == GENERAL) {
-    sstream >> conf_.max_body_size;
+    sstream >> conf_.common_.max_body_size_;
   } else if (scope_.top() == SERVER) {
-    ServConf &serv = conf_.server_confs_.back();
-    sstream >> serv.max_body_size;
+    ServerConf &serv = conf_.server_confs_.back();
+    sstream >> serv.common_.max_body_size_;
   } else if (scope_.top() == LOCATION) {
-    LocConf &loc = conf_.server_confs_.back().location_confs_.back();
-    sstream >> loc.max_body_size;
+    LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
+    sstream >> loc.common_.max_body_size_;
   }
   tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
@@ -320,7 +319,7 @@ void Parser::analyseLimitExcept() {
   if (scope_.top() != LOCATION) {
     throw std::runtime_error("error_page: invalid scope");
   }
-  LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+  LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
   Token tok = readToken();
   while (expectTokenType(tok, Token::STRING) && isMethod(tok.str_)) {
     loc.allowed_methods_[tok.str_] = true;
@@ -338,7 +337,7 @@ void Parser::analyseCGIExtension() {
   if (scope_.top() != LOCATION) {
     throw std::runtime_error("cgi_extension: invalid scope");
   }
-  LocConf &loc = conf_.server_confs_.back().location_confs_.back();
+  LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
   Token tok = readToken();
   while (expectTokenType(tok, Token::STRING) && isCGIExtension(tok.str_)) {
     loc.cgi_exts_.push_back(tok.str_);

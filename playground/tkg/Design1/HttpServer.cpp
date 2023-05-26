@@ -7,7 +7,7 @@
 int HttpServer::openPort() {
   int sock_fd;
   struct sockaddr_in add;
-  for (std::map<int, std::vector<Config::ServConf *> >::iterator itr = conf_.port_servConf_map_.begin();
+  for (std::map<int, std::vector<ServerConf *> >::iterator itr = conf_.port_servConf_map_.begin();
        itr != conf_.port_servConf_map_.end(); itr++) {
     if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
       throw std::runtime_error("socket error");

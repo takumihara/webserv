@@ -13,18 +13,7 @@ void printStrings(const char *prefix, std::vector<std::string> &strs) {
   std::cout << std::endl;
 }
 
-void Config::LocConf::printAllowedMethod() {
-  std::cout << "      Method: ";
-  if (allowed_methods_.empty())
-    std::cout << "All";
-  else {
-    for (std::map<std::string, bool>::iterator itr = allowed_methods_.begin(); itr != allowed_methods_.end(); itr++) {
-      std::cout << itr->first << " ";
-    }
-  }
-  std::cout << std::endl;
-}
-
+// Config class method
 void Config::makePortServConfMap() {
   for (std::vector<ServerConf>::iterator serv_itr = server_confs_.begin(); serv_itr != server_confs_.end();
        serv_itr++) {
@@ -36,52 +25,17 @@ void Config::makePortServConfMap() {
 
 void Config::printConfig() {
   std::cout << "connection limits: " << limit_connection_ << std::endl;
-  std::cout << "max_body_size: " << max_body_size << std::endl;
+  std::cout << "max_body_size: " << common_.max_body_size_ << std::endl;
   printAutoindex(this, 0);
 
-  for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
+  for (std::map<std::string, std::string>::iterator itr = common_.error_pages_.begin();
+       itr != common_.error_pages_.end(); itr++) {
     std::cout << "error_status and path: " << itr->first << " " << itr->second << std::endl;
   }
   int i = 0;
-  for (std::vector<ServConf>::iterator itr = server_confs_.begin(); itr != server_confs_.end(); itr++, i++) {
+  for (std::vector<ServerConf>::iterator itr = server_confs_.begin(); itr != server_confs_.end(); itr++, i++) {
     std::cout << "server" << i << std::endl;
     itr->printServConf();
-  }
-}
-
-void Config::ServerConf::printServConf() {
-  std::cout << "  server" << std::endl;
-  printStrings("    server_name: ", server_names_);
-  printRedirect(this, 2);
-  std::cout << "    max_body_size: " << max_body_size << std::endl;
-  printStrings("    index: ", index_);
-  printAutoindex(this, 2);
-  for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
-    std::cout << "    error_status and path: " << itr->first << " " << itr->second << std::endl;
-  }
-  for (size_t i = 0; i < host_.size(); i++) {
-    std::cout << "    listen host: " << std::setw(15) << std::left << host_[i];
-    std::cout << "    port: " << port_[i] << std::endl;
-  }
-  int j = 0;
-  for (std::vector<LocConf>::iterator itr2 = location_confs_.begin(); itr2 != location_confs_.end(); itr2++, j++) {
-    std::cout << "    location" << j << std::endl;
-    itr2->printLocationConf();
-  }
-}
-
-void Config::ServerConf::LocationConf::printLocationConf() {
-  std::cout << "      path: " << this->path_ << std::endl;
-  printStrings("      cgi_ext: ", this->cgi_exts_);
-  printRedirect(this, 3);
-  std::cout << "      max_body_size: " << max_body_size << std::endl;
-  std::cout << "      root: " << this->root_ << std::endl;
-  printStrings("      index: ", this->index_);
-  printAutoindex(this, 3);
-  printAllowedMethod();
-
-  for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
-    std::cout << "      error_status and path: " << itr->first << " " << itr->second << std::endl;
   }
 }
 
@@ -96,8 +50,8 @@ void Config::printPortServConfMap() {
   }
 }
 
-const Config::ServerConf *Config::getServConfig(int port, const std::string &host) {
-  std::vector<ServConf *> servs = port_servConf_map_[port];
+const ServerConf *Config::getServConfig(int port, const std::string &host) {
+  std::vector<ServerConf *> servs = port_servConf_map_[port];
   for (std::vector<ServerConf *>::iterator serv_itr = servs.begin(); serv_itr != servs.end(); serv_itr++) {
     std::vector<std::string> &names = (*serv_itr)->getServerNames();
     for (std::vector<std::string>::iterator name_itr = names.begin(); name_itr != names.end(); name_itr++) {
@@ -107,12 +61,75 @@ const Config::ServerConf *Config::getServConfig(int port, const std::string &hos
   return servs[0];
 }
 
-const Config::ServerConf::LocationConf &Config::getLocationConfig(const Config::ServerConf *serv_conf,
-                                                                  const std::string &path) const {
-  const std::vector<Config::ServerConf::LocationConf> &locs = serv_conf->location_confs_;
-  std::vector<LocConf>::const_iterator ret = locs.begin();
+int Config::getLimitConnection() const { return limit_connection_; }
+
+// ServerConfig class method
+void ServerConf::printServConf() {
+  std::cout << "  server" << std::endl;
+  printStrings("    server_name: ", server_names_);
+  printRedirect(this, 2);
+  std::cout << "    max_body_size: " << common_.max_body_size_ << std::endl;
+  printStrings("    index: ", common_.index_);
+  printAutoindex(this, 2);
+  for (std::map<std::string, std::string>::iterator itr = common_.error_pages_.begin();
+       itr != common_.error_pages_.end(); itr++) {
+    std::cout << "    error_status and path: " << itr->first << " " << itr->second << std::endl;
+  }
+  for (size_t i = 0; i < host_.size(); i++) {
+    std::cout << "    listen host: " << std::setw(15) << std::left << host_[i];
+    std::cout << "    port: " << port_[i] << std::endl;
+  }
+  int j = 0;
+  for (std::vector<LocationConf>::iterator itr2 = location_confs_.begin(); itr2 != location_confs_.end(); itr2++, j++) {
+    std::cout << "    location" << j << std::endl;
+    itr2->printLocationConf();
+  }
+}
+
+std::vector<std::string> &ServerConf::getHostNames() { return host_; }
+
+std::vector<int> &ServerConf::getPorts() { return port_; }
+
+std::vector<std::string> &ServerConf::getServerNames() { return server_names_; }
+
+// LocationConf class method
+void LocationConf::printAllowedMethod() {
+  std::cout << "      Method: ";
+  if (allowed_methods_.empty())
+    std::cout << "All";
+  else {
+    for (std::map<std::string, bool>::iterator itr = allowed_methods_.begin(); itr != allowed_methods_.end(); itr++) {
+      std::cout << itr->first << " ";
+    }
+  }
+  std::cout << std::endl;
+}
+
+std::map<std::string, bool> &LocationConf::getAllowedMethods() { return allowed_methods_; }
+
+std::vector<std::string> &LocationConf::getCGIExtensions() { return cgi_exts_; }
+
+void LocationConf::printLocationConf() {
+  std::cout << "      path: " << this->path_ << std::endl;
+  printStrings("      cgi_ext: ", this->cgi_exts_);
+  printRedirect(this, 3);
+  std::cout << "      max_body_size: " << this->common_.max_body_size_ << std::endl;
+  std::cout << "      root: " << this->common_.root_ << std::endl;
+  printStrings("      index: ", this->common_.index_);
+  printAutoindex(this, 3);
+  printAllowedMethod();
+
+  for (std::map<std::string, std::string>::iterator itr = common_.error_pages_.begin();
+       itr != common_.error_pages_.end(); itr++) {
+    std::cout << "      error_status and path: " << itr->first << " " << itr->second << std::endl;
+  }
+}
+
+const LocationConf &ServerConf::getLocationConfig(const std::string &path) const {
+  const std::vector<LocationConf> &locs = location_confs_;
+  std::vector<LocationConf>::const_iterator ret = locs.begin();
   size_t match_len = 0;
-  for (std::vector<LocConf>::const_iterator loc_itr = locs.begin(); loc_itr != locs.end(); loc_itr++) {
+  for (std::vector<LocationConf>::const_iterator loc_itr = locs.begin(); loc_itr != locs.end(); loc_itr++) {
     if (path.find(loc_itr->path_) == 0 && match_len < loc_itr->path_.size()) {
       ret = loc_itr;
       match_len = loc_itr->path_.size();
@@ -120,11 +137,3 @@ const Config::ServerConf::LocationConf &Config::getLocationConfig(const Config::
   }
   return *ret;
 }
-
-int Config::getLimitConnection() const { return limit_connection_; }
-
-std::vector<std::string> &Config::ServerConf::getHostNames() { return host_; }
-
-std::vector<int> &Config::ServerConf::getPorts() { return port_; }
-
-std::vector<std::string> &Config::ServerConf::getServerNames() { return server_names_; }

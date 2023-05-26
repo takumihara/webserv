@@ -86,8 +86,7 @@ bool validatePort(std::string &port) {
 
 bool isServernameDuplication(Config &conf) {
   std::map<std::string, bool> checklist;
-  for (std::vector<Config::ServerConf>::iterator serv = conf.server_confs_.begin(); serv != conf.server_confs_.end();
-       serv++) {
+  for (std::vector<ServerConf>::iterator serv = conf.server_confs_.begin(); serv != conf.server_confs_.end(); serv++) {
     for (std::vector<std::string>::iterator name = serv->server_names_.begin(); name != serv->server_names_.end();
          name++) {
       if (checklist.find(*name) != checklist.end()) return false;

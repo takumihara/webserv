@@ -22,8 +22,8 @@ class Token {
 
 class Parser {
  public:
-  typedef Config::ServerConf ServConf;
-  typedef Config::ServerConf::LocationConf LocConf;
+  // typedef S ServConf;
+  // typedef Config::ServerConf::LocationConf LocConf;
 
   Parser() : idx_(0) {
     scope_.push(GENERAL);
