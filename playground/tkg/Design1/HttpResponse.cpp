@@ -43,7 +43,8 @@ void HttpResponse::refresh(EventManager &em) {
   (void)port_;
   em.addChangedEvents((struct kevent){sock_fd_, EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
   em.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_ENABLE, 0, 0, 0});
-  em.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_ENABLE, EventManager::kTimeoutDuration, 0, 0});
+  em.addChangedEvents(
+      (struct kevent){sock_fd_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
   response_ = "";
   raw_data_ = "";
 }

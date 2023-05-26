@@ -104,5 +104,6 @@ void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
     request_.refresh();
     response_.createResponse(result_);
     response_.sendResponse(event_manager);
+    request_.headers_.clear();
   }
 }

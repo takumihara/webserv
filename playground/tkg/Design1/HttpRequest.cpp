@@ -32,7 +32,7 @@ bool HttpRequest::readRequest(EventManager &event_manager) {
 
     std::cout << "read from socket(fd:" << sock_fd_ << ")"
               << ":'" << escape(raw_data_) << "'" << std::endl;
-
+    std::cout << "state: " << state_ << std::endl;
     if (state_ == ReadingStartLine && isActionable()) {
       trimToEndingChars();
       parseStartline();
@@ -180,6 +180,7 @@ bool HttpRequest::readChunkedBody() {
 
       if (chunked_size_ == 0) {
         rest_ = raw_data_.substr(end + 2);
+        chunked_reading_state_ = ReadingChunkedSize;
         return true;
       }
 
@@ -249,7 +250,7 @@ void HttpRequest::moveToNextState() {
       break;
     case ReadingBody:
     case ReadingChunkedBody:
-      state_ = End;
+      state_ = ReadingStartLine;
       break;
     default:
       throw std::runtime_error("invalid HttpRequest state");
