@@ -19,7 +19,10 @@
 #include <vector>
 
 #include "./Config/Config.hpp"
-#include "AbstractObservee.hpp"
+#include "./Observee/CGI.hpp"
+#include "./Observee/ConnectionSocket.hpp"
+#include "./Observee/Observee.hpp"
+#include "./Observee/ServerSocket.hpp"
 
 #define PORT 80
 #define max(x, y) ((x) > (y) ? (x) : (y))
@@ -31,24 +34,22 @@ class EventManager {
 
   EventManager();
   void eventLoop();
-  void add(const std::pair<t_id, t_type> &key, AbstractObservee *obs);
+  void add(const std::pair<t_id, t_type> &key, Observee *obs);
   void remove(const std::pair<t_id, t_type> &key);
-  void addServerSocket(int fd, int port, Config &conf);
-  void removeServerSocket(int fd);
-  void addConnectionSocket(int fd, int port, Config &conf);
-  void removeConnectionSocket(int fd);
-  void addCgiConnectionPair(int fd, ConnectionSocket *con);
-  void removeCgiConnectionPair(int fd);
+  // void addServerSocket(int fd, int port, Config &conf);
+  // void removeServerSocket(int fd);
+  // void addConnectionSocket(int fd, int port, Config &conf);
+  // void removeConnectionSocket(int fd);
+  // void addCgiConnectionPair(int fd, ConnectionSocket *con);
+  // void removeCgiConnectionPair(int fd);
   void addChangedEvents(struct kevent kevent);
   void registerServerEvent(int fd, int port, Config &conf);
 
-  static const int kTimeoutDuration = 10;
+  static const int kTimeoutDuration = 20;
 
  private:
   void updateKqueue();
   void handleEvent(struct kevent ev);
-  bool isServerFd(int fd);
-  bool isCGIFd(int fd);
   void clearEvlist(struct kevent *evlist);
   void handleTimeout(struct kevent ev);
   struct s_eventInfo {
@@ -59,7 +60,7 @@ class EventManager {
 
   int kq_;
   std::vector<struct kevent> changed_events_;
-  std::map<std::pair<t_id, t_type>, AbstractObservee *> observees_;
+  std::map<std::pair<t_id, t_type>, Observee *> observees_;
   static const int kMaxEventSize = 100;
 };
 

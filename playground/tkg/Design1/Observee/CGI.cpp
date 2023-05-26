@@ -1,3 +1,5 @@
+#include "CGI.hpp"
+
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <signal.h>
@@ -15,21 +17,12 @@
 #include <map>
 #include <stdexcept>
 
-#include "AbstractObservee.hpp"
-#include "EventManager.hpp"
-
 void CGI::shutdown(EventManager &em) {
   DEBUG_PUTS("CGI shutdown");
   close(id_);
   em.addChangedEvents((struct kevent){id_, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
   kill(pid_, SIGINT);
   waitpid(pid_, NULL, 0);
-  // if (parent_) {
-  //  close(parent_->id_);  // parent_->obliviateChild(this);]
-  em.addChangedEvents(
-      (struct kevent){parent_->id_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
-  //}
-  parent_->obliviateChild(this);
   em.remove(std::pair<t_id, t_type>(id_, FD));
 }
 

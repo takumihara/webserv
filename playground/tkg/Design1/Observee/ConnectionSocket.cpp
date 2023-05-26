@@ -1,3 +1,5 @@
+#include "ConnectionSocket.hpp"
+
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -14,8 +16,7 @@
 #include <map>
 #include <stdexcept>
 
-#include "AbstractObservee.hpp"
-#include "EventManager.hpp"
+#include "CGI.hpp"
 
 static std::string readFile(const char *filename) {
   std::ifstream ifs(filename);
@@ -26,9 +27,6 @@ static std::string readFile(const char *filename) {
 }
 
 void ConnectionSocket::shutdown(EventManager &em) {
-  // for (std::set<AbstractObservee *>::iterator child = children_.begin(); child != children_.end(); child++) {
-  //   (*child)->shutdown(em);
-  // }
   DEBUG_PUTS("ConnectionSocket shutdown");
   close(id_);
   em.addChangedEvents((struct kevent){id_, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
@@ -64,11 +62,8 @@ void ConnectionSocket::execCGI(const std::string &path, EventManager &event_mana
     close(fd[1]);
     std::cout << "pid: " << pid << std::endl;
     CGI *obs = makeCGI(need_fd, pid);
-    monitorChild(obs);
     std::cout << "need_fd: " << need_fd << "  pid: " << pid << std::endl;
     event_manager.add(std::pair<t_id, t_type>(need_fd, FD), obs);
-    event_manager.addChangedEvents((struct kevent){id_, EVFILT_TIMER, EV_DISABLE, 0, 0, 0});
-    event_manager.addChangedEvents((struct kevent){id_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
     event_manager.addChangedEvents((struct kevent){need_fd, EVFILT_READ, EV_ADD, 0, 0, 0});
     event_manager.addChangedEvents(
         (struct kevent){need_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});

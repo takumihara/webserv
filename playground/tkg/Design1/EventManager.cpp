@@ -1,7 +1,7 @@
 #include "EventManager.hpp"
 
 #include "./Config/Config.hpp"
-#include "AbstractObservee.hpp"
+#include "Observee/Observee.hpp"
 #include "debug.hpp"
 
 EventManager::EventManager() {
@@ -13,7 +13,7 @@ EventManager::EventManager() {
 
 void EventManager::addChangedEvents(struct kevent kevent) { changed_events_.push_back(kevent); }
 
-void EventManager::add(const std::pair<t_id, t_type> &key, AbstractObservee *obs) { observees_[key] = obs; }
+void EventManager::add(const std::pair<t_id, t_type> &key, Observee *obs) { observees_[key] = obs; }
 
 void EventManager::remove(const std::pair<t_id, t_type> &key) {
   delete observees_[key];
@@ -27,7 +27,7 @@ void EventManager::registerServerEvent(int fd, int port, Config &conf) {
   EV_SET(&chlist, fd, EVFILT_READ, EV_ADD, 0, 0, 0);
   DEBUG_PUTS("");
   kevent(kq_, &chlist, 1, NULL, 0, NULL);
-  AbstractObservee *obs = new ServerSocket(fd, port, conf);
+  Observee *obs = new ServerSocket(fd, port, conf);
   std::cout << "sock fd: " << fd << std::endl;
   add(std::pair<t_id, t_type>(fd, FD), obs);
   observees_[std::pair<t_id, t_type>(fd, FD)];
@@ -89,7 +89,6 @@ void EventManager::handleEvent(struct kevent ev) {
     DEBUG_PUTS("timeout");
     handleTimeout(ev);
   } else {
-    std::cout << "koko \n";
     observees_[std::pair<t_id, t_type>(ev.ident, getType(ev.filter))]->notify(*this, ev);
   }
   DEBUG_PUTS("END HANDLE EVENT");

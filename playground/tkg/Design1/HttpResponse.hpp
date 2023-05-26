@@ -21,7 +21,7 @@ class HttpResponse {
   void sendResponse(EventManager &em);
   void refresh(EventManager &em);
 
- private:
+  // private:
   int sock_fd_;
   int port_;
   // Config &conf_;

@@ -57,6 +57,7 @@ int main(int argc, char **argv) {
   for (int i = 2; i < argc; i++) {
     std::string request = getRequest(argv[i]);
     int write_res = sendto(sock, request.c_str(), request.size(), 0, NULL, 0);
+    write_res = sendto(sock, request.c_str(), request.size(), 0, NULL, 0);
     if (write_res == -1) {
       perror("write");
     } else {
@@ -65,6 +66,7 @@ int main(int argc, char **argv) {
                 << "(fd:" << sock << "): '"
                 << " (size:" << write_res << ")" << std::endl;
     }
+    sleep(1);
     char response[1000];
     memset(response, 0, 1000);
     ssize_t res = read(sock, response, 1000);
@@ -72,9 +74,17 @@ int main(int argc, char **argv) {
       perror("read");
       exit(1);
     }
-    std::cout << "response received"
+    std::cout << "response1 received"
               << "(fd:" << sock << "): '" << escape(response) << "' (size: " << res << ")" << std::endl;
-    sleep(3);
+    memset(response, 0, 1000);
+    res = read(sock, response, 1000);
+    if (res == -1) {
+      perror("read");
+      exit(1);
+    }
+    std::cout << "response2 received"
+              << "(fd:" << sock << "): '" << escape(response) << "' (size: " << res << ")" << std::endl;
+    sleep(1);
   }
 
   freeaddrinfo(res);
@@ -103,13 +113,13 @@ n ␍␊chunks.    (eleven octets of data)
 std::string getRequest(const std::string &arg) {
   std::string request = "";
   if (arg == "chunked") {
-    request += "POST /inf.cgi HTTP/1.1\r\n";
+    request += "POST /index.html HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
     request += "Transfer-Encoding: chunked\r\n ";
     request += "Content-Type: text/plain\r\n";
     request += "\r\n";
-    request += "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n\r\n";
-    request += "\r\n";
+    request += "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n";
+    // request += "\r\n";
   } else {
     request += "POST /index.html HTTP/1.1\r\n";
     // request += "POST /index.html HTTP/1.1\r\n";

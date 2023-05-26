@@ -58,8 +58,9 @@ bool HttpRequest::readRequest(EventManager &event_manager) {
 
     if (finishedReading) {
       DEBUG_PRINTF("FINISHED READING: %s \n", escape(body_).c_str());
-      event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
-      event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL});
+      moveToNextState();
+      // event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+      // event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL});
     }
   }
 
@@ -178,6 +179,7 @@ bool HttpRequest::readChunkedBody() {
       ss >> std::hex >> chunked_size_;
 
       if (chunked_size_ == 0) {
+        rest_ = raw_data_.substr(end + 2);
         return true;
       }
 
@@ -244,6 +246,10 @@ void HttpRequest::moveToNextState() {
       } else {
         state_ = ReadingBody;
       }
+      break;
+    case ReadingBody:
+    case ReadingChunkedBody:
+      state_ = End;
       break;
     default:
       throw std::runtime_error("invalid HttpRequest state");

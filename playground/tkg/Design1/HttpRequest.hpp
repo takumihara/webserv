@@ -18,7 +18,7 @@ class EventManager;
 
 class HttpRequest {
  public:
-  enum State { ReadingStartLine, ReadingHeaders, ReadingChunkedBody, ReadingBody };
+  enum State { ReadingStartLine, ReadingHeaders, ReadingChunkedBody, ReadingBody, End };
   enum ReadingChunkedState { ReadingChunkedSize, ReadingChunkedData };
   struct RequestLine {
     std::string method;
