@@ -14,11 +14,12 @@ class Config {
      public:
       LocationConf() : path_("/"), root_("html") {}
       LocationConf(std::string &path, std::string root) : path_(path), root_(root) {}
-
+      void printLocationConf();
       // private:
       std::string path_;
       std::string root_;
       std::vector<std::string> index_;
+      std::map<std::string, std::string> error_pages_;
     };
     void printServConf();
     std::vector<std::string> &getServerNames();
@@ -31,6 +32,7 @@ class Config {
     std::vector<std::string> server_names_;
     std::string root_;
     std::vector<std::string> index_;
+    std::map<std::string, std::string> error_pages_;
     std::vector<LocationConf> location_confs_;
   };
   typedef Config::ServerConf ServConf;
@@ -44,6 +46,9 @@ class Config {
   int getLimitConnection() const;
   // private:
   int limit_connection_;
+  std::string root_;
+  std::vector<std::string> index_;
+  std::map<std::string, std::string> error_pages_;
   std::vector<ServerConf> server_confs_;
   std::map<int, std::vector<ServerConf *> > port_servConf_map_;
 };

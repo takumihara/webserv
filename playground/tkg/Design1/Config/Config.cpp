@@ -5,9 +5,12 @@
 #include <iostream>
 
 void printStrings(const char *prefix, std::vector<std::string> &strs) {
+  if (strs.size() == 0) return;
+  std::cout << prefix;
   for (std::vector<std::string>::iterator itr = strs.begin(); itr != strs.end(); itr++) {
-    std::cout << prefix << *itr << std::endl;
+    std::cout << *itr << " ";
   }
+  std::cout << std::endl;
 }
 
 void Config::makePortServConfMap() {
@@ -21,6 +24,9 @@ void Config::makePortServConfMap() {
 
 void Config::printConfig() {
   std::cout << "connection limits: " << limit_connection_ << std::endl;
+  for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
+    std::cout << "error_status and path: " << itr->first << " " << itr->second << std::endl;
+  }
   int i = 0;
   for (std::vector<ServConf>::iterator itr = server_confs_.begin(); itr != server_confs_.end(); itr++, i++) {
     std::cout << "server" << i << std::endl;
@@ -32,7 +38,9 @@ void Config::ServerConf::printServConf() {
   std::cout << "  server" << std::endl;
   printStrings("    server_name: ", server_names_);
   printStrings("    index: ", index_);
-
+  for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
+    std::cout << "    error_status and path: " << itr->first << " " << itr->second << std::endl;
+  }
   for (size_t i = 0; i < host_.size(); i++) {
     std::cout << "    listen host: " << std::setw(15) << std::left << host_[i];
     std::cout << "    port: " << port_[i] << std::endl;
@@ -40,11 +48,16 @@ void Config::ServerConf::printServConf() {
   int j = 0;
   for (std::vector<LocConf>::iterator itr2 = location_confs_.begin(); itr2 != location_confs_.end(); itr2++, j++) {
     std::cout << "    location" << j << std::endl;
-    std::cout << "      path: " << itr2->path_ << std::endl;
-    std::cout << "      root: " << itr2->root_ << std::endl;
-    for (std::vector<std::string>::iterator itr3 = itr2->index_.begin(); itr3 != itr2->index_.end(); itr3++) {
-      std::cout << "      index: " << *itr3 << std::endl;
-    }
+    itr2->printLocationConf();
+  }
+}
+
+void Config::ServerConf::LocationConf::printLocationConf() {
+  std::cout << "      path: " << this->path_ << std::endl;
+  std::cout << "      root: " << this->root_ << std::endl;
+  printStrings("      index: ", this->index_);
+  for (std::map<std::string, std::string>::iterator itr = error_pages_.begin(); itr != error_pages_.end(); itr++) {
+    std::cout << "      error_status and path: " << itr->first << " " << itr->second << std::endl;
   }
 }
 
