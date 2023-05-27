@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "const.hpp"
+
 bool in(const std::string &str, const std::string *arr, size_t size) {
   return std::find(arr, arr + size, str) != arr + size;
 }
@@ -31,4 +33,11 @@ std::string escape(const std::string &str) {
     }
   }
   return res;
+}
+
+std::string trimOws(const std::string &str) {
+  std::string::size_type start = str.find_first_not_of(OWS);
+  std::string::size_type end = str.find_last_not_of(OWS);
+  if (start == std::string::npos) return "";
+  return str.substr(start, end - start + 1);
 }

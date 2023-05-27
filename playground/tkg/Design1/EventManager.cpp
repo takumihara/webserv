@@ -76,7 +76,8 @@ void EventManager::updateKqueue() {
   bzero(chlist, sizeof(struct kevent) * size);
   int i = 0;
   for (changed_events_const_iterator itr = changed_events_.begin(); itr != changed_events_.end(); itr++, i++) {
-    DEBUG_PRINTF("fd: %lu(%s:%s), ", (*itr).ident, getEventFilter((*itr).filter).c_str(), getEventFlags((*itr).flags).c_str());
+    DEBUG_PRINTF("fd: %lu(%s:%s), ", (*itr).ident, getEventFilter((*itr).filter).c_str(),
+                 getEventFlags((*itr).flags).c_str());
     EV_SET(&chlist[i], (*itr).ident, (*itr).filter, (*itr).flags, (*itr).fflags, (*itr).data, (*itr).udata);
   }
   DEBUG_PUTS("");
@@ -105,9 +106,13 @@ void EventManager::handleEvent(struct kevent ev) {
         if (finished_reading) {
           connection_sockets_[ev.ident]->process(*this);
         }
+      } catch (const HttpRequest::BadRequestException &e) {
+      } catch (const HttpRequest::NotImplementedException &e) {
+      } catch (const HttpRequest::NotAllowedException &e) {
+      } catch (const HttpRequest::VersionNotSupportedException &e) {
       } catch (std::runtime_error &e) {
         std::cout << e.what() << std::endl;
-        // todo: handle what's necessary(return some response)
+        // todo: handle what's necessary(return some response, i guess 500?)
         close(ev.ident);
         removeConnectionSocket(ev.ident);
         addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
