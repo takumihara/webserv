@@ -13,6 +13,7 @@
 
 #define SP ' '
 #define CRLF "\r\n"
+#define OWS " \t"
 
 class EventManager;
 
@@ -20,19 +21,45 @@ class HttpRequest {
  public:
   enum State { ReadingStartLine, ReadingHeaders, ReadingChunkedBody, ReadingBody };
   enum ReadingChunkedState { ReadingChunkedSize, ReadingChunkedData };
+  enum RequestTargetType { OriginForm, AbsoluteForm, AuthorityForm, AsteriskForm };
+  enum Method { GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH };
+  enum Version { HTTP1_1 };
+  enum TransferEncoding { Chunked, Compress, Deflate, Gzip };
+  struct RequestTarget {
+    RequestTargetType type;
+    // origin form
+    std::string absolutePath;
+    std::string query;
+  };
   struct RequestLine {
-    std::string method;
-    std::string requestTarget;
-    std::string version;
+    Method method;
+    RequestTarget requestTarget;
+    Version version;
+  };
+  struct Host {
+    std::string uri_host;
+    int port;
+  };
+  struct Headers {
+    Host host;
+    size_t content_length;
+    std::vector<TransferEncoding> transferEncodings;
+    std::tm date;
   };
 
-  HttpRequest(int fd, int port) : sock_fd_(fd), port_(port), state_(ReadingStartLine), chunked_size_(0), chunked_reading_state_(ReadingChunkedSize) {}
+  HttpRequest(int fd, int port)
+      : sock_fd_(fd),
+        port_(port),
+        state_(ReadingStartLine),
+        chunked_size_(0),
+        chunked_reading_state_(ReadingChunkedSize) {}
   ~HttpRequest(){};
   bool readRequest(EventManager &em);
   void refresh();
   const std::string &getBody() const;
-  const std::string &getHeaderValue(const std::string &name) const;
-  const std::string &getRequestTarget() const;
+  const Host &getHost() const;
+  const RequestTarget &getRequestTarget() const;
+  bool isChunked();
 
   // private:
   int sock_fd_;
@@ -43,28 +70,29 @@ class HttpRequest {
   State state_;
 
   RequestLine request_line_;
-  // todo: lowercase key
-  std::map<std::string, std::string> headers_;
+  Headers headers_;
   std::string body_;
   size_t chunked_size_;
   ReadingChunkedState chunked_reading_state_;
-
-  static const std::string kSupportedMethods[];
-  static const std::string kSupportedVersions[];
 
   std::string getEndingChars() const;
   void trimToEndingChars();
   void moveToNextState();
 
   void parseStartline();
-  void validateStartLine();
-  bool isValidMethod();
-  bool isValidVersion();
-  bool isValidRequestTarget();
+
+  void assignAndValidateMethod(const std::string &method);
+  void assignAndValidateRequestTarget(const std::string &requestTarget);
+  void assignAndValidateVersion(const std::string &version);
 
   void parseHeaders();
   void validateHeaderName(const std::string &name);
   void validateHeaderValue(const std::string &value);
+  void analyzeHost(const std::string &value);
+  void analyzeContentLength(const std::string &value);
+  void analyzeTransferEncoding(const std::string &value);
+  void analyzeDate(const std::string &value);
+  void analyzeServer(const std::string &value);
 
   void readBody();
   bool readChunkedBody();
