@@ -50,7 +50,7 @@ void Config::printPortServConfMap() {
   }
 }
 
-const ServerConf *Config::getServConfig(int port, const std::string &host) {
+const ServerConf *Config::getServerConf(int port, const std::string &host) {
   std::vector<ServerConf *> servs = port_servConf_map_[port];
   for (std::vector<ServerConf *>::iterator serv_itr = servs.begin(); serv_itr != servs.end(); serv_itr++) {
     std::vector<std::string> &names = (*serv_itr)->getServerNames();
@@ -125,8 +125,8 @@ void LocationConf::printLocationConf() {
   }
 }
 
-const LocationConf &ServerConf::getLocationConfig(const std::string &path) const {
-  const std::vector<LocationConf> &locs = location_confs_;
+const LocationConf &Config::getLocationConf(const ServerConf *serv_conf, const std::string &path) const {
+  const std::vector<LocationConf> &locs = serv_conf->location_confs_;
   std::vector<LocationConf>::const_iterator ret = locs.begin();
   size_t match_len = 0;
   for (std::vector<LocationConf>::const_iterator loc_itr = locs.begin(); loc_itr != locs.end(); loc_itr++) {
