@@ -44,11 +44,11 @@ static std::string readFile(const char *filename) {
 }
 
 void ConnectionSocket::process(EventManager &event_manager) {
-  const Config::ServerConf *serv_conf = conf_.getServConfig(port_, request_.getHost().uri_host);
-  const Config::LocConf &loc_conf = conf_.getLocationConfig(serv_conf, request_.getRequestTarget().absolutePath);
+  const ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
+  const LocationConf &loc_conf = conf_.getLocationConf(serv_conf, request_.getRequestTarget().absolutePath);
 
   // todo: check if file exists
-  const std::string path = "." + loc_conf.root_ + request_.getRequestTarget().absolutePath;
+  const std::string path = "." + loc_conf.common_.root_ + request_.getRequestTarget().absolutePath;
   DEBUG_PRINTF("path: %s\n", path.c_str());
   std::string content;
   if (path.find(".cgi") != std::string::npos) {

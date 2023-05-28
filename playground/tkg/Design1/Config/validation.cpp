@@ -3,8 +3,6 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "Config.hpp"
-
 size_t skipSep(std::string &str, std::string sep, size_t pos) {
   while (str.find(sep, pos) == 0) {
     pos += sep.size();
@@ -40,9 +38,29 @@ bool isAllDigit(const std::string &str) {
   return true;
 }
 
+bool is3xxStatus(const std::string &status) {
+  if (isAllDigit(status) && status[0] == '3') return true;
+  return false;
+}
+
 bool isPath(const std::string &path) {
   // todo: verify valid path
   return path.size() != 0;
+}
+
+bool isURL(const std::string &URL) {
+  // todo: verify valid URL
+  return URL.size() != 0;
+}
+
+bool isMethod(const std::string &method) {
+  if (method == "GET" || method == "POST" || method == "DELETE" || method == "HEAD") return true;
+  return false;
+}
+
+bool isCGIExtension(const std::string &ext) {
+  if (ext == ".cgi" || ext == ".php" || ext == ".py") return true;
+  return false;
 }
 
 bool validateHost(std::string &host) {
@@ -64,4 +82,16 @@ bool validatePort(std::string &port) {
     return true;
   }
   return false;
+}
+
+bool isServernameDuplicate(Config &conf) {
+  std::map<std::string, bool> checklist;
+  for (std::vector<ServerConf>::iterator serv = conf.server_confs_.begin(); serv != conf.server_confs_.end(); serv++) {
+    for (std::vector<std::string>::iterator name = serv->server_names_.begin(); name != serv->server_names_.end();
+         name++) {
+      if (checklist.find(*name) != checklist.end()) return false;
+      checklist[*name] = true;
+    }
+  }
+  return true;
 }
