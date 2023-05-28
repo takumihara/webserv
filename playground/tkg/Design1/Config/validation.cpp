@@ -3,6 +3,9 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "../const.hpp"
+#include "Config.hpp"
+
 size_t skipSep(std::string &str, std::string sep, size_t pos) {
   while (str.find(sep, pos) == 0) {
     pos += sep.size();
@@ -82,6 +85,28 @@ bool validatePort(std::string &port) {
     return true;
   }
   return false;
+}
+
+// todo(thara): this can be more effective
+// token = 1*tchar (https://triple-underscore.github.io/RFC7230-ja.html#field.components)
+bool isToken(const std::string &str) {
+  if (str == "") {
+    return false;
+  }
+  for (std::string::const_iterator itr = str.cbegin(); itr != str.cend(); itr++) {
+    if (tchar().find(*itr) == std::string::npos) return false;
+  }
+  return true;
+}
+
+bool isVchar(const std::string &str) {
+  if (str == "") {
+    return false;
+  }
+  for (std::string::const_iterator itr = str.cbegin(); itr != str.cend(); itr++) {
+    if (vchar().find(*itr) == std::string::npos) return false;
+  }
+  return true;
 }
 
 bool isServernameDuplicate(Config &conf) {
