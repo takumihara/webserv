@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "../const.hpp"
 #include "Config.hpp"
 
 size_t skipSep(std::string &str, std::string sep, size_t pos) {
@@ -40,9 +41,29 @@ bool isAllDigit(const std::string &str) {
   return true;
 }
 
+bool is3xxStatus(const std::string &status) {
+  if (isAllDigit(status) && status[0] == '3') return true;
+  return false;
+}
+
 bool isPath(const std::string &path) {
   // todo: verify valid path
   return path.size() != 0;
+}
+
+bool isURL(const std::string &URL) {
+  // todo: verify valid URL
+  return URL.size() != 0;
+}
+
+bool isMethod(const std::string &method) {
+  if (method == "GET" || method == "POST" || method == "DELETE" || method == "HEAD") return true;
+  return false;
+}
+
+bool isCGIExtension(const std::string &ext) {
+  if (ext == ".cgi" || ext == ".php" || ext == ".py") return true;
+  return false;
 }
 
 bool validateHost(std::string &host) {
@@ -64,4 +85,38 @@ bool validatePort(std::string &port) {
     return true;
   }
   return false;
+}
+
+// todo(thara): this can be more effective
+// token = 1*tchar (https://triple-underscore.github.io/RFC7230-ja.html#field.components)
+bool isToken(const std::string &str) {
+  if (str == "") {
+    return false;
+  }
+  for (std::string::const_iterator itr = str.cbegin(); itr != str.cend(); itr++) {
+    if (tchar().find(*itr) == std::string::npos) return false;
+  }
+  return true;
+}
+
+bool isVchar(const std::string &str) {
+  if (str == "") {
+    return false;
+  }
+  for (std::string::const_iterator itr = str.cbegin(); itr != str.cend(); itr++) {
+    if (vchar().find(*itr) == std::string::npos) return false;
+  }
+  return true;
+}
+
+bool isServernameDuplicate(Config &conf) {
+  std::map<std::string, bool> checklist;
+  for (std::vector<ServerConf>::iterator serv = conf.server_confs_.begin(); serv != conf.server_confs_.end(); serv++) {
+    for (std::vector<std::string>::iterator name = serv->server_names_.begin(); name != serv->server_names_.end();
+         name++) {
+      if (checklist.find(*name) != checklist.end()) return false;
+      checklist[*name] = true;
+    }
+  }
+  return true;
 }

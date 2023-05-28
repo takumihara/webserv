@@ -40,6 +40,7 @@ CGI *ConnectionSocket::makeCGI(int id, int pid) {
 }
 
 void ConnectionSocket::execCGI(const std::string &path, EventManager &event_manager) {
+  std::cout << "MAKE EXEC\n";
   extern char **environ;
   char *argv[2];
   argv[0] = const_cast<char *>(path.c_str());
@@ -64,6 +65,7 @@ void ConnectionSocket::execCGI(const std::string &path, EventManager &event_mana
     CGI *obs = makeCGI(need_fd, pid);
     std::cout << "need_fd: " << need_fd << "  pid: " << pid << std::endl;
     event_manager.add(std::pair<t_id, t_type>(need_fd, FD), obs);
+    event_manager.addChangedEvents((struct kevent){id_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
     event_manager.addChangedEvents((struct kevent){need_fd, EVFILT_READ, EV_ADD, 0, 0, 0});
     event_manager.addChangedEvents(
         (struct kevent){need_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
@@ -71,11 +73,11 @@ void ConnectionSocket::execCGI(const std::string &path, EventManager &event_mana
 }
 
 void ConnectionSocket::process(EventManager &event_manager) {
-  const Config::ServerConf *serv_conf = conf_.getServConfig(port_, request_.getHost().uri_host);
-  const Config::LocConf &loc_conf = conf_.getLocationConfig(serv_conf, request_.getRequestTarget().absolutePath);
+  const ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
+  const LocationConf &loc_conf = conf_.getLocationConf(serv_conf, request_.getRequestTarget().absolute_path);
 
   // todo: check if file exists
-  const std::string path = "." + loc_conf.root_ + request_.getRequestTarget().absolutePath;
+  const std::string path = "." + loc_conf.common_.root_ + request_.getRequestTarget().absolute_path;
   DEBUG_PRINTF("path: %s\n", path.c_str());
   std::string content;
   if (path.find(".cgi") != std::string::npos) {
@@ -92,7 +94,7 @@ void ConnectionSocket::process(EventManager &event_manager) {
 void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
   DEBUG_PUTS("ConnectionSocket notify");
   if (ev.filter == EVFILT_READ) {
-    DEBUG_PUTS("handle_response() called");
+    DEBUG_PUTS("handle_request() called");
     bool finished = request_.readRequest(event_manager);
     if (finished) {
       this->process(event_manager);

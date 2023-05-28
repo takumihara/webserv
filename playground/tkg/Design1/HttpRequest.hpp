@@ -7,13 +7,10 @@
 
 #include <iostream>
 #include <map>
+#include <set>
 #include <string>
 
 #include "./Config/Config.hpp"
-
-#define SP ' '
-#define CRLF "\r\n"
-#define OWS " \t"
 
 class EventManager;
 
@@ -24,16 +21,17 @@ class HttpRequest {
   enum RequestTargetType { OriginForm, AbsoluteForm, AuthorityForm, AsteriskForm };
   enum Method { GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH };
   enum Version { HTTP1_1 };
+  enum HeaderField { HostField, ContentLengthField, TransferEncodingField, DateField };
   enum TransferEncoding { Chunked, Compress, Deflate, Gzip };
   struct RequestTarget {
     RequestTargetType type;
     // origin form
-    std::string absolutePath;
+    std::string absolute_path;
     std::string query;
   };
   struct RequestLine {
     Method method;
-    RequestTarget requestTarget;
+    RequestTarget request_target;
     Version version;
   };
   struct Host {
@@ -43,16 +41,17 @@ class HttpRequest {
   struct Headers {
     Host host;
     size_t content_length;
-    std::vector<TransferEncoding> transferEncodings;
+    std::vector<TransferEncoding> transfer_encodings;
     std::tm date;
   };
 
-  HttpRequest(int fd, int port)
+  HttpRequest(int fd, int port, Config &conf)
       : sock_fd_(fd),
         port_(port),
         state_(ReadingStartLine),
         chunked_size_(0),
-        chunked_reading_state_(ReadingChunkedSize) {}
+        chunked_reading_state_(ReadingChunkedSize),
+        conf_(conf) {}
   ~HttpRequest(){};
   bool readRequest(EventManager &em);
   void refresh();
@@ -61,19 +60,34 @@ class HttpRequest {
   const RequestTarget &getRequestTarget() const;
   bool isChunked();
 
-  // private:
+  class BadRequestException : public std::exception {
+    virtual const char *what() const throw() { return "Bad Request"; };
+  };
+  class NotImplementedException : public std::exception {
+    virtual const char *what() const throw() { return "Not Implemented"; };
+  };
+  class NotAllowedException : public std::exception {
+    virtual const char *what() const throw() { return "Method Not Allowed"; };
+  };
+  class VersionNotSupportedException : public std::exception {
+    virtual const char *what() const throw() { return "HTTP Version Not Supported"; };
+  };
+
+ private:
   int sock_fd_;
   int port_;
-  // Config &conf_;
   std::string raw_data_;
   std::string rest_;
   State state_;
 
   RequestLine request_line_;
   Headers headers_;
+  std::set<HeaderField> received_fields_;
   std::string body_;
   size_t chunked_size_;
   ReadingChunkedState chunked_reading_state_;
+  Config &conf_;
+  const static char *kSupportedTransferEncodings[];
 
   std::string getEndingChars() const;
   void trimToEndingChars();
@@ -88,6 +102,10 @@ class HttpRequest {
   void parseHeaders();
   void validateHeaderName(const std::string &name);
   void validateHeaderValue(const std::string &value);
+  void validateHeaders();
+  void insertIfNotDuplicate(HeaderField field, const char *error_msg);
+  
+  void initAnalyzeFuncs(std::map<std::string, void (HttpRequest::*)(const std::string &)> &analyze_funcs);
   void analyzeHost(const std::string &value);
   void analyzeContentLength(const std::string &value);
   void analyzeTransferEncoding(const std::string &value);
@@ -99,6 +117,8 @@ class HttpRequest {
 
   bool isReceivingBody();
   bool isActionable();
+
+  void printHeaders();
 };
 
 #endif

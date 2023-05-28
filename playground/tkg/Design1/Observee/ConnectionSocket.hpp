@@ -15,7 +15,7 @@ class ConnectionSocket : public Observee {
         port_(port),
         conf_(conf),
         result_(""),
-        request_(HttpRequest(id, port)),
+        request_(HttpRequest(id, port, conf)),
         response_(HttpResponse(id, port)) {}
   ~ConnectionSocket() {}
   void notify(EventManager &event_manager, struct kevent ev);

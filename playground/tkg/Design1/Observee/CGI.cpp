@@ -29,14 +29,11 @@ void CGI::shutdown(EventManager &em) {
 void CGI::notify(EventManager &event_manager, struct kevent ev) {
   std::cout << "handle CGI" << std::endl;
   (void)ev;
-  char buff[SOCKET_READ_SIZE + 1];
-  int res = read(id_, buff, FILE_READ_SIZE);
-  std::cout << "res: " << res << std::endl;
-  buff[res] = '\0';
-  *result_ += buff;
-  std::cout << "cgi wip result: '" << *result_ << "'" << std::endl;
-
-  if (res == 0) {
+  char buff[FILE_READ_SIZE + 1];
+  int res = read(id_, &buff[0], FILE_READ_SIZE);
+  if (res == -1)
+    return;
+  else if (res == 0) {
     close(id_);
     parent_->obliviateChild(this);
     (void)pid_;
@@ -46,6 +43,11 @@ void CGI::notify(EventManager &event_manager, struct kevent ev) {
     event_manager.addChangedEvents((struct kevent){parent_->id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS,
                                                    EventManager::kTimeoutDuration, 0});
     event_manager.remove(std::pair<t_id, t_type>(id_, FD));
-    std::cout << "CGI LAST RESULT: '" << result_ << "'" << std::endl;
+    std::cout << "CGI LAST RESULT: '" << *result_ << "'" << std::endl;
+  } else {
+    std::cout << "res: " << res << std::endl;
+    buff[res] = '\0';
+    *result_ += std::string(buff);
+    std::cout << "cgi wip result: '" << *result_ << "'" << std::endl;
   }
 }
