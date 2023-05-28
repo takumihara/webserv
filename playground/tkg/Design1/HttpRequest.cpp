@@ -223,7 +223,7 @@ void HttpRequest::analyzeHost(const std::string &value) {
 
     // todo: handle overflow
     headers_.host.port = std::atoi(port.c_str());
-    if (headers_.host.port <= MIN_PORT_NUM || headers_.host.port > MAX_PORT_NUM) {
+    if (headers_.host.port < MIN_PORT_NUM || headers_.host.port > MAX_PORT_NUM) {
       DEBUG_PUTS("Http Request: invalid port");
       throw BadRequestException();
     }
