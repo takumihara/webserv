@@ -1,8 +1,7 @@
 #include "EventManager.hpp"
 
 #include "./Config/Config.hpp"
-#include "ConnectionSocket.hpp"
-#include "ServerSocket.hpp"
+#include "Observee/Observee.hpp"
 #include "debug.hpp"
 
 EventManager::EventManager() {
@@ -12,29 +11,14 @@ EventManager::EventManager() {
   }
 }
 
-void EventManager::addServerSocket(int fd, int port, Config &conf) {
-  server_sockets_[fd] = new ServerSocket(fd, port, conf);
-}
-
-void EventManager::removeServerSocket(int fd) {
-  delete server_sockets_[fd];
-  server_sockets_.erase(fd);
-}
-
-void EventManager::addConnectionSocket(int fd, int port, Config &conf) {
-  connection_sockets_[fd] = new ConnectionSocket(fd, port, conf);
-}
-
-void EventManager::removeConnectionSocket(int fd) {
-  delete connection_sockets_[fd];
-  connection_sockets_.erase(fd);
-}
-
-void EventManager::addCgiConnectionPair(int fd, ConnectionSocket *con) { cgi_connection_pair_[fd] = con; }
-
-void EventManager::removeCgiConnectionPair(int fd) { cgi_connection_pair_.erase(fd); }
-
 void EventManager::addChangedEvents(struct kevent kevent) { changed_events_.push_back(kevent); }
+
+void EventManager::add(const std::pair<t_id, t_type> &key, Observee *obs) { observees_[key] = obs; }
+
+void EventManager::remove(const std::pair<t_id, t_type> &key) {
+  delete observees_[key];
+  observees_.erase(key);
+}
 
 void EventManager::registerServerEvent(int fd, int port, Config &conf) {
   struct kevent chlist;
@@ -43,7 +27,11 @@ void EventManager::registerServerEvent(int fd, int port, Config &conf) {
   EV_SET(&chlist, fd, EVFILT_READ, EV_ADD, 0, 0, 0);
   DEBUG_PUTS("");
   kevent(kq_, &chlist, 1, NULL, 0, NULL);
-  addServerSocket(fd, port, conf);
+  Observee *obs = new ServerSocket(fd, port, conf);
+  std::cout << "sock fd: " << fd << std::endl;
+  add(std::pair<t_id, t_type>(fd, FD), obs);
+  observees_[std::pair<t_id, t_type>(fd, FD)];
+  std::cout << observees_[std::pair<t_id, t_type>(fd, FD)]->id_;
 }
 
 std::string getEventFilter(int flag) {
@@ -71,6 +59,7 @@ std::string getEventFlags(int state) {
 }
 
 void EventManager::updateKqueue() {
+  DEBUG_PUTS("UPDATE KQUEUE");
   int size = changed_events_.size();
   struct kevent chlist[size];
   bzero(chlist, sizeof(struct kevent) * size);
@@ -85,54 +74,33 @@ void EventManager::updateKqueue() {
   changed_events_.clear();
 }
 
-bool EventManager::isServerFd(int fd) { return server_sockets_.find(fd) != server_sockets_.end(); }
-
-bool EventManager::isCGIFd(int fd) { return cgi_connection_pair_.find(fd) != cgi_connection_pair_.end(); }
+t_type getType(short filter) {
+  (void)filter;
+  if (filter == EVFILT_READ || filter == EVFILT_WRITE)
+    return FD;
+  else if (filter == EVFILT_PROC)
+    return PID;
+  return 0;
+}
 
 void EventManager::handleEvent(struct kevent ev) {
+  DEBUG_PUTS("START HANDLE EVENT");
   if (ev.filter == EVFILT_TIMER) {
     DEBUG_PUTS("timeout");
     handleTimeout(ev);
-  } else if (ev.filter == EVFILT_READ) {
-    if (isServerFd(ev.ident)) {
-      DEBUG_PUTS("request to make connection");
-      server_sockets_[ev.ident]->make_client_connection(*this);
-    } else if (isCGIFd(ev.ident)) {
-      cgi_connection_pair_[ev.ident]->handleCGI(*this, ev.ident);
-    } else {
-      std::cout << "request connection fd " << std::endl;
-      try {
-        bool finished_reading = connection_sockets_[ev.ident]->handle_request(*this);
-        if (finished_reading) {
-          connection_sockets_[ev.ident]->process(*this);
-        }
-      } catch (const HttpRequest::BadRequestException &e) {
-      } catch (const HttpRequest::NotImplementedException &e) {
-      } catch (const HttpRequest::NotAllowedException &e) {
-      } catch (const HttpRequest::VersionNotSupportedException &e) {
-      } catch (std::runtime_error &e) {
-        std::cout << e.what() << std::endl;
-        // todo: handle what's necessary(return some response, i guess 500?)
-        close(ev.ident);
-        removeConnectionSocket(ev.ident);
-        addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
-      }
-    }
-  } else if (ev.filter == EVFILT_WRITE) {
-    std::cout << "response connection fd " << std::endl;
-    connection_sockets_[ev.ident]->handle_response(*this);
+  } else {
+    observees_[std::pair<t_id, t_type>(ev.ident, getType(ev.filter))]->notify(*this, ev);
   }
+  DEBUG_PUTS("END HANDLE EVENT");
 }
 
 void EventManager::handleTimeout(struct kevent ev) {
-  close(ev.ident);
-  removeConnectionSocket(ev.ident);
-  addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+  observees_[std::pair<t_id, t_type>(ev.ident, FD)]->shutdown(*this);
 }
 
 void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(struct kevent) * kMaxEventSize); }
 
-void EventManager::eventLoop() {  // confファイルを引数として渡す？
+void EventManager::eventLoop() {
   struct kevent evlist[kMaxEventSize];
   DEBUG_PUTS("server setup finished!");
   while (1) {
@@ -145,6 +113,7 @@ void EventManager::eventLoop() {  // confファイルを引数として渡す？
     else if (nev == -1)
       perror("kevent");
     for (int i = 0; i < nev; i++) {
+      std::cout << "eclist fd: " << evlist[i].ident << std::endl;
       handleEvent(evlist[i]);
     }
     DEBUG_PUTS("----------------------");

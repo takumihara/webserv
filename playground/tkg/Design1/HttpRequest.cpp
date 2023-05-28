@@ -25,15 +25,17 @@ bool HttpRequest::readRequest(EventManager &event_manager) {
     throw std::runtime_error("read error");
   } else if (size == 0) {
     printf("closed fd = %d\n", sock_fd_);
+    // closeとEVFILT_TIMERのDELETEはワンセット
     close(sock_fd_);
-    event_manager.removeConnectionSocket(sock_fd_);
+    event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+    event_manager.remove(std::pair<t_id, t_type>(sock_fd_, FD));
   } else {
     req_str = std::string(request);
     raw_data_ += req_str;
 
     std::cout << "read from socket(fd:" << sock_fd_ << ")"
               << ":'" << escape(raw_data_) << "'" << std::endl;
-
+    std::cout << "state: " << state_ << std::endl;
     if (state_ == ReadingStartLine && isActionable()) {
       trimToEndingChars();
       parseStartline();
@@ -59,8 +61,9 @@ bool HttpRequest::readRequest(EventManager &event_manager) {
 
     if (finishedReading) {
       DEBUG_PRINTF("FINISHED READING: %s \n", escape(body_).c_str());
-      event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
-      event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL});
+      moveToNextState();
+      // event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+      // event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL});
     }
   }
 
@@ -68,7 +71,10 @@ bool HttpRequest::readRequest(EventManager &event_manager) {
 }
 
 bool HttpRequest::isReceivingBody() {
-  const bool res = request_line_.method != GET && request_line_.method != DELETE && headers_.content_length != 0;
+  const bool res =
+      request_line_.method != GET && request_line_.method != DELETE &&
+      (headers_.content_length != 0 || std::find(headers_.transfer_encodings.begin(), headers_.transfer_encodings.end(),
+                                                 Chunked) != headers_.transfer_encodings.end());
   if (res) {
     DEBUG_PUTS("receiving body");
   } else {
@@ -150,7 +156,6 @@ void HttpRequest::parseHeaders() {
 
   std::map<std::string, void (HttpRequest::*)(const std::string &)> analyze_funcs;
   initAnalyzeFuncs(analyze_funcs);
-
   while (end != std::string::npos) {
     std::string line = raw_data_.substr(start, end - start);
     std::stringstream lineStream(line);
@@ -316,6 +321,8 @@ bool HttpRequest::readChunkedBody() {
       ss >> std::hex >> chunked_size_;
 
       if (chunked_size_ == 0) {
+        rest_ = raw_data_.substr(end + 2);
+        chunked_reading_state_ = ReadingChunkedSize;
         return true;
       }
 
@@ -383,6 +390,10 @@ void HttpRequest::moveToNextState() {
       } else {
         state_ = ReadingBody;
       }
+      break;
+    case ReadingBody:
+    case ReadingChunkedBody:
+      state_ = ReadingStartLine;
       break;
     default:
       throw std::runtime_error("invalid HttpRequest state");

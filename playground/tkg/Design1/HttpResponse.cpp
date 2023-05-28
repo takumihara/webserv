@@ -32,6 +32,7 @@ void HttpResponse::sendResponse(EventManager &event_manager) {
             << "'" << res_str.substr(sending_response_size_, size) << "'"
             << " (size:" << res << ")" << std::endl;
   sending_response_size_ += size;
+  std::cout << "response size: " << response_size_ << "(" << sending_response_size_ << std::endl;
   if (sending_response_size_ == response_size_) {
     refresh(event_manager);
   }
@@ -43,6 +44,8 @@ void HttpResponse::refresh(EventManager &em) {
   (void)port_;
   em.addChangedEvents((struct kevent){sock_fd_, EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
   em.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_ENABLE, 0, 0, 0});
+  // em.addChangedEvents(
+  //    (struct kevent){sock_fd_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
   response_ = "";
   raw_data_ = "";
 }
