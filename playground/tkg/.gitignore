@@ -4,3 +4,6 @@ server
 client
 recieve.data
 obj
+tester
+gtest
+test.log
