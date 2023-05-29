@@ -33,6 +33,7 @@ void ConnectionSocket::handle_response(EventManager &event_manager) {
   request_.refresh();
   response_.createResponse(result_);
   response_.sendResponse(event_manager);
+  request_ = HttpRequest(sock_fd_, port_, conf_);
 }
 
 static std::string readFile(const char *filename) {

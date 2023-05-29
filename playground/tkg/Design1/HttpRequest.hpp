@@ -53,6 +53,23 @@ class HttpRequest {
         chunked_reading_state_(ReadingChunkedSize),
         conf_(conf) {}
   ~HttpRequest(){};
+  HttpRequest &operator=(const HttpRequest &other) {
+    if (this != &other) {
+      this->sock_fd_ = other.sock_fd_;
+      this->port_ = other.port_;
+      this->raw_data_ = other.raw_data_;
+      this->rest_ = other.rest_;
+      this->state_ = other.state_;
+      this->request_line_ = other.request_line_;
+      this->headers_ = other.headers_;
+      this->received_fields_ = other.received_fields_;
+      this->body_ = other.body_;
+      this->chunked_size_ = other.chunked_size_;
+      this->chunked_reading_state_ = other.chunked_reading_state_;
+      this->conf_ = other.conf_;
+    }
+    return *this;
+  }
   bool readRequest(EventManager &em);
   void refresh();
   const std::string &getBody() const;
@@ -104,7 +121,7 @@ class HttpRequest {
   void validateHeaderValue(const std::string &value);
   void validateHeaders();
   void insertIfNotDuplicate(HeaderField field, const char *error_msg);
-  
+
   void initAnalyzeFuncs(std::map<std::string, void (HttpRequest::*)(const std::string &)> &analyze_funcs);
   void analyzeHost(const std::string &value);
   void analyzeContentLength(const std::string &value);

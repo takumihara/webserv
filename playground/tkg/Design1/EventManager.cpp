@@ -106,10 +106,16 @@ void EventManager::handleEvent(struct kevent ev) {
         if (finished_reading) {
           connection_sockets_[ev.ident]->process(*this);
         }
-      } catch (const HttpRequest::BadRequestException &e) {
-      } catch (const HttpRequest::NotImplementedException &e) {
-      } catch (const HttpRequest::NotAllowedException &e) {
-      } catch (const HttpRequest::VersionNotSupportedException &e) {
+        // todo(thara): handle exceptions
+        // } catch (const HttpRequest::BadRequestException &e) {
+        // } catch (const HttpRequest::NotImplementedException &e) {
+        // } catch (const HttpRequest::NotAllowedException &e) {
+        // } catch (const HttpRequest::VersionNotSupportedException &e) {
+      } catch (std::exception &e) {
+        std::cout << e.what() << std::endl;
+        close(ev.ident);
+        removeConnectionSocket(ev.ident);
+        addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
       } catch (std::runtime_error &e) {
         std::cout << e.what() << std::endl;
         // todo: handle what's necessary(return some response, i guess 500?)

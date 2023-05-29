@@ -103,11 +103,19 @@ n ␍␊chunks.    (eleven octets of data)
 std::string getRequest(const std::string &arg) {
   std::string request = "";
   if (arg == "chunked") {
-    request += "POST /a.cgi HTTP/1.1\r\n";
+    request += "POST /index.html HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
-    request += "Transfer-Encoding: chunked     ,  chunked,     chunked\r\n ";
+    request += "Transfer-Encoding: chunked     ,  chunked,     chunked\r\n";
     request += "\r\n";
-    request += "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n\r\n";
+    request += "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n";
+    request += "\r\n";
+  } else if (arg == "obs") {
+    request += "POST /a.cgi?query HTTP/1.1\r\n";
+    request += "Host: localhost\r\n";
+    request += "SomeHeader: SomeValue  \r\n";
+    request += " continuous value\r\n";
+    request += "\r\n";
+    request += arg;
     request += "\r\n";
   } else {
     request += "POST /a.cgi?query HTTP/1.1\r\n";
