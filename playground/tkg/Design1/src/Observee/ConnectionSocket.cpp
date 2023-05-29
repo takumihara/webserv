@@ -132,7 +132,6 @@ void ConnectionSocket::processGET(EventManager &event_manager, std::string path)
   const ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
   const LocationConf &loc_conf = conf_.getLocationConf(serv_conf, request_.getRequestTarget().absolute_path);
 
-  // todo: check if file exists
   (void)event_manager;
   // check directory or file exists
   struct stat st;
@@ -150,24 +149,22 @@ void ConnectionSocket::processGET(EventManager &event_manager, std::string path)
   bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
   if (is_directory) {
     // see through index files (if no index files and autoindex is on, you should create directory list)
-    std::string idx_path = "";
+    std::string idx_path;
     if (loc_conf.common_.index_.size() != 0) {
       idx_path = getIndexFile(loc_conf, path);
       if (idx_path != "") path = idx_path;
-      std::cout << "SECOND PATH: " << idx_path << std::endl;
     }
-    if (idx_path == "" && loc_conf.common_.autoindex_) {
+    if (idx_path.empty() && loc_conf.common_.autoindex_) {
       result_ = listFilesAndDirectories(path);
       response_.status_ = 200;
       std::cout << "autoindex\n";
       return;  // 200 OK todo: event management
     }
-    if (idx_path == "" && !loc_conf.common_.autoindex_) {
+    if (idx_path.empty() && !loc_conf.common_.autoindex_) {
       response_.status_ = 404;
       std::cout << "no index and autoindex\n";
       return;  // 404 error
     }
-  } else {
     result_ = readFile(path.c_str());
     std::cout << "index or autoindex\n";
     response_.status_ = 200;
@@ -185,6 +182,7 @@ void ConnectionSocket::process(EventManager &event_manager) {
   // handle GET
   if (request_.request_line_.method == HttpRequest::GET) {
     processGET(event_manager, path);
+    return;
   } else if (request_.request_line_.method == HttpRequest::POST) {
     // handle POST
   } else if (request_.request_line_.method == HttpRequest::DELETE) {
