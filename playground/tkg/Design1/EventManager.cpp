@@ -113,7 +113,7 @@ void EventManager::eventLoop() {
     else if (nev == -1)
       perror("kevent");
     for (int i = 0; i < nev; i++) {
-      std::cout << "eclist fd: " << evlist[i].ident << std::endl;
+      std::cout << "evlist fd: " << evlist[i].ident << std::endl;
       handleEvent(evlist[i]);
     }
     DEBUG_PUTS("----------------------");

@@ -42,8 +42,8 @@ void CGI::notify(EventManager &event_manager, struct kevent ev) {
     event_manager.addChangedEvents((struct kevent){parent_->id_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
     event_manager.addChangedEvents((struct kevent){parent_->id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS,
                                                    EventManager::kTimeoutDuration, 0});
-    event_manager.remove(std::pair<t_id, t_type>(id_, FD));
     std::cout << "CGI LAST RESULT: '" << *result_ << "'" << std::endl;
+    event_manager.remove(std::pair<t_id, t_type>(id_, FD));
   } else {
     std::cout << "res: " << res << std::endl;
     buff[res] = '\0';

@@ -16,6 +16,7 @@ bool isStatusCode(const std::string &status);
 bool isPath(const std::string &path);
 bool isToken(const std::string &str);
 bool isVchar(const std::string &str);
+bool isFieldContent(const std::string &str);
 bool isMethod(const std::string &method);
 bool isCGIExtension(const std::string &ext);
 bool isURL(const std::string &URL);
