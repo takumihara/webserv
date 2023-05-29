@@ -1,5 +1,5 @@
 CXXFLAGS	= -Wall -Werror -Wextra -std=c++98
-SRC_DIR = .
+SRC_DIR = src
 SERVER_SRCS	= $(SRC_DIR)/HttpServer.cpp \
 			$(SRC_DIR)/HttpRequest.cpp \
 			$(SRC_DIR)/HttpResponse.cpp \
@@ -14,16 +14,16 @@ SERVER_SRCS	= $(SRC_DIR)/HttpServer.cpp \
 			$(SRC_DIR)/const.cpp \
 			$(SRC_DIR)/main.cpp
 
-SERVER_OBJ_DIR = obj
-SERVER_OBJS	= $(SERVER_SRCS:$(SRC_DIR)/%.cpp=$(SERVER_OBJ_DIR)/%.o)
+OBJ_DIR = obj
+SERVER_OBJS	= $(SERVER_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-DEPENDS = $(SERVER_SRCS:$(SRC_DIR)/%.cpp=$(SERVER_OBJ_DIR)/%.d)
+DEPENDS = $(SERVER_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.d)
 
 SRC_DIRS := $(shell find $(SRC_DIR) -type d -print)
 INCLUDE		=	-I $(SRC_DIR) \
 				$(addprefix -I ,$(SRC_DIRS))
 
-gtestdir	=	./gtest
+gtestdir	=	./test/gtest
 gtest		=	$(gtestdir)/gtest $(gtestdir)/googletest-release-1.11.0
 
 testdir = ./test
@@ -39,20 +39,20 @@ all: server client
 server: $(SERVER_OBJS)
 	clang++ $(SERVER_OBJS) -o server
 
-$(SERVER_OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@);
 	clang++ $(CXXFLAGS) $(INCLUDE) -MMD -MP -c $< -o $@
 
 
 client:
-	clang++ $(CXXFLAGS) client.cpp helper.cpp -o client
+	clang++ $(CXXFLAGS) $(INCLUDE) src/client/client.cpp src/helper.cpp -o client
 
 
 clean:
-	$(RM) $(SERVER_OBJS) $(DEPENDS)
+	$(RM) $(SERVER_OBJS) $(DEPENDS) 
 
 fclean:
-	$(RM) $(SERVER_OBJS) client server
+	$(RM) $(SERVER_OBJS) client server test.log tester
 
 
 re: fclean all
@@ -69,7 +69,7 @@ $(gtest):
 	curl -OL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz
 	tar -xvzf release-1.11.0.tar.gz googletest-release-1.11.0
 	$(RM) -rf release-1.11.0.tar.gz
-	python googletest-release-1.11.0/googletest/scripts/fuse_gtest_files.py $(gtestdir)
+	python3 googletest-release-1.11.0/googletest/scripts/fuse_gtest_files.py $(gtestdir)
 	mv googletest-release-1.11.0 $(gtestdir)
 
 test_compile = clang++ -std=c++11 \
