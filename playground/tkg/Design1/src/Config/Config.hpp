@@ -96,8 +96,7 @@ void printRedirect(T conf, int indent) {
   for (int i = 0; i < indent; i++) {
     std::cout << "  ";
   }
-  std::cout << "redirect: "
-            << "code: " << conf->redirect_.first << "  to: " << conf->redirect_.second << std::endl;
+  std::cout << "redirect: " << conf->redirect_.first << " " << conf->redirect_.second << std::endl;
 }
 
 template <class T>
