@@ -82,3 +82,23 @@ test: server $(gtest)
 	./server_binary > test.log &
 	-./tester && pkill server_binary
 	@rm server_binary
+
+
+#Config Unit Test start
+CONFTEST_SRCS =	$(SRC_DIR)/Config/Config.cpp \
+				$(SRC_DIR)/Config/validation.cpp \
+				$(SRC_DIR)/Config/Parser.cpp \
+				$(SRC_DIR)/const.cpp \
+				$(testdir)/Config/main.cpp
+
+
+conftest: $(gtest)
+	clang++ -std=c++11 \
+	$(CONFTEST_SRCS) $(gtestdir)/googletest-release-1.11.0/googletest/src/gtest_main.cc $(gtestdir)/gtest/gtest-all.cc \
+	-I$(gtestdir) -lpthread -o conftest
+	-./conftest
+	@rm conftest
+
+
+.PHONY: conftest
+	
