@@ -216,7 +216,6 @@ void Parser::analyseAutoindex() {
     setAutoindex(serv, tok.str_);
 
   } else if (scope_.top() == LOCATION) {
-    std::cout << "\n\n\n\nhere\n\n\n";
     LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
     setAutoindex(loc, tok.str_);
   }
