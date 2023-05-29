@@ -23,13 +23,20 @@ SRC_DIRS := $(shell find $(SRC_DIR) -type d -print)
 INCLUDE		=	-I $(SRC_DIR) \
 				$(addprefix -I ,$(SRC_DIRS))
 
+gtestdir	=	./gtest
+gtest		=	$(gtestdir)/gtest $(gtestdir)/googletest-release-1.11.0
+
+testdir = ./test
+
+# todo(thara): rm
+CXXFLAGS += -D DEBUG
 ifdef DEBUG
 	CXXFLAGS += -D DEBUG
 endif
 
 all: server client
 
-server: $(SERVER_OBJS) 
+server: $(SERVER_OBJS)
 	clang++ $(SERVER_OBJS) -o server
 
 $(SERVER_OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
@@ -57,3 +64,22 @@ debug:
 fclean: clean
 
 .PHONY: clean fclean re server client
+
+$(gtest):
+	curl -OL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz
+	tar -xvzf release-1.11.0.tar.gz googletest-release-1.11.0
+	$(RM) -rf release-1.11.0.tar.gz
+	python googletest-release-1.11.0/googletest/scripts/fuse_gtest_files.py $(gtestdir)
+	mv googletest-release-1.11.0 $(gtestdir)
+
+test_compile = clang++ -std=c++11 \
+	$(testdir)/*.cpp $(gtestdir)/googletest-release-1.11.0/googletest/src/gtest_main.cc $(gtestdir)/gtest/gtest-all.cc \
+	-I$(gtestdir) -I$(includes) -lpthread -o tester
+.PHONY: test
+test: server $(gtest)
+	$(test_compile)
+	cp server server_binary
+	./server_binary > test.log &
+	-./tester
+	@pkill server_binary
+	@rm server_binary
