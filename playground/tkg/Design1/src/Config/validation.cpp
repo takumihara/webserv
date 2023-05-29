@@ -104,7 +104,19 @@ bool isVchar(const std::string &str) {
     return false;
   }
   for (std::string::const_iterator itr = str.cbegin(); itr != str.cend(); itr++) {
-    if (vchar().find(*itr) == std::string::npos) return false;
+    if (*itr > 126 || *itr < 21) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool isFieldContent(const std::string &str) {
+  if (str == "") {
+    return false;
+  }
+  for (std::string::const_iterator itr = str.cbegin(); itr != str.cend(); itr++) {
+    if (!isVchar(std::string(1, *itr)) && *itr != ' ' && *itr != '\t') return false;
   }
   return true;
 }

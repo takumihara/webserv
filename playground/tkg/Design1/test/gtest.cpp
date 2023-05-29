@@ -13,12 +13,13 @@ std::string sendRequest(const std::string &request);
 std::string CGIRequest();
 std::string GetRequest();
 std::string ChunkedRequest();
+std::string ObsFoldRequest();
 
-// TEST(E2E, CGI) {
-//   std::string res = sendRequest(CGIRequest());
+TEST(E2E, CGI) {
+  std::string res = sendRequest(CGIRequest());
 
-//   EXPECT_EQ(res, std::string("GET"));
-// }
+  EXPECT_EQ(res, std::string("CGI Response \n"));
+}
 
 TEST(E2E, Get) {
   std::string res = sendRequest(GetRequest());
@@ -32,6 +33,12 @@ TEST(E2E, Chunked) {
 
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
   ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
+}
+
+TEST(E2E, ObsFold) {
+  std::string res = sendRequest(ObsFoldRequest());
+
+  EXPECT_EQ(res, std::string(""));
 }
 
 bool includes(const std::string &str, const std::string &substr) { return str.find(substr) != std::string::npos; }
@@ -98,7 +105,8 @@ std::string CGIRequest() {
   std::string request;
   request += "POST /a.cgi?query HTTP/1.1\r\n";
   request += "Host: localhost\r\n";
-  request += "Content-Length:5\r\n";
+  request += "Content-Length:  5 \r\n";
+  request += "Date: Wed, 16 Oct 2019 07:28:00 GMT\r\n";
   request += "\r\n";
   request += "Body";
   request += "\r\n";
@@ -109,9 +117,19 @@ std::string ChunkedRequest() {
   std::string request;
   request += "POST /index.html HTTP/1.1\r\n";
   request += "Host: localhost\r\n";
-  request += "Transfer-Encoding: chunked\r\n";
+  request += "Transfer-Encoding: chunked, chunked     , chunked  \r\n";
   request += "\r\n";
   request += "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n";
+  request += "\r\n";
+  return request;
+}
+
+std::string ObsFoldRequest() {
+  std::string request;
+  request += "GET /index.html HTTP/1.1\r\n";
+  request += "Host: localhost\r\n";
+  request += "SomeHeader: SomeValue  \r\n";
+  request += " continuous value\r\n";
   request += "\r\n";
   return request;
 }

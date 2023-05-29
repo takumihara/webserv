@@ -41,3 +41,5 @@ std::string trimOws(const std::string &str) {
   if (start == std::string::npos) return "";
   return str.substr(start, end - start + 1);
 }
+
+std::string trimUntilCRLF(const std::string &str) { return str.substr(0, str.find(CRLF)); }
