@@ -1,7 +1,7 @@
 a.out
 .vscode
 server
-client*
+client
 recieve.data
 obj
 tester
