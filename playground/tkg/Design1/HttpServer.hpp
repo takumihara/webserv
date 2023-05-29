@@ -7,7 +7,8 @@
 
 class HttpServer {
  public:
-  HttpServer(){};
+  HttpServer() : filename_("Config/con.conf"){};
+  HttpServer(char *filename) : filename_(filename){};
   ~HttpServer(){};
   int openPort();
   void setup();
@@ -15,6 +16,7 @@ class HttpServer {
 
  private:
   EventManager em_;
+  const char *filename_;
   Config conf_;
 };
 
