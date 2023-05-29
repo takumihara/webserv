@@ -168,19 +168,22 @@ void Parser::analyseIndex() {
   }
   if (scope_.top() == GENERAL) {
     while (expectTokenType(tok, Token::STRING)) {
+      if (std::find(conf_.common_.index_.begin(), conf_.common_.index_.end(), tok.str_) == conf_.common_.index_.end())
       conf_.common_.index_.push_back(tok.str_);
       tok = readToken();
     }
   } else if (scope_.top() == SERVER) {
     while (expectTokenType(tok, Token::STRING)) {
       ServerConf &serv = conf_.server_confs_.back();
-      serv.common_.index_.push_back(tok.str_);
+      if (std::find(serv.common_.index_.begin(), serv.common_.index_.end(), tok.str_) == serv.common_.index_.end())
+        serv.common_.index_.push_back(tok.str_);
       tok = readToken();
     }
   } else if (scope_.top() == LOCATION) {
     while (expectTokenType(tok, Token::STRING)) {
       LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
-      loc.common_.index_.push_back(tok.str_);
+      if (std::find(loc.common_.index_.begin(), loc.common_.index_.end(), tok.str_) == loc.common_.index_.end())
+        loc.common_.index_.push_back(tok.str_);
       tok = readToken();
     }
   } else {
