@@ -71,18 +71,11 @@ bool HttpRequest::readRequest(EventManager &event_manager) {
 }
 
 bool HttpRequest::isReceivingBody() {
-  const bool res =
-      request_line_.method != GET && request_line_.method != DELETE &&
-      (headers_.content_length != 0 || std::find(headers_.transfer_encodings.begin(), headers_.transfer_encodings.end(),
-                                                 Chunked) != headers_.transfer_encodings.end());
-  if (res) {
-    DEBUG_PUTS("receiving body");
-  } else {
-    DEBUG_PUTS("not receiving body");
+  if (request_line_.method == GET || request_line_.method == DELETE || !isChunked() || headers_.content_length == 0) {
+    return false;
   }
-  return res;
+  return true;
 }
-
 void HttpRequest::parseStartline() {
   std::stringstream ss = std::stringstream(raw_data_);
   std::string method;
@@ -156,30 +149,32 @@ void HttpRequest::parseHeaders() {
 
   std::map<std::string, void (HttpRequest::*)(const std::string &)> analyze_funcs;
   initAnalyzeFuncs(analyze_funcs);
-  while (end != std::string::npos) {
+  while (true) {
     std::string line = raw_data_.substr(start, end - start);
+    // this is the end of headers
+    if (line.empty()) {
+      break;
+    }
+
     std::stringstream lineStream(line);
     std::string name, value;
 
-    if (std::getline(lineStream, name, ':')) {
-      if (std::getline(lineStream, value)) {
-        value = trimOws(value);
-        toLower(name);
+    std::getline(lineStream, name, ':');
+    std::getline(lineStream, value);
+    value = trimOws(value);
+    toLower(name);
 
-        validateHeaderName(name);
-        validateHeaderValue(value);
-        if (analyze_funcs.find(name) != analyze_funcs.end()) {
-          (this->*analyze_funcs[name])(value);
-        }
-      }
+    validateHeaderName(name);
+    validateHeaderValue(value);
+    if (analyze_funcs.find(name) != analyze_funcs.end()) {
+      (this->*analyze_funcs[name])(value);
     }
 
     start = end + 2;
-    end = raw_data_.find("\r\n", start);
+    end = raw_data_.find(CRLF, start);
   }
 
   validateHeaders();
-  DEBUG_PUTS("HEADER PARSED");
   printHeaders();
 }
 
@@ -200,7 +195,7 @@ void HttpRequest::insertIfNotDuplicate(HeaderField field, const char *error_msg)
 }
 
 void HttpRequest::analyzeHost(const std::string &value) {
-  std::string hostHeader = value.substr(0, value.find(CRLF));
+  std::string hostHeader = trimUntilCRLF(value);
 
   insertIfNotDuplicate(HostField, "Http Request: duplicated host header");
 
@@ -271,8 +266,7 @@ void HttpRequest::analyzeTransferEncoding(const std::string &value) {
 }
 
 void HttpRequest::analyzeDate(const std::string &value) {
-  std::string dateStr = value.substr(0, value.find(CRLF));
-
+  std::string dateStr = trimUntilCRLF(value);
   insertIfNotDuplicate(DateField, "Http Request: duplicated date");
 
   std::istringstream ss(dateStr);
@@ -320,8 +314,10 @@ bool HttpRequest::readChunkedBody() {
       std::stringstream ss(hex);
       ss >> std::hex >> chunked_size_;
 
+      // todo(thara):there is unread data in socket
       if (chunked_size_ == 0) {
         rest_ = raw_data_.substr(end + 2);
+        // todo(thara): I think we can remove this because I added re-initialization of HttpRequest
         chunked_reading_state_ = ReadingChunkedSize;
         return true;
       }
@@ -393,6 +389,7 @@ void HttpRequest::moveToNextState() {
       break;
     case ReadingBody:
     case ReadingChunkedBody:
+      // todo(thara): I think we can remove this because I added re-initialization of HttpRequest
       state_ = ReadingStartLine;
       break;
     default:

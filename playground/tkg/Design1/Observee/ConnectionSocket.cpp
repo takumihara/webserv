@@ -107,7 +107,11 @@ void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
       // } catch (const HttpRequest::VersionNotSupportedException &e) {
     } catch (std::exception &e) {
       std::cout << e.what() << std::endl;
-      // todo: handle what's necessary(return some response, i guess 500?)
+      close(ev.ident);
+      event_manager.remove(std::pair<t_id, t_type>(ev.ident, FD));
+      event_manager.addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+    } catch (std::runtime_error &e) {
+      std::cout << e.what() << std::endl;
       close(ev.ident);
       event_manager.remove(std::pair<t_id, t_type>(ev.ident, FD));
       event_manager.addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
@@ -118,6 +122,7 @@ void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
     request_.refresh();
     response_.createResponse(result_);
     response_.sendResponse(event_manager);
+    // request_ = HttpRequest(id_, port_, conf_);
     // request_.headers_ .clear();
   }
 }
