@@ -169,7 +169,7 @@ void Parser::analyseIndex() {
   if (scope_.top() == GENERAL) {
     while (expectTokenType(tok, Token::STRING)) {
       if (std::find(conf_.common_.index_.begin(), conf_.common_.index_.end(), tok.str_) == conf_.common_.index_.end())
-      conf_.common_.index_.push_back(tok.str_);
+        conf_.common_.index_.push_back(tok.str_);
       tok = readToken();
     }
   } else if (scope_.top() == SERVER) {
@@ -195,7 +195,7 @@ void Parser::analyseIndex() {
 }
 
 template <class T>
-void setAutoindex(T conf, const std::string &flag) {
+void setAutoindex(T &conf, const std::string &flag) {
   if (flag == "on")
     conf.common_.autoindex_ = true;
   else if (flag == "off")
@@ -218,6 +218,7 @@ void Parser::analyseAutoindex() {
     setAutoindex(serv, tok.str_);
 
   } else if (scope_.top() == LOCATION) {
+    std::cout << "\n\n\n\nhere\n\n\n";
     LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
     setAutoindex(loc, tok.str_);
   }
@@ -228,7 +229,7 @@ void Parser::analyseAutoindex() {
 }
 
 template <class T>
-void setErrorPages(T conf, std::vector<std::string> &status, std::string &path) {
+void setErrorPages(T &conf, std::vector<std::string> &status, std::string &path) {
   for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
     if (conf.common_.error_pages_.find(*itr) != conf.common_.error_pages_.end()) {
       throw std::runtime_error("error_page: duplicate erro_page path");
