@@ -45,12 +45,12 @@ class ServerConf {
   ServerConf(const CommonConf &conf) : common_(conf) {}
   void printServConf();
   std::vector<std::string> &getServerNames();
-  std::vector<std::string> &getHostNames();
-  std::vector<int> &getPorts();
+  std::string &getHostNames();
+  int &getPorts();
   const LocationConf &getLocationConfig(const std::string &path) const;
 
-  std::vector<std::string> host_;
-  std::vector<int> port_;
+  std::string host_;
+  int port_;
   std::vector<std::string> server_names_;
   std::pair<std::string, std::string> redirect_;
   CommonConf common_;
