@@ -95,9 +95,22 @@ void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
   DEBUG_PUTS("ConnectionSocket notify");
   if (ev.filter == EVFILT_READ) {
     DEBUG_PUTS("handle_request() called");
-    bool finished = request_.readRequest(event_manager);
-    if (finished) {
-      this->process(event_manager);
+    try {
+      bool finished_reading = request_.readRequest(event_manager);
+      if (finished_reading) {
+        this->process(event_manager);
+      }
+      // todo(thara): handle exceptions
+      // } catch (const HttpRequest::BadRequestException &e) {
+      // } catch (const HttpRequest::NotImplementedException &e) {
+      // } catch (const HttpRequest::NotAllowedException &e) {
+      // } catch (const HttpRequest::VersionNotSupportedException &e) {
+    } catch (std::exception &e) {
+      std::cout << e.what() << std::endl;
+      // todo: handle what's necessary(return some response, i guess 500?)
+      close(ev.ident);
+      event_manager.remove(std::pair<t_id, t_type>(ev.ident, FD));
+      event_manager.addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
     }
   }
   if (ev.filter == EVFILT_WRITE) {
