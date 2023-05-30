@@ -74,6 +74,7 @@ class HttpRequest {
   void refresh();
   const std::string &getBody() const;
   const Host &getHost() const;
+  bool methodIs(Method method) const;
   const RequestTarget &getRequestTarget() const;
   bool isChunked();
 
@@ -90,7 +91,7 @@ class HttpRequest {
     virtual const char *what() const throw() { return "HTTP Version Not Supported"; };
   };
 
-  // private:
+ private:
   int sock_fd_;
   int port_;
   std::string raw_data_;

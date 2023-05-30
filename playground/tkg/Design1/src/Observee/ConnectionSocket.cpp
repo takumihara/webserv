@@ -180,16 +180,16 @@ void ConnectionSocket::process(EventManager &event_manager) {
   std::string path = "." + getTargetPath(loc_conf);
   if (path.find(".cgi") != std::string::npos) {
     execCGI(path, event_manager);
-  } else if (request_.request_line_.method == HttpRequest::GET) {
+  } else if (request_.methodIs(HttpRequest::GET)) {
     // handle GET
     processGET(event_manager, path);
     event_manager.addChangedEvents((struct kevent){id_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
     event_manager.addChangedEvents(
         (struct kevent){id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
     return;
-  } else if (request_.request_line_.method == HttpRequest::POST) {
+  } else if (request_.methodIs(HttpRequest::POST)) {
     // handle POST
-  } else if (request_.request_line_.method == HttpRequest::DELETE) {
+  } else if (request_.methodIs(HttpRequest::DELETE)) {
     // handle DELETE
   }
   DEBUG_PUTS("PROCESSING FINISHED");
