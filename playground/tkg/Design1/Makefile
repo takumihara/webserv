@@ -89,11 +89,11 @@ CONFTEST_SRCS =	$(SRC_DIR)/Config/Config.cpp \
 				$(SRC_DIR)/Config/validation.cpp \
 				$(SRC_DIR)/Config/Parser.cpp \
 				$(SRC_DIR)/const.cpp \
-				$(testdir)/Config/main.cpp
+				$(testdir)/Config/test.cpp
 
 
 conftest: $(gtest)
-	clang++ -std=c++11 \
+	clang++ -D CONFTEST -std=c++11 \
 	$(CONFTEST_SRCS) $(INCLUDE) $(gtestdir)/googletest-release-1.11.0/googletest/src/gtest_main.cc $(gtestdir)/gtest/gtest-all.cc \
 	-I$(gtestdir) -lpthread -o conftest
 	-./conftest
