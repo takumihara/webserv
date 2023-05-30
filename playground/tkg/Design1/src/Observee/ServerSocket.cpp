@@ -1,4 +1,5 @@
 #include "ServerSocket.hpp"
+#include "../IO/FDReadCloser.hpp"
 
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -28,10 +29,10 @@ void ServerSocket::notify(EventManager &event_manager, struct kevent ev) {
   if (connection_fd == -1) {
     throw std::runtime_error("accept error");
   }
-  event_manager.addChangedEvents((struct kevent){connection_fd, EVFILT_READ, EV_ADD, 0, 0, 0});
-  event_manager.addChangedEvents((struct kevent){connection_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS,
+  event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_READ, EV_ADD, 0, 0, 0});
+  event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS,
                                                  EventManager::kTimeoutDuration, 0});
-  ConnectionSocket *obs = new ConnectionSocket(connection_fd, port_, conf_, this);
+  ConnectionSocket *obs = new ConnectionSocket(connection_fd, port_, conf_, this, new FDReadCloser(connection_fd));
   event_manager.add(std::pair<t_id, t_type>(connection_fd, FD), obs);
   return;
 };
