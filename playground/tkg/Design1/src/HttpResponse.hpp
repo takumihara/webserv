@@ -26,8 +26,9 @@ class HttpResponse {
   void createResponse(const std::string &result);
   void sendResponse(EventManager &em);
   void refresh(EventManager &em);
+  void setStatus(const int status);
 
-  // private:
+ private:
   int sock_fd_;
   int port_;
   int status_;

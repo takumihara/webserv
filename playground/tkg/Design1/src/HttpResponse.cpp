@@ -9,6 +9,8 @@
 #include "EventManager.hpp"
 #include "const.hpp"
 
+void HttpResponse::setStatus(const int status) { status_ = status; }
+
 void HttpResponse::createResponse(const std::string &result) {
   raw_data_ = result;
   char buf[100];

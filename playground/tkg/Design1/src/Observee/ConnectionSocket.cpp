@@ -136,13 +136,13 @@ void ConnectionSocket::processGET(EventManager &event_manager, std::string path)
   // check directory or file exists
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
-    response_.status_ = 404;
+    response_.setStatus(404);
     DEBUG_PUTS("stat error");
     return;  // 404 error
   }
   // check directory or file is readable
   if (access(path.c_str(), R_OK) != 0) {
-    response_.status_ = 403;
+    response_.setStatus(403);
     DEBUG_PUTS("access error");
     return;  // return 403 Forbiden
   }
@@ -156,19 +156,19 @@ void ConnectionSocket::processGET(EventManager &event_manager, std::string path)
     }
     if (idx_path == "" && loc_conf.common_.autoindex_) {
       result_ = listFilesAndDirectories(path);
-      response_.status_ = 200;
+      response_.setStatus(200);
       DEBUG_PUTS("autoindex");
       return;  // 200 OK
     }
     if (idx_path == "" && !loc_conf.common_.autoindex_) {
-      response_.status_ = 404;
+      response_.setStatus(404);
       DEBUG_PUTS("no index and autoindex");
       return;  // 404 error
     }
   }
   result_ = readFile(path.c_str());
   DEBUG_PUTS("index or autoindex");
-  response_.status_ = 200;
+  response_.setStatus(200);
   return;  // 200 OK
 }
 
