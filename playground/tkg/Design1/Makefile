@@ -80,7 +80,5 @@ test: server $(gtest)
 	$(test_compile)
 	cp server server_binary
 	./server_binary > test.log &
-	-./tester
-	$(shell sleep 1)
-	@pkill server_binary
+	-./tester && pkill server_binary
 	@rm server_binary
