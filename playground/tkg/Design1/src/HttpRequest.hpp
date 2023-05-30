@@ -90,7 +90,7 @@ class HttpRequest {
     virtual const char *what() const throw() { return "HTTP Version Not Supported"; };
   };
 
- private:
+  // private:
   int sock_fd_;
   int port_;
   std::string raw_data_;

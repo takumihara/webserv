@@ -1,5 +1,6 @@
 #include "HttpResponse.hpp"
 
+#include <stdio.h>
 #include <sys/event.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -10,7 +11,17 @@
 
 void HttpResponse::createResponse(const std::string &result) {
   raw_data_ = result;
-  response_ = result;
+  char buf[100];
+
+  response_ = "HTTP/1.1 ";
+  snprintf(buf, sizeof(buf), "%d ", status_);
+  response_ += buf;
+  response_ += "status-message\r\n";
+  snprintf(buf, sizeof(buf), "Content-Length: %lu\r\n\r\n", result.size());
+  response_ += buf;
+  response_ += result;
+  response_ += "\r\n";
+  std::cout << "RESPONSE: " << response_;
   // response_ = "HTTP/1.1 200 Ok\r\nContent-Length: " + std::to_string(result.size()) + "\r\n\r\n" + result + "\r\n";
   response_size_ = response_.size();
 }

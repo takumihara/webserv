@@ -1,5 +1,6 @@
 #include "ConnectionSocket.hpp"
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -7,6 +8,7 @@
 #include <string.h>
 #include <sys/event.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -72,12 +74,122 @@ void ConnectionSocket::execCGI(const std::string &path, EventManager &event_mana
   }
 }
 
+std::string ConnectionSocket::getTargetPath(const LocationConf &loc) {
+  std::string target = loc.common_.root_;
+  if (target[target.size() - 1] == '/' && request_.getRequestTarget().absolute_path[0] == '/')
+    target.erase(target.size() - 1);
+  target += request_.getRequestTarget().absolute_path;
+  return target;
+}
+
+std::string ConnectionSocket::listFilesAndDirectories(const std::string &directory_path) {
+  DIR *dir;
+  struct dirent *entry;
+  struct stat fileStat;
+  std::string ret = "";
+
+  if ((dir = opendir(directory_path.c_str())) == NULL) {
+    perror("Error opening directory");
+    return ret;
+  }
+  while ((entry = readdir(dir)) != NULL) {
+    std::string file_path;
+    file_path = directory_path + "/" + entry->d_name;
+
+    if (stat(file_path.c_str(), &fileStat) == -1) {
+      perror("Error getting file/directory information");
+      continue;
+    }
+    std::string name = entry->d_name;
+    if (S_ISREG(fileStat.st_mode)) {
+      ret += entry->d_name;
+      ret += "\n";
+    } else if (S_ISDIR(fileStat.st_mode)) {
+      if (name != "." && name != "..") {
+        ret += entry->d_name;
+        ret += "/\n";
+      }
+    }
+  }
+  std::cout << "directory list: " << ret;
+  closedir(dir);
+  return ret;
+}
+
+std::string ConnectionSocket::getIndexFile(const LocationConf &conf, std::string path) {
+  std::vector<std::string> index = conf.common_.index_;
+
+  if (path[path.size() - 1] != '/') path += "/";
+  for (std::vector<std::string>::const_iterator itr = index.cbegin(); itr != index.cend(); itr++) {
+    if (access((path + (*itr)).c_str(), R_OK) == 0) {
+      return path + *itr;
+    }
+  }
+  return "";
+}
+
+void ConnectionSocket::processGET(EventManager &event_manager, std::string path) {
+  const ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
+  const LocationConf &loc_conf = conf_.getLocationConf(serv_conf, request_.getRequestTarget().absolute_path);
+
+  // todo: check if file exists
+  (void)event_manager;
+  // check directory or file exists
+  struct stat st;
+  if (stat(path.c_str(), &st) == -1) {
+    response_.status_ = 404;
+    std::cout << "stat error\n";
+    return;  // 404 error
+  }
+  // check directory or file is readable
+  if (access(path.c_str(), R_OK) != 0) {
+    response_.status_ = 403;
+    std::cout << "access error\n";
+    return;  // return 403 Forbiden
+  }
+  bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
+  if (is_directory) {
+    // see through index files (if no index files and autoindex is on, you should create directory list)
+    std::string idx_path = "";
+    if (loc_conf.common_.index_.size() != 0) {
+      idx_path = getIndexFile(loc_conf, path);
+      if (idx_path != "") path = idx_path;
+      std::cout << "SECOND PATH: " << idx_path << std::endl;
+    }
+    if (idx_path == "" && loc_conf.common_.autoindex_) {
+      result_ = listFilesAndDirectories(path);
+      response_.status_ = 200;
+      std::cout << "autoindex\n";
+      return;  // 200 OK todo: event management
+    }
+    if (idx_path == "" && !loc_conf.common_.autoindex_) {
+      response_.status_ = 404;
+      std::cout << "no index and autoindex\n";
+      return;  // 404 error
+    }
+  } else {
+    result_ = readFile(path.c_str());
+    std::cout << "index or autoindex\n";
+    response_.status_ = 200;
+    return;  // 200 OK
+  }
+}
+
 void ConnectionSocket::process(EventManager &event_manager) {
   const ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
   const LocationConf &loc_conf = conf_.getLocationConf(serv_conf, request_.getRequestTarget().absolute_path);
 
   // todo: check if file exists
-  const std::string path = "." + loc_conf.common_.root_ + request_.getRequestTarget().absolute_path;
+  std::string path = "." + getTargetPath(loc_conf);
+  std::cout << "FIRST PATH: " << path << std::endl;
+  // handle GET
+  if (request_.request_line_.method == HttpRequest::GET) {
+    processGET(event_manager, path);
+  } else if (request_.request_line_.method == HttpRequest::POST) {
+    // handle POST
+  } else if (request_.request_line_.method == HttpRequest::DELETE) {
+    // handle DELETE
+  }
   DEBUG_PRINTF("path: %s\n", path.c_str());
   std::string content;
   if (path.find(".cgi") != std::string::npos) {
@@ -99,6 +211,9 @@ void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
       bool finished_reading = request_.readRequest(event_manager);
       if (finished_reading) {
         this->process(event_manager);
+        event_manager.addChangedEvents((struct kevent){id_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
+        event_manager.addChangedEvents(
+            (struct kevent){id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
       }
       // todo(thara): handle exceptions
       // } catch (const HttpRequest::BadRequestException &e) {

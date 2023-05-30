@@ -22,8 +22,12 @@ class ConnectionSocket : public Observee {
   void shutdown(EventManager &em);
   void send_response(EventManager &event_manager);
   void process(EventManager &em);
+  void processGET(EventManager &event_manager, std::string path);
   void execCGI(const std::string &path, EventManager &event_manager);
   CGI *makeCGI(int id, int pid);
+  std::string getTargetPath(const LocationConf &loc);
+  std::string listFilesAndDirectories(const std::string &directoryPath);
+  std::string getIndexFile(const LocationConf &conf, std::string path);
   void addChild(Observee *obs);
   void removeChild(Observee *obs);
 
