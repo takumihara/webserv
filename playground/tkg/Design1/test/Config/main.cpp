@@ -7,8 +7,8 @@
 #include <sstream>
 #include <string>
 
-#include "../../Config/Config.hpp"
-#include "../../Config/Parser.hpp"
+#include "Config.hpp"
+#include "Parser.hpp"
 
 static std::string readFile(const char *filename) {
   std::ifstream ifs(filename);
