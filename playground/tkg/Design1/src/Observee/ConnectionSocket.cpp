@@ -137,13 +137,13 @@ void ConnectionSocket::processGET(EventManager &event_manager, std::string path)
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
     response_.status_ = 404;
-    std::cout << "stat error\n";
+    DEBUG_PUTS("stat error");
     return;  // 404 error
   }
   // check directory or file is readable
   if (access(path.c_str(), R_OK) != 0) {
     response_.status_ = 403;
-    std::cout << "access error\n";
+    DEBUG_PUTS("access error");
     return;  // return 403 Forbiden
   }
   bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
@@ -154,22 +154,22 @@ void ConnectionSocket::processGET(EventManager &event_manager, std::string path)
       idx_path = getIndexFile(loc_conf, path);
       if (idx_path != "") path = idx_path;
     }
-    if (idx_path.empty() && loc_conf.common_.autoindex_) {
+    if (idx_path == "" && loc_conf.common_.autoindex_) {
       result_ = listFilesAndDirectories(path);
       response_.status_ = 200;
-      std::cout << "autoindex\n";
-      return;  // 200 OK todo: event management
+      DEBUG_PUTS("autoindex");
+      return;  // 200 OK
     }
-    if (idx_path.empty() && !loc_conf.common_.autoindex_) {
+    if (idx_path == "" && !loc_conf.common_.autoindex_) {
       response_.status_ = 404;
-      std::cout << "no index and autoindex\n";
+      DEBUG_PUTS("no index and autoindex");
       return;  // 404 error
     }
-    result_ = readFile(path.c_str());
-    std::cout << "index or autoindex\n";
-    response_.status_ = 200;
-    return;  // 200 OK
   }
+  result_ = readFile(path.c_str());
+  DEBUG_PUTS("index or autoindex");
+  response_.status_ = 200;
+  return;  // 200 OK
 }
 
 void ConnectionSocket::process(EventManager &event_manager) {
@@ -178,25 +178,19 @@ void ConnectionSocket::process(EventManager &event_manager) {
 
   // todo: check if file exists
   std::string path = "." + getTargetPath(loc_conf);
-  std::cout << "FIRST PATH: " << path << std::endl;
-  // handle GET
-  if (request_.request_line_.method == HttpRequest::GET) {
+  if (path.find(".cgi") != std::string::npos) {
+    execCGI(path, event_manager);
+  } else if (request_.request_line_.method == HttpRequest::GET) {
+    // handle GET
     processGET(event_manager, path);
+    event_manager.addChangedEvents((struct kevent){id_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
+    event_manager.addChangedEvents(
+        (struct kevent){id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
     return;
   } else if (request_.request_line_.method == HttpRequest::POST) {
     // handle POST
   } else if (request_.request_line_.method == HttpRequest::DELETE) {
     // handle DELETE
-  }
-  DEBUG_PRINTF("path: %s\n", path.c_str());
-  std::string content;
-  if (path.find(".cgi") != std::string::npos) {
-    execCGI(path, event_manager);
-  } else {
-    event_manager.addChangedEvents((struct kevent){id_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-    event_manager.addChangedEvents(
-        (struct kevent){id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
-    result_ = readFile(path.c_str());
   }
   DEBUG_PUTS("PROCESSING FINISHED");
 }
@@ -209,9 +203,6 @@ void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
       bool finished_reading = request_.readRequest(event_manager);
       if (finished_reading) {
         this->process(event_manager);
-        event_manager.addChangedEvents((struct kevent){id_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-        event_manager.addChangedEvents(
-            (struct kevent){id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
       }
       // todo(thara): handle exceptions
       // } catch (const HttpRequest::BadRequestException &e) {
