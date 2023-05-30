@@ -7,7 +7,7 @@
 
 class HttpServer {
  public:
-  HttpServer() : filename_("config/con.conf"){};
+  HttpServer() : filename_("Config/con.conf"){};
   HttpServer(char *filename) : filename_(filename){};
   ~HttpServer(){};
   int openPort();
