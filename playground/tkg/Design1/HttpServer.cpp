@@ -29,9 +29,8 @@ int HttpServer::openPort() {
 }
 
 void HttpServer::setup() {
-  const char *file = "./Config/con.conf";
   Parser parser;
-  conf_ = parser.parse(file);
+  conf_ = parser.parse(filename_);
   conf_.makePortServConfMap();
   if (!isServernameDuplicate(conf_)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");

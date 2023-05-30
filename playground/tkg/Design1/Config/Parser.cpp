@@ -59,17 +59,17 @@ void Parser::analyseServer() {
 void Parser::setHost(std::string &host) {
   ServerConf &serv_conf = conf_.server_confs_.back();
   if (host == "")
-    serv_conf.host_.push_back(kDefaultIP);
+    serv_conf.host_ = kDefaultIP;
   else
-    serv_conf.host_.push_back(host);
+    serv_conf.host_ = host;
 }
 
 void Parser::setPort(std::string &port) {
   ServerConf &serv_conf = conf_.server_confs_.back();
   if (port == "")
-    serv_conf.port_.push_back(kDefaultPort);
+    serv_conf.port_ = kDefaultPort;
   else
-    serv_conf.port_.push_back(atoi(port.c_str()));
+    serv_conf.port_ = atoi(port.c_str());
 }
 
 void Parser::analyseListen() {
@@ -81,20 +81,18 @@ void Parser::analyseListen() {
   if (!expectTokenType(tok, Token::STRING)) {
     throw std::runtime_error("listen: invalid type");
   }
-  while (expectTokenType(tok, Token::STRING)) {
-    size_t pos = tok.str_.find(":");
-    if (pos == std::string::npos) {
-      throw std::runtime_error("listen: invalid grammar, need colon");
-    }
-    std::string host = tok.str_.substr(0, pos);
-    std::string port = tok.str_.erase(0, pos + 1);
-    if (!validateHost(host) || !validatePort(port)) {
-      throw std::runtime_error("listen: invalid host ot port");
-    }
-    setHost(host);
-    setPort(port);
-    tok = readToken();
+  size_t pos = tok.str_.find(":");
+  if (pos == std::string::npos) {
+    throw std::runtime_error("listen: invalid grammar, need colon");
   }
+  std::string host = tok.str_.substr(0, pos);
+  std::string port = tok.str_.erase(0, pos + 1);
+  if (!validateHost(host) || !validatePort(port)) {
+    throw std::runtime_error("listen: invalid host ot port");
+  }
+  setHost(host);
+  setPort(port);
+  tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
     throw std::runtime_error("listen: invalid grammar, need semicolon");
   }
@@ -168,19 +166,22 @@ void Parser::analyseIndex() {
   }
   if (scope_.top() == GENERAL) {
     while (expectTokenType(tok, Token::STRING)) {
-      conf_.common_.index_.push_back(tok.str_);
+      if (std::find(conf_.common_.index_.begin(), conf_.common_.index_.end(), tok.str_) == conf_.common_.index_.end())
+        conf_.common_.index_.push_back(tok.str_);
       tok = readToken();
     }
   } else if (scope_.top() == SERVER) {
     while (expectTokenType(tok, Token::STRING)) {
       ServerConf &serv = conf_.server_confs_.back();
-      serv.common_.index_.push_back(tok.str_);
+      if (std::find(serv.common_.index_.begin(), serv.common_.index_.end(), tok.str_) == serv.common_.index_.end())
+        serv.common_.index_.push_back(tok.str_);
       tok = readToken();
     }
   } else if (scope_.top() == LOCATION) {
     while (expectTokenType(tok, Token::STRING)) {
       LocationConf &loc = conf_.server_confs_.back().location_confs_.back();
-      loc.common_.index_.push_back(tok.str_);
+      if (std::find(loc.common_.index_.begin(), loc.common_.index_.end(), tok.str_) == loc.common_.index_.end())
+        loc.common_.index_.push_back(tok.str_);
       tok = readToken();
     }
   } else {
@@ -192,7 +193,7 @@ void Parser::analyseIndex() {
 }
 
 template <class T>
-void setAutoindex(T conf, const std::string &flag) {
+void setAutoindex(T &conf, const std::string &flag) {
   if (flag == "on")
     conf.common_.autoindex_ = true;
   else if (flag == "off")
@@ -225,7 +226,7 @@ void Parser::analyseAutoindex() {
 }
 
 template <class T>
-void setErrorPages(T conf, std::vector<std::string> &status, std::string &path) {
+void setErrorPages(T &conf, std::vector<std::string> &status, std::string &path) {
   for (std::vector<std::string>::iterator itr = status.begin(); itr != status.end(); itr++) {
     if (conf.common_.error_pages_.find(*itr) != conf.common_.error_pages_.end()) {
       throw std::runtime_error("error_page: duplicate erro_page path");
@@ -328,7 +329,9 @@ void Parser::analyseLimitExcept() {
   if (!expectTokenType(tok, Token::SEMICOLON)) {
     throw std::runtime_error("error_page: invalid grammar, need semicolon");
   }
-  loc.allowed_methods_["HEAD"] = true;
+  if (loc.allowed_methods_["GET"] == true) {
+    loc.allowed_methods_["HEAD"] = true;
+  }
   return;
 }
 

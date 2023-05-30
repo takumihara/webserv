@@ -17,9 +17,7 @@ void printStrings(const char *prefix, std::vector<std::string> &strs) {
 void Config::makePortServConfMap() {
   for (std::vector<ServerConf>::iterator serv_itr = server_confs_.begin(); serv_itr != server_confs_.end();
        serv_itr++) {
-    for (std::vector<int>::iterator port_itr = serv_itr->port_.begin(); port_itr != serv_itr->port_.end(); port_itr++) {
-      (port_servConf_map_[*port_itr]).push_back(&(*serv_itr));
-    }
+    (port_servConf_map_[serv_itr->port_]).push_back(&(*serv_itr));
   }
 }
 
@@ -75,10 +73,8 @@ void ServerConf::printServConf() {
        itr != common_.error_pages_.end(); itr++) {
     std::cout << "    error_status and path: " << itr->first << " " << itr->second << std::endl;
   }
-  for (size_t i = 0; i < host_.size(); i++) {
-    std::cout << "    listen host: " << std::setw(15) << std::left << host_[i];
-    std::cout << "    port: " << port_[i] << std::endl;
-  }
+  std::cout << "    listen host: " << std::setw(15) << std::left << host_;
+  std::cout << "    port: " << port_ << std::endl;
   int j = 0;
   for (std::vector<LocationConf>::iterator itr2 = location_confs_.begin(); itr2 != location_confs_.end(); itr2++, j++) {
     std::cout << "    location" << j << std::endl;
@@ -86,9 +82,9 @@ void ServerConf::printServConf() {
   }
 }
 
-std::vector<std::string> &ServerConf::getHostNames() { return host_; }
+std::string &ServerConf::getHostNames() { return host_; }
 
-std::vector<int> &ServerConf::getPorts() { return port_; }
+int &ServerConf::getPorts() { return port_; }
 
 std::vector<std::string> &ServerConf::getServerNames() { return server_names_; }
 
