@@ -14,56 +14,51 @@
 #define MIN_PORT_NUM 0
 #define MAX_PORT_NUM 65535
 
-bool HttpRequest::readRequest(EventManager &event_manager) {
-  char request[SOCKET_READ_SIZE + 1];
-  bzero(request, SOCKET_READ_SIZE + 1);
-  std::string req_str;
-  int size = read(sock_fd_, request, SOCKET_READ_SIZE);
+bool HttpRequest::readRequest(HttpRequest &req, EventManager &em, IReadCloser *rc) {
+  std::string request;
+
+  size_t size = rc->read(request, SOCKET_READ_SIZE);
   bool finishedReading = false;
 
-  if (size == -1) {
-    throw std::runtime_error("read error");
-  } else if (size == 0) {
-    printf("closed fd = %d\n", sock_fd_);
+  if (size == 0) {
+    printf("closed fd = %d\n", req.sock_fd_);
     // closeとEVFILT_TIMERのDELETEはワンセット
-    close(sock_fd_);
-    event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
-    event_manager.remove(std::pair<t_id, t_type>(sock_fd_, FD));
+    rc->close();
+    em.addChangedEvents((struct kevent){static_cast<uintptr_t>(req.sock_fd_), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+    em.remove(std::pair<t_id, t_type>(req.sock_fd_, FD));
   } else {
-    req_str = std::string(request);
-    raw_data_ += req_str;
+    req.raw_data_ += request;
 
-    std::cout << "read from socket(fd:" << sock_fd_ << ")"
-              << ":'" << escape(raw_data_) << "'" << std::endl;
-    std::cout << "state: " << state_ << std::endl;
-    if (state_ == ReadingStartLine && isActionable()) {
-      trimToEndingChars();
-      parseStartline();
-      refresh();
-      moveToNextState();
+    std::cout << "read from socket(fd:" << req.sock_fd_ << ")"
+              << ":'" << escape(req.raw_data_) << "'" << std::endl;
+    if (req.state_ == ReadingStartLine && req.isActionable()) {
+      req.trimToEndingChars();
+      req.parseStartline();
+      req.refresh();
+      req.moveToNextState();
     }
-    if (state_ == ReadingHeaders && isActionable()) {
-      trimToEndingChars();
-      parseHeaders();
-      refresh();
-      if (!isReceivingBody()) {
+    if (req.state_ == ReadingHeaders && req.isActionable()) {
+      req.trimToEndingChars();
+      req.parseHeaders();
+      req.refresh();
+      if (!req.isReceivingBody()) {
         finishedReading = true;
       } else {
-        moveToNextState();
+        req.moveToNextState();
       }
     }
-    if (state_ == ReadingChunkedBody) {
-      finishedReading = readChunkedBody();
-    } else if (state_ == ReadingBody && isActionable()) {
-      body_ = raw_data_;
+    if (req.state_ == ReadingChunkedBody) {
+      finishedReading = req.readChunkedBody();
+    } else if (req.state_ == ReadingBody && req.isActionable()) {
+      req.body_ = req.raw_data_;
       finishedReading = true;
     }
 
     if (finishedReading) {
-      DEBUG_PRINTF("FINISHED READING: %s \n", escape(body_).c_str());
-      moveToNextState();
-      // event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
-      // event_manager.addChangedEvents((struct kevent){sock_fd_, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL});
+      DEBUG_PRINTF("FINISHED READING: %s \n", escape(req.body_).c_str());
+      req.moveToNextState();
+      // event_manager.addChangedEvents((struct kevent){req.sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+      // event_manager.addChangedEvents((struct kevent){req.sock_fd_, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL});
     }
   }
 

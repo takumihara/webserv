@@ -2,6 +2,7 @@
 #define CONNECTION_SOCKET_HPP_
 
 #include "../EventManager.hpp"
+#include "../IO/IReadCloser.hpp"
 // #include "CGI.hpp"
 #include <deque>
 
@@ -10,13 +11,14 @@ class CGI;
 
 class ConnectionSocket : public Observee {
  public:
-  ConnectionSocket(int id, int port, Config &conf, Observee *parent)
+  ConnectionSocket(int id, int port, Config &conf, Observee *parent, IReadCloser *rc)
       : Observee(id, "connection", parent),
         port_(port),
         conf_(conf),
         request_(HttpRequest(id, port, conf)),
-        response_(HttpResponse(id, port)) {}
-  ~ConnectionSocket() {}
+        response_(HttpResponse(id, port)),
+        rc_(rc) {}
+  ~ConnectionSocket() { delete rc_; }
   void notify(EventManager &event_manager, struct kevent ev);
   void shutdown(EventManager &em);
   void send_response(EventManager &event_manager);
@@ -36,6 +38,7 @@ class ConnectionSocket : public Observee {
   // std::string result_;
   HttpRequest request_;
   HttpResponse response_;
+  IReadCloser *rc_;
   //   std::deque<HttpRequest> request_;
   //   std::deque<HttpResponse> response_;
 };

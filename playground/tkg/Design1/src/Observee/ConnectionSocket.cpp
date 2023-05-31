@@ -31,7 +31,7 @@ static std::string readFile(const char *filename) {
 void ConnectionSocket::shutdown(EventManager &em) {
   DEBUG_PUTS("ConnectionSocket shutdown");
   close(id_);
-  em.addChangedEvents((struct kevent){id_, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+  em.addChangedEvents((struct kevent){static_cast<uintptr_t>(id_), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
   em.remove(std::pair<t_id, t_type>(id_, FD));
 }
 
@@ -67,10 +67,10 @@ void ConnectionSocket::execCGI(const std::string &path, EventManager &event_mana
     CGI *obs = makeCGI(need_fd, pid);
     std::cout << "need_fd: " << need_fd << "  pid: " << pid << std::endl;
     event_manager.add(std::pair<t_id, t_type>(need_fd, FD), obs);
-    event_manager.addChangedEvents((struct kevent){id_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
-    event_manager.addChangedEvents((struct kevent){need_fd, EVFILT_READ, EV_ADD, 0, 0, 0});
-    event_manager.addChangedEvents(
-        (struct kevent){need_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+    event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(id_), EVFILT_READ, EV_DISABLE, 0, 0, 0});
+    event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(need_fd), EVFILT_READ, EV_ADD, 0, 0, 0});
+    event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(need_fd), EVFILT_TIMER, EV_ADD | EV_ENABLE,
+                                                   NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
   }
 }
 
@@ -187,9 +187,10 @@ void ConnectionSocket::process(EventManager &event_manager) {
   } else if (request_.methodIs(HttpRequest::GET)) {
     // handle GET
     processGET(loc_conf, path);
-    event_manager.addChangedEvents((struct kevent){id_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
     event_manager.addChangedEvents(
-        (struct kevent){id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+        (struct kevent){static_cast<uintptr_t>(id_), EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
+    event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(id_), EVFILT_TIMER, EV_ADD | EV_ENABLE,
+                                                   NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
     return;
   } else if (request_.methodIs(HttpRequest::POST)) {
     // handle POST
@@ -204,7 +205,7 @@ void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
   if (ev.filter == EVFILT_READ) {
     DEBUG_PUTS("handle_request() called");
     try {
-      bool finished_reading = request_.readRequest(event_manager);
+      bool finished_reading = HttpRequest::readRequest(request_, event_manager, rc_);
       if (finished_reading) {
         this->process(event_manager);
       }
@@ -217,12 +218,14 @@ void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
       std::cout << e.what() << std::endl;
       close(ev.ident);
       event_manager.remove(std::pair<t_id, t_type>(ev.ident, FD));
-      event_manager.addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+      event_manager.addChangedEvents(
+          (struct kevent){static_cast<uintptr_t>(ev.ident), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
     } catch (std::runtime_error &e) {
       std::cout << e.what() << std::endl;
       close(ev.ident);
       event_manager.remove(std::pair<t_id, t_type>(ev.ident, FD));
-      event_manager.addChangedEvents((struct kevent){ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+      event_manager.addChangedEvents(
+          (struct kevent){static_cast<uintptr_t>(ev.ident), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
     }
   }
   if (ev.filter == EVFILT_WRITE) {

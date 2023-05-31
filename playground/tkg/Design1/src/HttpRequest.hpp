@@ -11,6 +11,7 @@
 #include <string>
 
 #include "./Config/Config.hpp"
+#include "./IO/IReadCloser.hpp"
 
 class EventManager;
 
@@ -70,13 +71,14 @@ class HttpRequest {
     }
     return *this;
   }
-  bool readRequest(EventManager &em);
   void refresh();
   const std::string &getBody() const;
   const Host &getHost() const;
   bool methodIs(Method method) const;
   const RequestTarget &getRequestTarget() const;
   bool isChunked();
+
+  static bool readRequest(HttpRequest &req, EventManager &em, IReadCloser *rc);
 
   class BadRequestException : public std::exception {
     virtual const char *what() const throw() { return "Bad Request"; };
