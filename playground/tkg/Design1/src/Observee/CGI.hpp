@@ -6,11 +6,11 @@
 
 class CGI : public Observee {
  public:
-  CGI(int id, int pid, Observee *parent, HttpResponse *response)
-      : Observee(id, "cgi", parent), pid_(pid), response_(response) {}
+  CGI(int id, int pid, EventManager *em, Observee *parent, HttpResponse *response)
+      : Observee(id, "cgi", em, parent), pid_(pid), response_(response) {}
   ~CGI() {}
-  void notify(EventManager &event_manager, struct kevent ev);
-  void shutdown(EventManager &em);
+  void notify(struct kevent ev);
+  void shutdown();
 
  private:
   int pid_;

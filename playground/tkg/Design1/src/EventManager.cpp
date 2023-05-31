@@ -27,11 +27,27 @@ void EventManager::registerServerEvent(int fd, int port, Config &conf) {
   EV_SET(&chlist, fd, EVFILT_READ, EV_ADD, 0, 0, 0);
   DEBUG_PUTS("");
   kevent(kq_, &chlist, 1, NULL, 0, NULL);
-  Observee *obs = new ServerSocket(fd, port, conf);
+  Observee *obs = new ServerSocket(fd, port, conf, this);
   std::cout << "sock fd: " << fd << std::endl;
   add(std::pair<t_id, t_type>(fd, FD), obs);
   observees_[std::pair<t_id, t_type>(fd, FD)];
   std::cout << observees_[std::pair<t_id, t_type>(fd, FD)]->id_;
+}
+
+void EventManager::disableReadAndAddWriteEvent(uintptr_t read, uintptr_t write) {
+  addChangedEvents((struct kevent){read, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+
+  addChangedEvents((struct kevent){write, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
+  addChangedEvents(
+      (struct kevent){write, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+}
+
+void EventManager::disableReadAndAddReadEvent(uintptr_t parent, uintptr_t child) {
+  addChangedEvents((struct kevent){parent, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+
+  addChangedEvents((struct kevent){child, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0});
+  addChangedEvents(
+      (struct kevent){child, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
 }
 
 std::string getEventFilter(int flag) {
@@ -89,14 +105,12 @@ void EventManager::handleEvent(struct kevent ev) {
     DEBUG_PUTS("timeout");
     handleTimeout(ev);
   } else {
-    observees_[std::pair<t_id, t_type>(ev.ident, getType(ev.filter))]->notify(*this, ev);
+    observees_[std::pair<t_id, t_type>(ev.ident, getType(ev.filter))]->notify(ev);
   }
   DEBUG_PUTS("END HANDLE EVENT");
 }
 
-void EventManager::handleTimeout(struct kevent ev) {
-  observees_[std::pair<t_id, t_type>(ev.ident, FD)]->shutdown(*this);
-}
+void EventManager::handleTimeout(struct kevent ev) { observees_[std::pair<t_id, t_type>(ev.ident, FD)]->shutdown(); }
 
 void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(struct kevent) * kMaxEventSize); }
 

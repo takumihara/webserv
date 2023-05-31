@@ -17,6 +17,7 @@ class CommonConf {
         index_(conf.index_),
         autoindex_(conf.autoindex_),
         error_pages_(conf.error_pages_) {}
+  std::string getIndexFile(std::string path) const;
   std::size_t max_body_size_;
   std::string root_;
   std::vector<std::string> index_;
@@ -32,7 +33,7 @@ class LocationConf {
   void printAllowedMethod();
   std::map<std::string, bool> &getAllowedMethods();
   std::vector<std::string> &getCGIExtensions();
-
+  std::string getTargetPath(const std::string &request_uri) const;
   std::string path_;
   std::pair<std::string, std::string> redirect_;
   CommonConf common_;
@@ -47,8 +48,7 @@ class ServerConf {
   std::vector<std::string> &getServerNames();
   std::string &getHostNames();
   int &getPorts();
-  const LocationConf &getLocationConfig(const std::string &path) const;
-
+  const LocationConf &getLocationConf(const std::string &path) const;
   std::string host_;
   int port_;
   std::vector<std::string> server_names_;
@@ -70,7 +70,6 @@ class Config {
   void printConfig();
   void printPortServConfMap();
   const ServerConf *getServerConf(const int port, const std::string &host);
-  const LocationConf &getLocationConf(const ServerConf *serv_conf, const std::string &path) const;
   int getLimitConnection() const;
 
   int limit_connection_;

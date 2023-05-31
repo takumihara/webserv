@@ -3,7 +3,7 @@
 #include <string>
 
 #define SOCKET_READ_SIZE 100
-#define FILE_READ_SIZE 3
+#define FILE_READ_SIZE 330
 
 #define SOCKET_WRITE_SIZE 1000
 

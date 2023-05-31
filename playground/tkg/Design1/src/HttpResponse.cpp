@@ -25,6 +25,7 @@ void HttpResponse::createResponse() {
   response_ = ss.str();
   std::cout << response_;
   response_size_ = response_.size();
+  sending_response_size_ = 0;
 }
 
 void HttpResponse::sendResponse(EventManager &event_manager) {
