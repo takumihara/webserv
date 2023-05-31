@@ -39,7 +39,7 @@ class Observee {
   virtual void monitorChild(Observee *child) { children_.insert(child); };
 
  public:
-  int id_;
+  uintptr_t id_;
   std::string type_;
   EventManager *em_;
   Observee *parent_;
