@@ -34,20 +34,35 @@ void EventManager::registerServerEvent(int fd, int port, Config &conf) {
   std::cout << observees_[std::pair<t_id, t_type>(fd, FD)]->id_;
 }
 
-void EventManager::disableReadAndAddWriteEvent(uintptr_t read, uintptr_t write) {
-  addChangedEvents((struct kevent){read, EVFILT_READ, EV_DISABLE, 0, 0, 0});
-
-  addChangedEvents((struct kevent){write, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
+void EventManager::registerWriteEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
   addChangedEvents(
-      (struct kevent){write, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+      (struct kevent){fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
 }
 
-void EventManager::disableReadAndAddReadEvent(uintptr_t parent, uintptr_t child) {
-  addChangedEvents((struct kevent){parent, EVFILT_READ, EV_DISABLE, 0, 0, 0});
-
-  addChangedEvents((struct kevent){child, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0});
+void EventManager::registerReadEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0});
   addChangedEvents(
-      (struct kevent){child, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+      (struct kevent){fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+}
+
+void EventManager::disableReadEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+}
+
+void EventManager::disableWriteEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
+}
+
+void EventManager::deleteTimerEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_TIMER, EV_DELETE, 0, 0, 0});
+}
+
+void EventManager::updateTimer(Observee *obs) {
+  if (obs->parent_) {
+    updateTimer(obs->parent_);
+  }
+  addChangedEvents((struct kevent){obs->id_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
 }
 
 std::string getEventFilter(int flag) {

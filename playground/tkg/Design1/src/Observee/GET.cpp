@@ -24,7 +24,7 @@
 void GET::shutdown() {
   DEBUG_PUTS("GET shutdown");
   close(id_);
-  em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(id_), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+  em_->deleteTimerEvent(id_);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
@@ -71,16 +71,13 @@ void GET::notify(struct kevent ev) {
   } else {
     buff[res] = '\0';
     response_->appendBody(std::string(buff));
+    em_->updateTimer(this);
     if (res == 0 || res == ev.data) {
       close(id_);
       response_->setStatus(200);
       parent_->obliviateChild(this);
-      em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(id_), EVFILT_TIMER, EV_DELETE, NOTE_SECONDS,
-                                            EventManager::kTimeoutDuration, 0});
-      em_->addChangedEvents(
-          (struct kevent){static_cast<uintptr_t>(parent_->id_), EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-      em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(parent_->id_), EVFILT_TIMER, EV_ADD | EV_ENABLE,
-                                            NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+      em_->deleteTimerEvent(id_);
+      em_->registerWriteEvent(parent_->id_);
       std::cout << "GET LAST RESULT: '" << response_->getBody() << "'" << std::endl;
       em_->remove(std::pair<t_id, t_type>(id_, FD));
       return;

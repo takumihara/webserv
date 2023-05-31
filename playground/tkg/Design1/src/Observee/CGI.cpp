@@ -20,7 +20,7 @@
 void CGI::shutdown() {
   DEBUG_PUTS("CGI shutdown");
   close(id_);
-  em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(id_), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+  em_->deleteTimerEvent(id_);
   kill(pid_, SIGINT);
   waitpid(pid_, NULL, 0);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
@@ -38,20 +38,15 @@ void CGI::notify(struct kevent ev) {
     close(id_);
     response_->setStatus(200);
     parent_->obliviateChild(this);
-    (void)pid_;
-    em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(id_), EVFILT_TIMER, EV_DELETE, NOTE_SECONDS,
-                                          EventManager::kTimeoutDuration, 0});
-    em_->addChangedEvents(
-        (struct kevent){static_cast<uintptr_t>(parent_->id_), EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-    em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(parent_->id_), EVFILT_TIMER, EV_ADD | EV_ENABLE,
-                                          NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+    em_->deleteTimerEvent(id_);
+    em_->registerWriteEvent(parent_->id_);
     std::cout << "CGI LAST RESULT: '" << response_->getBody() << "'" << std::endl;
     em_->remove(std::pair<t_id, t_type>(id_, FD));
   } else {
     std::cout << "res: " << res << std::endl;
     buff[res] = '\0';
     response_->appendBody(std::string(buff));
-
+    em_->updateTimer(this);
     std::cout << "cgi wip result: '" << response_->getBody() << "'" << std::endl;
   }
 }

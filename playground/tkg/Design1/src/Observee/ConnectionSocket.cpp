@@ -24,7 +24,7 @@
 void ConnectionSocket::shutdown() {
   DEBUG_PUTS("ConnectionSocket shutdown");
   close(id_);
-  em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(id_), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+  em_->deleteTimerEvent(id_);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
@@ -70,7 +70,8 @@ void ConnectionSocket::execCGI(const ServerConf *serv_conf) {
     CGI *obs = makeCGI(need_fd, pid);
     std::cout << "need_fd: " << need_fd << "  pid: " << pid << std::endl;
     em_->add(std::pair<t_id, t_type>(need_fd, FD), obs);
-    em_->disableReadAndAddReadEvent(id_, need_fd);
+    em_->disableReadEvent(id_);
+    em_->registerReadEvent(need_fd);
   }
 }
 
@@ -107,7 +108,8 @@ void ConnectionSocket::processGET(const ServerConf *serv_conf) {
       }
       response_.setStatus(200);
       DEBUG_PUTS("autoindex");
-      em_->disableReadAndAddWriteEvent(id_, id_);
+      em_->disableReadEvent(id_);
+      em_->registerWriteEvent(id_);
       return;  // 200 OK
     }
     if (idx_path == "" && !loc_conf.common_.autoindex_) {
@@ -118,7 +120,8 @@ void ConnectionSocket::processGET(const ServerConf *serv_conf) {
   int fd = open(path.c_str(), O_RDONLY);
   GET *obs = makeGET(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
-  em_->disableReadAndAddReadEvent(id_, fd);
+  em_->disableReadEvent(id_);
+  em_->registerReadEvent(fd);
 }
 
 void ConnectionSocket::process() {
@@ -130,7 +133,8 @@ void ConnectionSocket::process() {
       execCGI(serv_conf);
     } catch (std::runtime_error &e) {
       std::cerr << e.what() << std::endl;
-      em_->disableReadAndAddWriteEvent(id_, id_);
+      em_->disableReadEvent(id_);
+      em_->registerWriteEvent(id_);
     }
   } else if (request_.methodIs(HttpRequest::GET)) {
     // handle GET
@@ -138,7 +142,8 @@ void ConnectionSocket::process() {
       processGET(serv_conf);
     } catch (std::runtime_error &e) {
       std::cerr << e.what() << std::endl;
-      em_->disableReadAndAddWriteEvent(id_, id_);
+      em_->disableReadEvent(id_);
+      em_->registerWriteEvent(id_);
     }
   } else if (request_.methodIs(HttpRequest::POST)) {
     // handle POST
