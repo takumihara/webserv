@@ -165,7 +165,12 @@ void ConnectionSocket::processGET(const LocationConf &conf, std::string path) {
       return;  // 404 error
     }
   }
-  response_.appendBody(readFile(path.c_str()));
+  try {
+    response_.appendBody(readFile(path.c_str()));
+  } catch (std::runtime_error &e) {
+    response_.setStatus(403);
+    return;
+  }
   DEBUG_PUTS("index or autoindex");
   response_.setStatus(200);
   return;  // 200 OK
