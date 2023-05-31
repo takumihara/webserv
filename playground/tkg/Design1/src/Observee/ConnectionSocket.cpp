@@ -36,7 +36,7 @@ void ConnectionSocket::shutdown(EventManager &em) {
 }
 
 CGI *ConnectionSocket::makeCGI(int id, int pid) {
-  CGI *obs = new CGI(id, pid, this, &result_);
+  CGI *obs = new CGI(id, pid, this, &response_);
   this->monitorChild(obs);
   return obs;
 }
@@ -85,33 +85,31 @@ std::string ConnectionSocket::getTargetPath(const LocationConf &loc) {
 std::string ConnectionSocket::listFilesAndDirectories(const std::string &directory_path) {
   DIR *dir;
   struct dirent *entry;
-  struct stat fileStat;
+  struct stat file_stat;
   std::string ret = "";
 
   if ((dir = opendir(directory_path.c_str())) == NULL) {
-    perror("Error opening directory");
-    return ret;
+    throw std::runtime_error("listFilesAndDirectories: opendir error");
   }
   while ((entry = readdir(dir)) != NULL) {
     std::string file_path;
     file_path = directory_path + "/" + entry->d_name;
 
-    if (stat(file_path.c_str(), &fileStat) == -1) {
-      perror("Error getting file/directory information");
+    if (stat(file_path.c_str(), &file_stat) == -1) {
+      perror("listFilesAndDirectories: stat error");
       continue;
     }
     std::string name = entry->d_name;
-    if (S_ISREG(fileStat.st_mode)) {
+    if (S_ISREG(file_stat.st_mode)) {
       ret += entry->d_name;
       ret += "\n";
-    } else if (S_ISDIR(fileStat.st_mode)) {
+    } else if (S_ISDIR(file_stat.st_mode)) {
       if (name != "." && name != "..") {
         ret += entry->d_name;
         ret += "/\n";
       }
     }
   }
-  std::cout << "directory list: " << ret;
   closedir(dir);
   return ret;
 }
@@ -128,11 +126,7 @@ std::string ConnectionSocket::getIndexFile(const LocationConf &conf, std::string
   return "";
 }
 
-void ConnectionSocket::processGET(EventManager &event_manager, std::string path) {
-  const ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
-  const LocationConf &loc_conf = conf_.getLocationConf(serv_conf, request_.getRequestTarget().absolute_path);
-
-  (void)event_manager;
+void ConnectionSocket::processGET(const LocationConf &conf, std::string path) {
   // check directory or file exists
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
@@ -150,23 +144,28 @@ void ConnectionSocket::processGET(EventManager &event_manager, std::string path)
   if (is_directory) {
     // see through index files (if no index files and autoindex is on, you should create directory list)
     std::string idx_path;
-    if (loc_conf.common_.index_.size() != 0) {
-      idx_path = getIndexFile(loc_conf, path);
+    if (conf.common_.index_.size() != 0) {
+      idx_path = getIndexFile(conf, path);
       if (idx_path != "") path = idx_path;
     }
-    if (idx_path == "" && loc_conf.common_.autoindex_) {
-      result_ = listFilesAndDirectories(path);
+    if (idx_path == "" && conf.common_.autoindex_) {
+      try {
+        response_.appendBody(listFilesAndDirectories(path));
+      } catch (std::runtime_error &e) {
+        response_.setStatus(403);
+        return;
+      }
       response_.setStatus(200);
       DEBUG_PUTS("autoindex");
       return;  // 200 OK
     }
-    if (idx_path == "" && !loc_conf.common_.autoindex_) {
+    if (idx_path == "" && !conf.common_.autoindex_) {
       response_.setStatus(404);
       DEBUG_PUTS("no index and autoindex");
       return;  // 404 error
     }
   }
-  result_ = readFile(path.c_str());
+  response_.appendBody(readFile(path.c_str()));
   DEBUG_PUTS("index or autoindex");
   response_.setStatus(200);
   return;  // 200 OK
@@ -182,7 +181,7 @@ void ConnectionSocket::process(EventManager &event_manager) {
     execCGI(path, event_manager);
   } else if (request_.methodIs(HttpRequest::GET)) {
     // handle GET
-    processGET(event_manager, path);
+    processGET(loc_conf, path);
     event_manager.addChangedEvents((struct kevent){id_, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
     event_manager.addChangedEvents(
         (struct kevent){id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
@@ -224,7 +223,7 @@ void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
   if (ev.filter == EVFILT_WRITE) {
     DEBUG_PUTS("handle_response() called");
     request_.refresh();
-    response_.createResponse(result_);
+    response_.createResponse();
     response_.sendResponse(event_manager);
     // request_ = HttpRequest(id_, port_, conf_);
     // request_.headers_ .clear();
