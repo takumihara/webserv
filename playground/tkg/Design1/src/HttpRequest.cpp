@@ -396,6 +396,7 @@ void HttpRequest::refresh() {
   raw_data_ = rest_;
   rest_ = "";
 }
+bool HttpRequest::methodIs(Method method) const { return request_line_.method == method; };
 
 const std::string &HttpRequest::getBody() const { return body_; }
 

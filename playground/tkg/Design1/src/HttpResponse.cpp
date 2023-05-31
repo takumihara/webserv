@@ -1,17 +1,29 @@
 #include "HttpResponse.hpp"
 
+#include <stdio.h>
 #include <sys/event.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/types.h>
 
+#include <sstream>
+
 #include "EventManager.hpp"
 #include "const.hpp"
 
-void HttpResponse::createResponse(const std::string &result) {
-  raw_data_ = result;
-  response_ = result;
-  // response_ = "HTTP/1.1 200 Ok\r\nContent-Length: " + std::to_string(result.size()) + "\r\n\r\n" + result + "\r\n";
+void HttpResponse::setStatus(const int status) { status_ = status; }
+
+void HttpResponse::appendBody(const std::string &str) { body_ += str; }
+
+const std::string &HttpResponse::getBody() const { return body_; }
+
+void HttpResponse::createResponse() {
+  std::stringstream ss;
+
+  ss << "HTTP/1.1 " << status_ << " status-message" << CRLF << "Content-Length: " << body_.size() << CRLF << CRLF
+     << body_ << CRLF;
+  response_ = ss.str();
+  std::cout << response_;
   response_size_ = response_.size();
 }
 
@@ -47,5 +59,5 @@ void HttpResponse::refresh(EventManager &em) {
   // em.addChangedEvents(
   //    (struct kevent){sock_fd_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
   response_ = "";
-  raw_data_ = "";
+  body_ = "";
 }

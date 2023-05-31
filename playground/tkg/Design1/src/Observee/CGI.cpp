@@ -37,19 +37,19 @@ void CGI::notify(EventManager &event_manager, struct kevent ev) {
     close(id_);
     parent_->obliviateChild(this);
     (void)pid_;
-    event_manager.addChangedEvents(
-        (struct kevent){static_cast<uintptr_t>(id_), EVFILT_TIMER, EV_DELETE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+    event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(id_), EVFILT_TIMER, EV_DELETE, NOTE_SECONDS,
+                                                   EventManager::kTimeoutDuration, 0});
     event_manager.addChangedEvents(
         (struct kevent){static_cast<uintptr_t>(parent_->id_), EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
     event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(parent_->id_), EVFILT_TIMER,
                                                    EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration,
                                                    0});
-    std::cout << "CGI LAST RESULT: '" << *result_ << "'" << std::endl;
+    std::cout << "CGI LAST RESULT: '" << response_->getBody() << "'" << std::endl;
     event_manager.remove(std::pair<t_id, t_type>(id_, FD));
   } else {
     std::cout << "res: " << res << std::endl;
     buff[res] = '\0';
-    *result_ += std::string(buff);
-    std::cout << "cgi wip result: '" << *result_ << "'" << std::endl;
+    response_->appendBody(std::string(buff));
+    std::cout << "cgi wip result: '" << response_->getBody() << "'" << std::endl;
   }
 }

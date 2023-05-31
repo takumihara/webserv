@@ -15,7 +15,6 @@ class ConnectionSocket : public Observee {
       : Observee(id, "connection", parent),
         port_(port),
         conf_(conf),
-        result_(""),
         request_(HttpRequest(id, port, conf)),
         response_(HttpResponse(id, port)),
         rc_(rc) {}
@@ -24,15 +23,19 @@ class ConnectionSocket : public Observee {
   void shutdown(EventManager &em);
   void send_response(EventManager &event_manager);
   void process(EventManager &em);
+  void processGET(const LocationConf &loc_conf, std::string path);
   void execCGI(const std::string &path, EventManager &event_manager);
   CGI *makeCGI(int id, int pid);
+  std::string getTargetPath(const LocationConf &loc);
+  std::string listFilesAndDirectories(const std::string &directoryPath);
+  std::string getIndexFile(const LocationConf &conf, std::string path);
   void addChild(Observee *obs);
   void removeChild(Observee *obs);
 
  private:
   int port_;
   Config &conf_;
-  std::string result_;
+  // std::string result_;
   HttpRequest request_;
   HttpResponse response_;
   IReadCloser *rc_;
