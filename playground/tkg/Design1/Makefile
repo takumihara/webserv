@@ -99,6 +99,8 @@ conftest: $(gtest)
 	-./conftest
 	@rm conftest
 
+unit_conf: 
+	clang++  -std=c++11 $(CONFTEST_SRCS) $(INCLUDE) $(testdir)/Config/main.cpp -o ./test/Config/a.out
 
 .PHONY: conftest
 	

@@ -15,7 +15,7 @@
 
 const std::string Parser::kReserved = ";{}";
 const std::string Parser::kDefaultIP = "0.0.0.0";
-const int Parser::kDefaultPort = 8080;
+const int Parser::kDefaultPort = 80;
 
 std::string readFile(const char *filename) {
   std::ifstream ifs(filename);

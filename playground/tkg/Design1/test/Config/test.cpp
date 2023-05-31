@@ -170,4 +170,10 @@ TEST(Conftest, OK_03_multiple_location) {
   const std::string res = stringifyConfig("./test/Config/input/OK_03_multiple_location.conf");
   EXPECT_EQ(res, ans);
 }
+
+TEST(Conftest, OK_04_multiple_server) {
+  const std::string ans = readFile("./test/Config/output/OK_04_multiple_server.conf");
+  const std::string res = stringifyConfig("./test/Config/input/OK_04_multiple_server.conf");
+  EXPECT_EQ(res, ans);
+}
 #endif
