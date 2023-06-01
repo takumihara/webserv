@@ -17,7 +17,7 @@ class EventManager;
 
 class HttpRequest {
  public:
-  enum State { ReadingStartLine, ReadingHeaders, ReadingChunkedBody, ReadingBody, End };
+  enum State { ReadingStartLine, ReadingHeaders, ReadingChunkedBody, ReadingBody, FinishedReading, SocketClosed, End };
   enum ReadingChunkedState { ReadingChunkedSize, ReadingChunkedData };
   enum RequestTargetType { OriginForm, AbsoluteForm, AuthorityForm, AsteriskForm };
   enum Method { GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH };
@@ -78,7 +78,7 @@ class HttpRequest {
   const RequestTarget &getRequestTarget() const;
   bool isChunked();
 
-  static bool readRequest(HttpRequest &req, EventManager &em, IReadCloser *rc);
+  static State readRequest(HttpRequest &req, IReadCloser *rc);
   class HttpException : public std::runtime_error {
    public:
     HttpException(int statusCode, const std::string &statusMessage)
@@ -147,7 +147,7 @@ class HttpRequest {
   void analyzeServer(const std::string &value);
 
   void readBody();
-  bool readChunkedBody();
+  void readChunkedBody();
 
   bool isReceivingBody();
   bool isActionable();

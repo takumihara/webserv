@@ -19,6 +19,7 @@
 #include <stdexcept>
 
 #include "CGI.hpp"
+#include "helper.hpp"
 
 static std::string readFile(const char *filename) {
   std::ifstream ifs(filename);
@@ -205,21 +206,19 @@ void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
   if (ev.filter == EVFILT_READ) {
     DEBUG_PUTS("handle_request() called");
     try {
-      bool finished_reading = HttpRequest::readRequest(request_, event_manager, rc_);
-      if (finished_reading) {
+      HttpRequest::State state = HttpRequest::readRequest(request_, rc_);
+      if (state == HttpRequest::FinishedReading) {
+        DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.getBody()).c_str());
+
         this->process(event_manager);
+      } else if (state == HttpRequest::SocketClosed) {
+        shutdown(event_manager);
       }
       // todo(thara): handle exceptions
       // } catch (const HttpRequest::BadRequestException &e) {
       // } catch (const HttpRequest::NotImplementedException &e) {
       // } catch (const HttpRequest::NotAllowedException &e) {
       // } catch (const HttpRequest::VersionNotSupportedException &e) {
-    } catch (std::exception &e) {
-      std::cout << e.what() << std::endl;
-      close(ev.ident);
-      event_manager.remove(std::pair<t_id, t_type>(ev.ident, FD));
-      event_manager.addChangedEvents(
-          (struct kevent){static_cast<uintptr_t>(ev.ident), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
     } catch (std::runtime_error &e) {
       std::cout << e.what() << std::endl;
       close(ev.ident);
@@ -233,7 +232,6 @@ void ConnectionSocket::notify(EventManager &event_manager, struct kevent ev) {
     request_.refresh();
     response_.createResponse();
     response_.sendResponse(event_manager);
-    // request_ = HttpRequest(id_, port_, conf_);
-    // request_.headers_ .clear();
+    request_ = HttpRequest(id_, port_, conf_);
   }
 }

@@ -14,56 +14,39 @@
 #define MIN_PORT_NUM 0
 #define MAX_PORT_NUM 65535
 
-bool HttpRequest::readRequest(HttpRequest &req, EventManager &em, IReadCloser *rc) {
+HttpRequest::State HttpRequest::readRequest(HttpRequest &req, IReadCloser *rc) {
   std::string request;
 
   size_t size = rc->read(request, SOCKET_READ_SIZE);
-  bool finishedReading = false;
 
   // todo(thara): move this logic to ConnectionSocket
   if (size == 0) {
     printf("closed fd = %d\n", req.sock_fd_);
-    // closeとEVFILT_TIMERのDELETEはワンセット
-    rc->close();
-    em.addChangedEvents((struct kevent){static_cast<uintptr_t>(req.sock_fd_), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
-    em.remove(std::pair<t_id, t_type>(req.sock_fd_, FD));
-  } else {
-    req.raw_data_ += request;
+    return HttpRequest::SocketClosed;
+  }
+  req.raw_data_ += request;
 
-    std::cout << "read from socket(fd:" << req.sock_fd_ << ")"
-              << ":'" << escape(req.raw_data_) << "'" << std::endl;
-    if (req.state_ == ReadingStartLine && req.isActionable()) {
-      req.trimToEndingChars();
-      req.parseStartline();
-      req.refresh();
-      req.moveToNextState();
-    }
-    if (req.state_ == ReadingHeaders && req.isActionable()) {
-      req.trimToEndingChars();
-      req.parseHeaders();
-      req.refresh();
-      if (!req.isReceivingBody()) {
-        finishedReading = true;
-      } else {
-        req.moveToNextState();
-      }
-    }
-    if (req.state_ == ReadingChunkedBody) {
-      finishedReading = req.readChunkedBody();
-    } else if (req.state_ == ReadingBody && req.isActionable()) {
-      req.body_ = req.raw_data_;
-      finishedReading = true;
-    }
-
-    if (finishedReading) {
-      DEBUG_PRINTF("FINISHED READING: %s \n", escape(req.body_).c_str());
-      req.moveToNextState();
-      // event_manager.addChangedEvents((struct kevent){req.sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
-      // event_manager.addChangedEvents((struct kevent){req.sock_fd_, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL});
-    }
+  std::cout << "read from socket(fd:" << req.sock_fd_ << ")"
+            << ":'" << escape(req.raw_data_) << "'" << std::endl;
+  if (req.state_ == ReadingStartLine && req.isActionable()) {
+    req.trimToEndingChars();
+    req.parseStartline();
+    req.refresh();
+    req.moveToNextState();
+  }
+  if (req.state_ == ReadingHeaders && req.isActionable()) {
+    req.trimToEndingChars();
+    req.parseHeaders();
+    req.refresh();
+    req.moveToNextState();
+  }
+  if (req.state_ == ReadingChunkedBody) {
+    req.readChunkedBody();
+  } else if (req.state_ == ReadingBody && req.isActionable()) {
+    req.readBody();
   }
 
-  return finishedReading;
+  return req.state_;
 }
 
 bool HttpRequest::isReceivingBody() {
@@ -295,12 +278,12 @@ void HttpRequest::validateHeaderValue(const std::string &value) {
   }
 }
 
-bool HttpRequest::readChunkedBody() {
+void HttpRequest::readChunkedBody() {
   while (true) {
     if (chunked_reading_state_ == ReadingChunkedSize) {
       std::string::size_type end = raw_data_.find(CRLF);
       if (end == std::string::npos) {
-        return false;
+        return;
       }
 
       std::string hex = raw_data_.substr(0, end);
@@ -312,7 +295,8 @@ bool HttpRequest::readChunkedBody() {
         rest_ = raw_data_.substr(end + 2);
         // todo(thara): I think we can remove this because I added re-initialization of HttpRequest
         chunked_reading_state_ = ReadingChunkedSize;
-        return true;
+        moveToNextState();
+        return;
       }
 
       raw_data_ = raw_data_.substr(end + 2);
@@ -321,7 +305,7 @@ bool HttpRequest::readChunkedBody() {
 
     if (chunked_reading_state_ == ReadingChunkedData) {
       if (raw_data_.size() < (chunked_size_ + 2)) {
-        return false;
+        return;
       }
       if (raw_data_.substr(chunked_size_, 2) != CRLF) {
         throw BadRequestException("Http Request: invalid chunked body");
@@ -333,10 +317,13 @@ bool HttpRequest::readChunkedBody() {
       chunked_reading_state_ = ReadingChunkedSize;
     }
   }
-  return false;
+  return;
 }
 
-void HttpRequest::readBody() { body_ = raw_data_; }
+void HttpRequest::readBody() {
+  body_ = raw_data_;
+  moveToNextState();
+}
 
 bool HttpRequest::isActionable() {
   if (state_ == ReadingStartLine || state_ == ReadingHeaders) {
@@ -375,16 +362,19 @@ void HttpRequest::moveToNextState() {
       state_ = ReadingHeaders;
       break;
     case ReadingHeaders:
-      if (isChunked()) {
-        state_ = ReadingChunkedBody;
+      if (isReceivingBody()) {
+        if (isChunked()) {
+          state_ = ReadingChunkedBody;
+        } else {
+          state_ = ReadingBody;
+        }
       } else {
-        state_ = ReadingBody;
+        state_ = FinishedReading;
       }
       break;
     case ReadingBody:
     case ReadingChunkedBody:
-      // todo(thara): I think we can remove this because I added re-initialization of HttpRequest
-      state_ = ReadingStartLine;
+      state_ = FinishedReading;
       break;
     default:
       throw std::runtime_error("invalid HttpRequest state");

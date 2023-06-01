@@ -7,10 +7,9 @@
 
 TEST(Request, Get) {
   IReadCloser *rc = new MockReadCloser("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n");
-  EventManager em = EventManager();
   Config conf;
   HttpRequest req(0, 0, conf);
-  bool finished = HttpRequest::readRequest(req, em, rc);
+  bool finished = HttpRequest::readRequest(req, rc);
 
   ASSERT_TRUE(finished);
   ASSERT_EQ(req.getRequestTarget().absolute_path, "/");
@@ -24,7 +23,7 @@ TEST(Request, BodyLargerThanContentLength) {
   EventManager em = EventManager();
   Config conf;
   HttpRequest req(0, 0, conf);
-  bool finished = HttpRequest::readRequest(req, em, rc);
+  bool finished = HttpRequest::readRequest(req, rc);
 
   ASSERT_TRUE(finished);
   ASSERT_EQ(req.getBody(), "body");
@@ -36,7 +35,7 @@ TEST(Request, NoHostFeild) {
   Config conf;
   HttpRequest req(0, 0, conf);
   try {
-    HttpRequest::readRequest(req, em, rc);
+    HttpRequest::readRequest(req, rc);
     FAIL();
   } catch (HttpRequest::BadRequestException &e) {
     ASSERT_EQ(std::string(e.what()), std::string("missing host header"));
@@ -52,7 +51,7 @@ TEST(Request, BothContentLengthAndTransferEncoding) {
   Config conf;
   HttpRequest req(0, 0, conf);
   try {
-    HttpRequest::readRequest(req, em, rc);
+    HttpRequest::readRequest(req, rc);
     std::cout << "No Exception" << std::endl;
     FAIL();
   } catch (HttpRequest::BadRequestException &e) {
@@ -72,7 +71,7 @@ TEST(Request, TooBigContentLength) {
   HttpRequest req(0, 0, conf);
 
   try {
-    HttpRequest::readRequest(req, em, rc);
+    HttpRequest::readRequest(req, rc);
     std::cout << "No Exception" << std::endl;
     FAIL();
   } catch (HttpRequest::BadRequestException &e) {
@@ -91,7 +90,7 @@ TEST(Request, NegativeContentLength) {
   HttpRequest req(0, 0, conf);
 
   try {
-    HttpRequest::readRequest(req, em, rc);
+    HttpRequest::readRequest(req, rc);
     std::cout << "No Exception" << std::endl;
     FAIL();
   } catch (HttpRequest::BadRequestException &e) {
