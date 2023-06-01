@@ -62,3 +62,42 @@ TEST(Request, BothContentLengthAndTransferEncoding) {
     FAIL();
   }
 }
+
+TEST(Request, TooBigContentLength) {
+  const std::string req_str =
+      "POST / HTTP/1.1\r\nHost: localhost\r\nContent-Length: " + std::to_string(MiB + 1) + "\r\n\r\nbody";
+  IReadCloser *rc = new MockReadCloser(req_str);
+  EventManager em = EventManager();
+  Config conf;
+  HttpRequest req(0, 0, conf);
+
+  try {
+    HttpRequest::readRequest(req, em, rc);
+    std::cout << "No Exception" << std::endl;
+    FAIL();
+  } catch (HttpRequest::BadRequestException &e) {
+    ASSERT_EQ(std::string(e.what()), std::string("Http Request: invalid content-length"));
+  } catch (...) {
+    std::cout << "Wrong Exception" << std::endl;
+    FAIL();
+  }
+}
+
+TEST(Request, NegativeContentLength) {
+  const std::string req_str = "POST / HTTP/1.1\r\nHost: localhost\r\nContent-Length: -1\r\n\r\nbody";
+  IReadCloser *rc = new MockReadCloser(req_str);
+  EventManager em = EventManager();
+  Config conf;
+  HttpRequest req(0, 0, conf);
+
+  try {
+    HttpRequest::readRequest(req, em, rc);
+    std::cout << "No Exception" << std::endl;
+    FAIL();
+  } catch (HttpRequest::BadRequestException &e) {
+    ASSERT_EQ(std::string(e.what()), std::string("Http Request: invalid content-length"));
+  } catch (...) {
+    std::cout << "Wrong Exception" << std::endl;
+    FAIL();
+  }
+}

@@ -239,9 +239,9 @@ void HttpRequest::analyzeContentLength(const std::string &value) {
     throw BadRequestException("Http Request: invalid content-length");
   }
 
+  // todo: handle overflow
   const int val = std::atoi(value.c_str());
-  // todo: check if content length is too big
-  if (val < 0) {
+  if (val < 0 || conf_.getMaxBodySize() < val) {
     throw BadRequestException("Http Request: invalid content-length");
   }
   headers_.content_length = val;
@@ -290,7 +290,6 @@ void HttpRequest::validateHeaderName(const std::string &name) {
 }
 
 void HttpRequest::validateHeaderValue(const std::string &value) {
-  // todo(thara): check for obs-fold and return 400
   if (!isVchar(value)) {
     throw BadRequestException("Http Request: invalid header value");
   }
