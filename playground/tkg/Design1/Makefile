@@ -87,5 +87,6 @@ test: server tester
 	cp server server_binary
 	./server_binary > test/test.log 2>&1 &
 	@sleep 1
-	-./tester && pkill server_binary
+	-./tester
 	@rm server_binary
+	@pkill server_binary
