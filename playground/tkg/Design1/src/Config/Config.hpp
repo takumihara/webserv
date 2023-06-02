@@ -72,6 +72,7 @@ class Config {
   const ServerConf *getServerConf(const int port, const std::string &host);
   const LocationConf &getLocationConf(const ServerConf *serv_conf, const std::string &path) const;
   int getLimitConnection() const;
+  int getMaxBodySize() const;
 
   int limit_connection_;
   CommonConf common_;

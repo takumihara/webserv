@@ -17,7 +17,7 @@ class EventManager;
 
 class HttpRequest {
  public:
-  enum State { ReadingStartLine, ReadingHeaders, ReadingChunkedBody, ReadingBody, End };
+  enum State { ReadingStartLine, ReadingHeaders, ReadingChunkedBody, ReadingBody, FinishedReading, SocketClosed, End };
   enum ReadingChunkedState { ReadingChunkedSize, ReadingChunkedData };
   enum RequestTargetType { OriginForm, AbsoluteForm, AuthorityForm, AsteriskForm };
   enum Method { GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH };
@@ -78,19 +78,32 @@ class HttpRequest {
   const RequestTarget &getRequestTarget() const;
   bool isChunked();
 
-  static bool readRequest(HttpRequest &req, EventManager &em, IReadCloser *rc);
+  static State readRequest(HttpRequest &req, IReadCloser *rc);
+  class HttpException : public std::runtime_error {
+   public:
+    HttpException(int statusCode, const std::string &statusMessage)
+        : std::runtime_error(statusMessage), statusCode_(statusCode) {}
 
-  class BadRequestException : public std::exception {
-    virtual const char *what() const throw() { return "Bad Request"; };
+    int statusCode() const { return statusCode_; }
+
+   private:
+    int statusCode_;
   };
-  class NotImplementedException : public std::exception {
-    virtual const char *what() const throw() { return "Not Implemented"; };
+  class BadRequestException : public HttpException {
+   public:
+    BadRequestException(const std::string &message) : HttpException(400, message) {}
   };
-  class NotAllowedException : public std::exception {
-    virtual const char *what() const throw() { return "Method Not Allowed"; };
+  class NotImplementedException : public HttpException {
+   public:
+    NotImplementedException(const std::string &message) : HttpException(501, message) {}
   };
-  class VersionNotSupportedException : public std::exception {
-    virtual const char *what() const throw() { return "HTTP Version Not Supported"; };
+  class NotAllowedException : public HttpException {
+   public:
+    NotAllowedException(const std::string &message) : HttpException(405, message) {}
+  };
+  class VersionNotSupportedException : public HttpException {
+   public:
+    VersionNotSupportedException(const std::string &message) : HttpException(505, message) {}
   };
 
  private:
@@ -123,6 +136,7 @@ class HttpRequest {
   void validateHeaderName(const std::string &name);
   void validateHeaderValue(const std::string &value);
   void validateHeaders();
+  bool hasField(HeaderField field) const;
   void insertIfNotDuplicate(HeaderField field, const char *error_msg);
 
   void initAnalyzeFuncs(std::map<std::string, void (HttpRequest::*)(const std::string &)> &analyze_funcs);
@@ -133,7 +147,7 @@ class HttpRequest {
   void analyzeServer(const std::string &value);
 
   void readBody();
-  bool readChunkedBody();
+  void readChunkedBody();
 
   bool isReceivingBody();
   bool isActionable();

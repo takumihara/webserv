@@ -14,59 +14,43 @@
 #define MIN_PORT_NUM 0
 #define MAX_PORT_NUM 65535
 
-bool HttpRequest::readRequest(HttpRequest &req, EventManager &em, IReadCloser *rc) {
+HttpRequest::State HttpRequest::readRequest(HttpRequest &req, IReadCloser *rc) {
   std::string request;
 
   size_t size = rc->read(request, SOCKET_READ_SIZE);
-  bool finishedReading = false;
 
+  // todo(thara): move this logic to ConnectionSocket
   if (size == 0) {
     printf("closed fd = %d\n", req.sock_fd_);
-    // closeとEVFILT_TIMERのDELETEはワンセット
-    rc->close();
-    em.addChangedEvents((struct kevent){static_cast<uintptr_t>(req.sock_fd_), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
-    em.remove(std::pair<t_id, t_type>(req.sock_fd_, FD));
-  } else {
-    req.raw_data_ += request;
+    return HttpRequest::SocketClosed;
+  }
+  req.raw_data_ += request;
 
-    std::cout << "read from socket(fd:" << req.sock_fd_ << ")"
-              << ":'" << escape(req.raw_data_) << "'" << std::endl;
-    if (req.state_ == ReadingStartLine && req.isActionable()) {
-      req.trimToEndingChars();
-      req.parseStartline();
-      req.refresh();
-      req.moveToNextState();
-    }
-    if (req.state_ == ReadingHeaders && req.isActionable()) {
-      req.trimToEndingChars();
-      req.parseHeaders();
-      req.refresh();
-      if (!req.isReceivingBody()) {
-        finishedReading = true;
-      } else {
-        req.moveToNextState();
-      }
-    }
-    if (req.state_ == ReadingChunkedBody) {
-      finishedReading = req.readChunkedBody();
-    } else if (req.state_ == ReadingBody && req.isActionable()) {
-      req.body_ = req.raw_data_;
-      finishedReading = true;
-    }
-
-    if (finishedReading) {
-      DEBUG_PRINTF("FINISHED READING: %s \n", escape(req.body_).c_str());
-      req.moveToNextState();
-      // event_manager.addChangedEvents((struct kevent){req.sock_fd_, EVFILT_READ, EV_DISABLE, 0, 0, 0});
-      // event_manager.addChangedEvents((struct kevent){req.sock_fd_, EVFILT_TIMER, EV_DISABLE, 0, 0, NULL});
-    }
+  std::cout << "read from socket(fd:" << req.sock_fd_ << ")"
+            << ":'" << escape(req.raw_data_) << "'" << std::endl;
+  if (req.state_ == ReadingStartLine && req.isActionable()) {
+    req.trimToEndingChars();
+    req.parseStartline();
+    req.refresh();
+    req.moveToNextState();
+  }
+  if (req.state_ == ReadingHeaders && req.isActionable()) {
+    req.trimToEndingChars();
+    req.parseHeaders();
+    req.refresh();
+    req.moveToNextState();
+  }
+  if (req.state_ == ReadingChunkedBody) {
+    req.readChunkedBody();
+  } else if (req.state_ == ReadingBody && req.isActionable()) {
+    req.readBody();
   }
 
-  return finishedReading;
+  return req.state_;
 }
 
 bool HttpRequest::isReceivingBody() {
-  if (request_line_.method == GET || request_line_.method == DELETE || !isChunked() || headers_.content_length == 0) {
+  if (request_line_.method == GET || request_line_.method == DELETE || (!isChunked() && headers_.content_length == 0)) {
     return false;
   }
   return true;
@@ -100,7 +84,7 @@ void HttpRequest::assignAndValidateMethod(const std::string &method) {
   } else if (method == "DELETE") {
     request_line_.method = DELETE;
   } else if (method == "PUT" || method == "PATCH" || method == "HEAD" || method == "OPTIONS") {
-    throw NotAllowedException();
+    throw NotAllowedException("Http Request: method not allowed");
   } else {
     throw std::runtime_error("Http Request: invalid method");
   }
@@ -116,8 +100,7 @@ void HttpRequest::assignAndValidateRequestTarget(const std::string &request_targ
       request_line_.request_target.query = request_target.substr(request_target.find_first_of('?') + 1);
     }
   } else {
-    DEBUG_PUTS("Http Request: invalid request target");
-    throw BadRequestException();
+    throw BadRequestException("Http Request: invalid request target");
   }
 }
 
@@ -125,7 +108,7 @@ void HttpRequest::assignAndValidateVersion(const std::string &version) {
   if (version == "HTTP/1.1") {
     request_line_.version = HTTP1_1;
   } else {
-    throw VersionNotSupportedException();
+    throw VersionNotSupportedException("Http Request: invalid version");
   }
 }
 
@@ -174,17 +157,25 @@ void HttpRequest::parseHeaders() {
 }
 
 void HttpRequest::validateHeaders() {
-  if (received_fields_.find(HostField) == received_fields_.end()) {
-    DEBUG_PUTS("Http Request: missing host header");
-    throw BadRequestException();
+  // https://www.rfc-editor.org/rfc/rfc7230#section-5.4
+  // validate required headers
+  if (!hasField(HostField)) {
+    throw BadRequestException("missing host header");
+  }
+
+  // https://www.rfc-editor.org/rfc/rfc7230#section-3.3.3
+  // check if content-length and transfer-encoding are both present
+  // todo: refactor hasField
+  if (hasField(ContentLengthField) && headers_.transfer_encodings.size() != 0) {
+    throw BadRequestException("both content-length and transfer-encoding are present");
   }
 }
 
+bool HttpRequest::hasField(HeaderField field) const { return received_fields_.find(field) != received_fields_.end(); }
+
 void HttpRequest::insertIfNotDuplicate(HeaderField field, const char *error_msg) {
   if (received_fields_.find(field) != received_fields_.end()) {
-    (void)error_msg;
-    DEBUG_PUTS(error_msg);
-    throw BadRequestException();
+    throw BadRequestException(error_msg);
   }
   received_fields_.insert(field);
 }
@@ -212,32 +203,29 @@ void HttpRequest::analyzeHost(const std::string &value) {
   // validate port
   if (!port.empty()) {
     if (!isAllDigit(port)) {
-      DEBUG_PUTS("Http Request: invalid port");
-      throw BadRequestException();
+      throw BadRequestException("Http Request: invalid port");
     }
 
     // todo: handle overflow
     headers_.host.port = std::atoi(port.c_str());
     if (headers_.host.port < MIN_PORT_NUM || headers_.host.port > MAX_PORT_NUM) {
-      DEBUG_PUTS("Http Request: invalid port");
-      throw BadRequestException();
+      throw BadRequestException("Http Request: invalid port");
     }
   }
 }
 
 void HttpRequest::analyzeContentLength(const std::string &value) {
+  // https://www.rfc-editor.org/rfc/rfc7230#section-3.3.3
   insertIfNotDuplicate(ContentLengthField, "Http Request: duplicated content length");
 
   if (!isAllDigit(value)) {
-    DEBUG_PUTS("Http Request: invalid content-length");
-    throw BadRequestException();
+    throw BadRequestException("Http Request: invalid content-length");
   }
 
+  // todo: handle overflow
   const int val = std::atoi(value.c_str());
-  // todo: check if content length is too big
-  if (val < 0) {
-    DEBUG_PUTS("Http Request: invalid content-length");
-    throw BadRequestException();
+  if (val < 0 || conf_.getMaxBodySize() < val) {
+    throw BadRequestException("Http Request: invalid content-length");
   }
   headers_.content_length = val;
 }
@@ -251,11 +239,9 @@ void HttpRequest::analyzeTransferEncoding(const std::string &value) {
     if (encoding == "chunked") {
       headers_.transfer_encodings.push_back(Chunked);
     } else if (encoding == "gzip" || encoding == "compress" || encoding == "deflate") {
-      DEBUG_PUTS("Http Request: unsupported transfer-encoding");
-      throw NotImplementedException();
+      throw NotImplementedException("Http Request: unsupported transfer-encoding");
     } else {
-      DEBUG_PUTS("Http Request: invalid transfer-encoding");
-      throw BadRequestException();
+      throw BadRequestException("Http Request: invalid transfer-encoding");
     }
   }
 }
@@ -270,39 +256,34 @@ void HttpRequest::analyzeDate(const std::string &value) {
   ss >> std::get_time(&headers_.date, "%a, %d %b %Y %H:%M:%S");
   if (ss.fail()) {
     std::cout << "ss.fail()" << std::endl;
-    DEBUG_PUTS("Http Request: invalid date");
-    throw BadRequestException();
+    throw BadRequestException("Http Request: invalid date");
   }
 
   // this checks if the date is valid
   std::time_t t = std::mktime(&headers_.date);
   if (t == -1) {
-    DEBUG_PUTS("Http Request: invalid date");
-    throw BadRequestException();
+    throw BadRequestException("Http Request: invalid date");
   }
 }
 
 void HttpRequest::validateHeaderName(const std::string &name) {
   if (!isToken(name)) {
-    DEBUG_PUTS("Http Request: invalid header name");
-    throw BadRequestException();
+    throw BadRequestException("Http Request: invalid header name");
   }
 }
 
 void HttpRequest::validateHeaderValue(const std::string &value) {
-  // todo(thara): check for obs-fold and return 400
   if (!isVchar(value)) {
-    DEBUG_PUTS("Http Request: invalid header value");
-    throw BadRequestException();
+    throw BadRequestException("Http Request: invalid header value");
   }
 }
 
-bool HttpRequest::readChunkedBody() {
+void HttpRequest::readChunkedBody() {
   while (true) {
     if (chunked_reading_state_ == ReadingChunkedSize) {
       std::string::size_type end = raw_data_.find(CRLF);
       if (end == std::string::npos) {
-        return false;
+        return;
       }
 
       std::string hex = raw_data_.substr(0, end);
@@ -314,7 +295,8 @@ bool HttpRequest::readChunkedBody() {
         rest_ = raw_data_.substr(end + 2);
         // todo(thara): I think we can remove this because I added re-initialization of HttpRequest
         chunked_reading_state_ = ReadingChunkedSize;
-        return true;
+        moveToNextState();
+        return;
       }
 
       raw_data_ = raw_data_.substr(end + 2);
@@ -323,11 +305,10 @@ bool HttpRequest::readChunkedBody() {
 
     if (chunked_reading_state_ == ReadingChunkedData) {
       if (raw_data_.size() < (chunked_size_ + 2)) {
-        return false;
+        return;
       }
       if (raw_data_.substr(chunked_size_, 2) != CRLF) {
-        DEBUG_PUTS("Http Request: invalid chunked body");
-        throw BadRequestException();
+        throw BadRequestException("Http Request: invalid chunked body");
       }
 
       body_ += raw_data_.substr(0, chunked_size_);
@@ -336,19 +317,26 @@ bool HttpRequest::readChunkedBody() {
       chunked_reading_state_ = ReadingChunkedSize;
     }
   }
-  return false;
+  return;
 }
 
-void HttpRequest::readBody() { body_ = raw_data_; }
+void HttpRequest::readBody() {
+  body_ = raw_data_.substr(0, headers_.content_length);
+  moveToNextState();
+}
 
 bool HttpRequest::isActionable() {
-  if (state_ == ReadingStartLine || state_ == ReadingHeaders || state_ == ReadingBody) {
+  if (state_ == ReadingStartLine || state_ == ReadingHeaders) {
     return raw_data_.find(getEndingChars()) != std::string::npos;
+  } else if (state_ == ReadingBody) {
+    // this accepts body that is larger than content-length
+    return raw_data_.size() >= headers_.content_length;
   } else {
     throw std::runtime_error("invalid HttpRequest state");
   }
 }
 
+// isActionable must be called before calling this function
 void HttpRequest::trimToEndingChars() {
   const std::string ending_chars = getEndingChars();
   size_t end_pos = raw_data_.find(ending_chars);
@@ -363,8 +351,6 @@ std::string HttpRequest::getEndingChars() const {
       return CRLF;
     case ReadingHeaders:
       return std::string(CRLF) + CRLF;
-    case ReadingBody:
-      return CRLF;
     default:
       throw std::runtime_error("invalid HttpRequest state");
   }
@@ -376,16 +362,19 @@ void HttpRequest::moveToNextState() {
       state_ = ReadingHeaders;
       break;
     case ReadingHeaders:
-      if (isChunked()) {
-        state_ = ReadingChunkedBody;
+      if (isReceivingBody()) {
+        if (isChunked()) {
+          state_ = ReadingChunkedBody;
+        } else {
+          state_ = ReadingBody;
+        }
       } else {
-        state_ = ReadingBody;
+        state_ = FinishedReading;
       }
       break;
     case ReadingBody:
     case ReadingChunkedBody:
-      // todo(thara): I think we can remove this because I added re-initialization of HttpRequest
-      state_ = ReadingStartLine;
+      state_ = FinishedReading;
       break;
     default:
       throw std::runtime_error("invalid HttpRequest state");

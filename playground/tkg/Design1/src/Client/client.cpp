@@ -126,16 +126,14 @@ std::string getRequest(const std::string &arg) {
     request += " continuous value\r\n";
     request += "\r\n";
     request += arg;
-    request += "\r\n";
   } else {
     request += "POST /a.cgi?query HTTP/1.1\r\n";
     // request += "POST /index.html HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
-    request += "Content-Length: 5\r\n";
+    request += "Content-Length: " + std::to_string(arg.size()) + "\r\n";
     request += "Date: Wed, 16 Oct 2019 07:28:00 GMT\r\n";
     request += "\r\n";
     request += arg;
-    request += "\r\n";
   }
   return request;
 }
