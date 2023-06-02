@@ -26,7 +26,7 @@ TEST(Request, BodyLargerThanContentLength) {
   bool finished = HttpRequest::readRequest(req, rc);
 
   ASSERT_TRUE(finished);
-  ASSERT_EQ(req.getBody(), "body");
+  ASSERT_EQ(req.getBody(), "bod");
 }
 
 TEST(Request, NoHostFeild) {

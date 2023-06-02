@@ -321,7 +321,7 @@ void HttpRequest::readChunkedBody() {
 }
 
 void HttpRequest::readBody() {
-  body_ = raw_data_;
+  body_ = raw_data_.substr(0, headers_.content_length);
   moveToNextState();
 }
 
