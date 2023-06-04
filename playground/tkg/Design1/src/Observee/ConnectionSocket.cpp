@@ -20,6 +20,7 @@
 
 #include "CGI.hpp"
 #include "GET.hpp"
+#include "helper.hpp"
 
 void ConnectionSocket::shutdown() {
   DEBUG_PUTS("ConnectionSocket shutdown");
@@ -155,20 +156,19 @@ void ConnectionSocket::notify(struct kevent ev) {
   if (ev.filter == EVFILT_READ) {
     DEBUG_PUTS("handle_request() called");
     try {
-      bool finished_reading = HttpRequest::readRequest(request_, *em_, rc_);
-      if (finished_reading) {
+      HttpRequest::State state = HttpRequest::readRequest(request_, rc_);
+      if (state == HttpRequest::FinishedReading) {
+        DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.getBody()).c_str());
+
         this->process();
+      } else if (state == HttpRequest::SocketClosed) {
+        shutdown();
       }
       // todo(thara): handle exceptions
       // } catch (const HttpRequest::BadRequestException &e) {
       // } catch (const HttpRequest::NotImplementedException &e) {
       // } catch (const HttpRequest::NotAllowedException &e) {
       // } catch (const HttpRequest::VersionNotSupportedException &e) {
-    } catch (std::exception &e) {
-      std::cout << e.what() << std::endl;
-      close(ev.ident);
-      em_->remove(std::pair<t_id, t_type>(ev.ident, FD));
-      em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(ev.ident), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
     } catch (std::runtime_error &e) {
       std::cout << e.what() << std::endl;
       close(ev.ident);
@@ -181,5 +181,6 @@ void ConnectionSocket::notify(struct kevent ev) {
     request_.refresh();
     response_.createResponse();
     response_.sendResponse(*em_);
+    request_ = HttpRequest(id_, port_, conf_);
   }
 }

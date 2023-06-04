@@ -71,6 +71,7 @@ class Config {
   void printPortServConfMap();
   const ServerConf *getServerConf(const int port, const std::string &host);
   int getLimitConnection() const;
+  int getMaxBodySize() const;
 
   int limit_connection_;
   CommonConf common_;
