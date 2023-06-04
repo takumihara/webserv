@@ -90,3 +90,6 @@ test: server tester
 	-./tester
 	@rm server_binary
 	@pkill server_binary
+
+test-%: server tester
+	-./tester --gtest_filter=${@:test-%=%}
