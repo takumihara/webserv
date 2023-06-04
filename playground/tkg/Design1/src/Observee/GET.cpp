@@ -35,7 +35,7 @@ std::string GET::listFilesAndDirectories(const std::string &directory_path) {
   std::string ret = "";
 
   if ((dir = opendir(directory_path.c_str())) == NULL) {
-    throw std::runtime_error("listFilesAndDirectories: opendir error");
+    throw ConnectionSocket::InternalServerErrorException("listFilesAndDirectories: opendir error");
   }
   while ((entry = readdir(dir)) != NULL) {
     std::string file_path;
@@ -71,7 +71,6 @@ void GET::notify(struct kevent ev) {
   } else {
     buff[res] = '\0';
     response_->appendBody(std::string(buff));
-    em_->updateTimer(this);
     if (res == 0 || res == ev.data) {
       close(id_);
       response_->setStatus(200);
@@ -82,6 +81,9 @@ void GET::notify(struct kevent ev) {
       em_->remove(std::pair<t_id, t_type>(id_, FD));
       return;
     }
+    // todo: em_->updateTimer(this); cause seg fault
+    // beacause Timer event update and timer deletion is dupricate in changedEvent
+    // solution: change chengedEvent type from vector<kevent> to map(key:pair<ident,filter> value: kevent)
     std::cout << "GET wip result: '" << response_->getBody() << "'" << std::endl;
   }
 }

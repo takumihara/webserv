@@ -44,7 +44,7 @@ class EventManager {
   void disableWriteEvent(uintptr_t fd);
   void deleteTimerEvent(uintptr_t fd);
   void updateTimer(Observee *obs);
-  static const int kTimeoutDuration = 20;
+  static const int kTimeoutDuration = 5;
 
  private:
   void updateKqueue();

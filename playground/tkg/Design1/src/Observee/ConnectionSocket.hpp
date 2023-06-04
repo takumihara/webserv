@@ -34,6 +34,34 @@ class ConnectionSocket : public Observee {
   void disableReadAndAddWriteEvent(uintptr_t read, uintptr_t write);
   void disableReadAndAddReadEvent(uintptr_t parent, uintptr_t child);
 
+  class HttpException : public std::runtime_error {
+   public:
+    HttpException(int statusCode, const std::string &statusMessage)
+        : std::runtime_error(statusMessage), statusCode_(statusCode) {}
+    int statusCode() const { return statusCode_; }
+
+   private:
+    int statusCode_;
+  };
+
+  class BadRequestException : public HttpException {
+   public:
+    BadRequestException(const std::string &message) : HttpException(400, message) {}
+  };
+
+  class ResourceNotFoundException : public HttpException {
+   public:
+    ResourceNotFoundException(const std::string &message) : HttpException(404, message) {}
+  };
+  class ResourceForbidenException : public HttpException {
+   public:
+    ResourceForbidenException(const std::string &message) : HttpException(403, message) {}
+  };
+  class InternalServerErrorException : public HttpException {
+   public:
+    InternalServerErrorException(const std::string &message) : HttpException(500, message) {}
+  };
+
  private:
   int port_;
   Config &conf_;

@@ -23,9 +23,11 @@ bool HttpRequest::readRequest(HttpRequest &req, EventManager &em, IReadCloser *r
   if (size == 0) {
     printf("closed fd = %d\n", req.sock_fd_);
     // closeとEVFILT_TIMERのDELETEはワンセット
-    rc->close();
-    em.addChangedEvents((struct kevent){static_cast<uintptr_t>(req.sock_fd_), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
-    em.remove(std::pair<t_id, t_type>(req.sock_fd_, FD));
+    throw std::runtime_error("client closed");
+    (void)em;
+    // rc->close();
+    // em.addChangedEvents((struct kevent){static_cast<uintptr_t>(req.sock_fd_), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+    // em.remove(std::pair<t_id, t_type>(req.sock_fd_, FD));
   } else {
     req.raw_data_ += request;
 

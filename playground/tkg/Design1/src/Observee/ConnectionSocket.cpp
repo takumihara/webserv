@@ -44,7 +44,7 @@ void ConnectionSocket::execCGI(const ServerConf *serv_conf) {
   // todo: ここでのgetLocationConfはMethod,cgi拡張子を引数として渡し、全てを満たすlocationConを返すようにしたい
   const LocationConf &loc_conf = serv_conf->getLocationConf(request_.getRequestTarget().absolute_path);
   std::string path = "." + loc_conf.getTargetPath(request_.getRequestTarget().absolute_path);
-  std::cout << "MAKE EXEC\n";
+  DEBUG_PUTS("MAKE EXEC");
   extern char **environ;
   char *argv[2];
   argv[0] = const_cast<char *>(path.c_str());
@@ -78,17 +78,16 @@ void ConnectionSocket::execCGI(const ServerConf *serv_conf) {
 void ConnectionSocket::processGET(const ServerConf *serv_conf) {
   // todo: getLocationConfはMethodを引数として渡し、そのmethodが許可されているlocationConを返すようにしたい
   const LocationConf &loc_conf = serv_conf->getLocationConf(request_.getRequestTarget().absolute_path);
+  // todo: . is for temporary implementation
   std::string path = "." + loc_conf.getTargetPath(request_.getRequestTarget().absolute_path);
   // check directory or file exists
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
-    response_.setStatus(404);
-    throw std::runtime_error("stat error");  // 404 Not Found
+    throw ResourceNotFoundException("stat error");  // 404 Not Found
   }
   // check directory or file is readable
   if (access(path.c_str(), R_OK) != 0) {
-    response_.setStatus(403);
-    throw std::runtime_error("access error");  // 403 Forbiden
+    throw ResourceForbidenException("access error");  // 403 Forbiden
   }
   bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
   if (is_directory) {
@@ -101,20 +100,17 @@ void ConnectionSocket::processGET(const ServerConf *serv_conf) {
     if (idx_path == "" && loc_conf.common_.autoindex_) {
       try {
         response_.appendBody(GET::listFilesAndDirectories(path));
-      } catch (std::runtime_error &e) {
-        // todo: read error is 5xx error?
-        response_.setStatus(403);
-        throw std::runtime_error(e);
+      } catch (HttpException &e) {
+        throw e;
       }
-      response_.setStatus(200);
       DEBUG_PUTS("autoindex");
+      response_.setStatus(200);
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
       return;  // 200 OK
     }
     if (idx_path == "" && !loc_conf.common_.autoindex_) {
-      response_.setStatus(404);
-      throw std::runtime_error("no index and autoindex");  // 404 Not Found
+      throw ResourceNotFoundException("no index and autoindex");  // 404 Not Found
     }
   }
   int fd = open(path.c_str(), O_RDONLY);
@@ -140,8 +136,9 @@ void ConnectionSocket::process() {
     // handle GET
     try {
       processGET(serv_conf);
-    } catch (std::runtime_error &e) {
+    } catch (HttpException &e) {
       std::cerr << e.what() << std::endl;
+      response_.setStatus(e.statusCode());
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
     }

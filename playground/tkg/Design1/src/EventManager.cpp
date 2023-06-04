@@ -62,7 +62,8 @@ void EventManager::updateTimer(Observee *obs) {
   if (obs->parent_) {
     updateTimer(obs->parent_);
   }
-  addChangedEvents((struct kevent){obs->id_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+  addChangedEvents(
+      (struct kevent){obs->id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
 }
 
 std::string getEventFilter(int flag) {
