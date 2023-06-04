@@ -17,39 +17,37 @@
 #include <map>
 #include <stdexcept>
 
-void CGI::shutdown(EventManager &em) {
+void CGI::shutdown() {
   DEBUG_PUTS("CGI shutdown");
   close(id_);
-  em.addChangedEvents((struct kevent){static_cast<uintptr_t>(id_), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+  em_->deleteTimerEvent(id_);
   kill(pid_, SIGINT);
   waitpid(pid_, NULL, 0);
-  em.remove(std::pair<t_id, t_type>(id_, FD));
+  em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
-void CGI::notify(EventManager &event_manager, struct kevent ev) {
+void CGI::notify(struct kevent ev) {
   std::cout << "handle CGI" << std::endl;
   (void)ev;
   char buff[FILE_READ_SIZE + 1];
   int res = read(id_, &buff[0], FILE_READ_SIZE);
+  if (ev.flags & EV_EOF) std::cout << "CGI EOF" << std::endl;
   if (res == -1)
     return;
   else if (res == 0) {
     close(id_);
+    response_->setStatus(200);
     parent_->obliviateChild(this);
-    (void)pid_;
-    event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(id_), EVFILT_TIMER, EV_DELETE, NOTE_SECONDS,
-                                                   EventManager::kTimeoutDuration, 0});
-    event_manager.addChangedEvents(
-        (struct kevent){static_cast<uintptr_t>(parent_->id_), EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-    event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(parent_->id_), EVFILT_TIMER,
-                                                   EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration,
-                                                   0});
+    em_->deleteTimerEvent(id_);
+    em_->registerWriteEvent(parent_->id_);
     std::cout << "CGI LAST RESULT: '" << response_->getBody() << "'" << std::endl;
-    event_manager.remove(std::pair<t_id, t_type>(id_, FD));
+    em_->remove(std::pair<t_id, t_type>(id_, FD));
   } else {
     std::cout << "res: " << res << std::endl;
     buff[res] = '\0';
     response_->appendBody(std::string(buff));
+    // todo: timeout is not properly deleted beacause of below code
+    // em_->updateTimer(this);
     std::cout << "cgi wip result: '" << response_->getBody() << "'" << std::endl;
   }
 }

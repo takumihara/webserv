@@ -1,5 +1,7 @@
 #include "Config.hpp"
 
+#include <unistd.h>
+
 #include <iomanip>
 #include <ios>
 #include <iostream>
@@ -11,6 +13,18 @@ void printStrings(const char *prefix, std::vector<std::string> &strs) {
     std::cout << *itr << " ";
   }
   std::cout << std::endl;
+}
+
+// Common class method
+// if no index file exists, return empty string
+std::string CommonConf::getIndexFile(std::string path) const {
+  if (path[path.size() - 1] != '/') path += "/";
+  for (std::vector<std::string>::const_iterator itr = index_.cbegin(); itr != index_.cend(); itr++) {
+    if (access((path + (*itr)).c_str(), R_OK) == 0) {
+      return path + *itr;
+    }
+  }
+  return "";
 }
 
 // Config class method
@@ -124,15 +138,22 @@ void LocationConf::printLocationConf() {
   }
 }
 
-const LocationConf &Config::getLocationConf(const ServerConf *serv_conf, const std::string &path) const {
-  const std::vector<LocationConf> &locs = serv_conf->location_confs_;
-  std::vector<LocationConf>::const_iterator ret = locs.begin();
+const LocationConf &ServerConf::getLocationConf(const std::string &path) const {
+  std::vector<LocationConf>::const_iterator ret = location_confs_.begin();
   size_t match_len = 0;
-  for (std::vector<LocationConf>::const_iterator loc_itr = locs.begin(); loc_itr != locs.end(); loc_itr++) {
+  for (std::vector<LocationConf>::const_iterator loc_itr = location_confs_.begin(); loc_itr != location_confs_.end();
+       loc_itr++) {
     if (path.find(loc_itr->path_) == 0 && match_len < loc_itr->path_.size()) {
       ret = loc_itr;
       match_len = loc_itr->path_.size();
     }
   }
   return *ret;
+}
+
+std::string LocationConf::getTargetPath(const std::string &request_uri) const {
+  std::string target = common_.root_;
+  if (target[target.size() - 1] == '/' && request_uri[0] == '/') target.erase(target.size() - 1);
+  target += request_uri;
+  return target;
 }

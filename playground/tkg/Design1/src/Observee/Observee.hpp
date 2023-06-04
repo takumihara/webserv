@@ -28,18 +28,20 @@ class EventManager;
 
 class Observee {
  public:
-  Observee(int id, const std::string &type, Observee *parent) : id_(id), type_(type), parent_(parent) {}
+  Observee(int id, const std::string &type, EventManager *em, Observee *parent)
+      : id_(id), type_(type), em_(em), parent_(parent) {}
   virtual ~Observee() {}
-  virtual void notify(EventManager &event_manager, struct kevent ev) = 0;
-  virtual void shutdown(EventManager &em) = 0;
+  virtual void notify(struct kevent ev) = 0;
+  virtual void shutdown() = 0;
   virtual void obliviateChild(Observee *child) {
     if (parent_) parent_->children_.erase(child);
   };
   virtual void monitorChild(Observee *child) { children_.insert(child); };
 
  public:
-  int id_;
+  uintptr_t id_;
   std::string type_;
+  EventManager *em_;
   Observee *parent_;
   std::set<Observee *> children_;
 };

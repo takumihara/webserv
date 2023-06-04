@@ -1,5 +1,4 @@
 #include "ServerSocket.hpp"
-#include "../IO/FDReadCloser.hpp"
 
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -16,12 +15,14 @@
 #include <set>
 #include <stdexcept>
 
-void ServerSocket::shutdown(EventManager &em) {
+#include "../IO/FDReadCloser.hpp"
+
+void ServerSocket::shutdown() {
   close(id_);
-  em.remove(std::pair<t_id, t_type>(id_, FD));
+  em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
-void ServerSocket::notify(EventManager &event_manager, struct kevent ev) {
+void ServerSocket::notify(struct kevent ev) {
   (void)ev;
   struct sockaddr_in add;
   int addlen;
@@ -29,10 +30,10 @@ void ServerSocket::notify(EventManager &event_manager, struct kevent ev) {
   if (connection_fd == -1) {
     throw std::runtime_error("accept error");
   }
-  event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_READ, EV_ADD, 0, 0, 0});
-  event_manager.addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS,
-                                                 EventManager::kTimeoutDuration, 0});
-  ConnectionSocket *obs = new ConnectionSocket(connection_fd, port_, conf_, this, new FDReadCloser(connection_fd));
-  event_manager.add(std::pair<t_id, t_type>(connection_fd, FD), obs);
+  em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_READ, EV_ADD, 0, 0, 0});
+  em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_TIMER, EV_ADD | EV_ENABLE,
+                                        NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+  ConnectionSocket *obs = new ConnectionSocket(connection_fd, port_, conf_, em_, this, new FDReadCloser(connection_fd));
+  em_->add(std::pair<t_id, t_type>(connection_fd, FD), obs);
   return;
 };

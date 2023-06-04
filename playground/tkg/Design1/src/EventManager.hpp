@@ -36,16 +36,15 @@ class EventManager {
   void eventLoop();
   void add(const std::pair<t_id, t_type> &key, Observee *obs);
   void remove(const std::pair<t_id, t_type> &key);
-  // void addServerSocket(int fd, int port, Config &conf);
-  // void removeServerSocket(int fd);
-  // void addConnectionSocket(int fd, int port, Config &conf);
-  // void removeConnectionSocket(int fd);
-  // void addCgiConnectionPair(int fd, ConnectionSocket *con);
-  // void removeCgiConnectionPair(int fd);
   void addChangedEvents(struct kevent kevent);
   void registerServerEvent(int fd, int port, Config &conf);
-
-  static const int kTimeoutDuration = 20;
+  void registerWriteEvent(uintptr_t fd);
+  void registerReadEvent(uintptr_t fd);
+  void disableReadEvent(uintptr_t fd);
+  void disableWriteEvent(uintptr_t fd);
+  void deleteTimerEvent(uintptr_t fd);
+  void updateTimer(Observee *obs);
+  static const int kTimeoutDuration = 5;
 
  private:
   void updateKqueue();

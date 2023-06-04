@@ -27,11 +27,43 @@ void EventManager::registerServerEvent(int fd, int port, Config &conf) {
   EV_SET(&chlist, fd, EVFILT_READ, EV_ADD, 0, 0, 0);
   DEBUG_PUTS("");
   kevent(kq_, &chlist, 1, NULL, 0, NULL);
-  Observee *obs = new ServerSocket(fd, port, conf);
+  Observee *obs = new ServerSocket(fd, port, conf, this);
   std::cout << "sock fd: " << fd << std::endl;
   add(std::pair<t_id, t_type>(fd, FD), obs);
   observees_[std::pair<t_id, t_type>(fd, FD)];
   std::cout << observees_[std::pair<t_id, t_type>(fd, FD)]->id_;
+}
+
+void EventManager::registerWriteEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
+  addChangedEvents(
+      (struct kevent){fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+}
+
+void EventManager::registerReadEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0});
+  addChangedEvents(
+      (struct kevent){fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+}
+
+void EventManager::disableReadEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_READ, EV_DISABLE, 0, 0, 0});
+}
+
+void EventManager::disableWriteEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
+}
+
+void EventManager::deleteTimerEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_TIMER, EV_DELETE, 0, 0, 0});
+}
+
+void EventManager::updateTimer(Observee *obs) {
+  if (obs->parent_) {
+    updateTimer(obs->parent_);
+  }
+  addChangedEvents(
+      (struct kevent){obs->id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
 }
 
 std::string getEventFilter(int flag) {
@@ -89,14 +121,12 @@ void EventManager::handleEvent(struct kevent ev) {
     DEBUG_PUTS("timeout");
     handleTimeout(ev);
   } else {
-    observees_[std::pair<t_id, t_type>(ev.ident, getType(ev.filter))]->notify(*this, ev);
+    observees_[std::pair<t_id, t_type>(ev.ident, getType(ev.filter))]->notify(ev);
   }
   DEBUG_PUTS("END HANDLE EVENT");
 }
 
-void EventManager::handleTimeout(struct kevent ev) {
-  observees_[std::pair<t_id, t_type>(ev.ident, FD)]->shutdown(*this);
-}
+void EventManager::handleTimeout(struct kevent ev) { observees_[std::pair<t_id, t_type>(ev.ident, FD)]->shutdown(); }
 
 void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(struct kevent) * kMaxEventSize); }
 

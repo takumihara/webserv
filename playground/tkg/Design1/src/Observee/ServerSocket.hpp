@@ -6,10 +6,11 @@
 
 class ServerSocket : public Observee {
  public:
-  ServerSocket(int id, int port, Config &conf) : Observee(id, "server", NULL), port_(port), conf_(conf) {}
+  ServerSocket(int id, int port, Config &conf, EventManager *em)
+      : Observee(id, "server", em, NULL), port_(port), conf_(conf) {}
   ~ServerSocket() {}
-  void notify(EventManager &event_manager, struct kevent ev);
-  void shutdown(EventManager &em);
+  void notify(struct kevent ev);
+  void shutdown();
 
  private:
   int port_;
