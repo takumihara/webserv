@@ -18,6 +18,7 @@
 #include <map>
 #include <stdexcept>
 
+#include "../Config/validation.h"
 #include "CGI.hpp"
 #include "GET.hpp"
 #include "helper.hpp"
@@ -41,10 +42,8 @@ CGI *ConnectionSocket::makeCGI(int id, int pid) {
   return obs;
 }
 
-void ConnectionSocket::execCGI(const ServerConf *serv_conf) {
-  // todo: ここでのgetLocationConfはMethod,cgi拡張子を引数として渡し、全てを満たすlocationConを返すようにしたい
-  const LocationConf &loc_conf = serv_conf->getLocationConf(request_.getRequestTarget().absolute_path);
-  std::string path = "." + loc_conf.getTargetPath(request_.getRequestTarget().absolute_path);
+void ConnectionSocket::execCGI(const std::string &path) {
+  // todo: .extensionから?#までの間をPATH_INFOとして分離する必要がある
   DEBUG_PUTS("MAKE EXEC");
   extern char **environ;
   char *argv[2];
@@ -76,21 +75,32 @@ void ConnectionSocket::execCGI(const ServerConf *serv_conf) {
   }
 }
 
-void ConnectionSocket::processGET(const ServerConf *serv_conf) {
-  // todo: getLocationConfはMethodを引数として渡し、そのmethodが許可されているlocationConを返すようにしたい
-  const LocationConf &loc_conf = serv_conf->getLocationConf(request_.getRequestTarget().absolute_path);
+void ConnectionSocket::processGET(const LocationConf &loc_conf) {
+  const bool hasCGI = extension_ != "";
+
   // todo: . is for temporary implementation
   std::string path = "." + loc_conf.getTargetPath(request_.getRequestTarget().absolute_path);
   // check directory or file exists
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
-    throw ResourceNotFoundException("stat error");  // 404 Not Found
+    throw ResourceNotFoundException("stat error: file doesn't exist");  // 404 Not Found
+  }
+  bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
+  // if CGI extension exist and that is not directory, try exec CGI
+  if (hasCGI && !is_directory) {
+    if (access(path.c_str(), X_OK) == 0 && contain(loc_conf.cgi_exts_, extension_)) {
+      try {
+        execCGI("." + loc_conf.getTargetPath(request_.getRequestTarget().absolute_path));
+        return;
+      } catch (std::runtime_error &e) {
+        std::cerr << e.what() << std::endl;
+      }
+    }
   }
   // check directory or file is readable
   if (access(path.c_str(), R_OK) != 0) {
-    throw ResourceForbidenException("access error");  // 403 Forbiden
+    throw ResourceForbidenException("access Read error");  // 403 Forbiden
   }
-  bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
   if (is_directory) {
     // see through index files (if no index files and autoindex is on, you should create directory list)
     std::string idx_path;
@@ -114,6 +124,7 @@ void ConnectionSocket::processGET(const ServerConf *serv_conf) {
       throw ResourceNotFoundException("no index and autoindex");  // 404 Not Found
     }
   }
+  // URI file or index file
   int fd = open(path.c_str(), O_RDONLY);
   GET *obs = makeGET(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
@@ -123,20 +134,12 @@ void ConnectionSocket::processGET(const ServerConf *serv_conf) {
 
 void ConnectionSocket::process() {
   const ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
-
-  // todo: 他の拡張子も対応できるようにする
-  if (request_.getRequestTarget().absolute_path.find(".cgi") != std::string::npos) {
-    try {
-      execCGI(serv_conf);
-    } catch (std::runtime_error &e) {
-      std::cerr << e.what() << std::endl;
-      em_->disableReadEvent(id_);
-      em_->registerWriteEvent(id_);
-    }
-  } else if (request_.methodIs(HttpRequest::GET)) {
+  const LocationConf &loc_conf = serv_conf->getLocationConf(&request_);
+  extension_ = getExtension(request_.getRequestTarget().absolute_path);
+  if (request_.methodIs(HttpRequest::GET)) {
     // handle GET
     try {
-      processGET(serv_conf);
+      processGET(loc_conf);
     } catch (HttpException &e) {
       std::cerr << e.what() << std::endl;
       response_.setStatus(e.statusCode());
@@ -170,7 +173,7 @@ void ConnectionSocket::notify(struct kevent ev) {
       // } catch (const HttpRequest::NotAllowedException &e) {
       // } catch (const HttpRequest::VersionNotSupportedException &e) {
     } catch (std::runtime_error &e) {
-      std::cout << e.what() << std::endl;
+      std::cerr << e.what() << std::endl;
       close(ev.ident);
       em_->remove(std::pair<t_id, t_type>(ev.ident, FD));
       em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(ev.ident), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});

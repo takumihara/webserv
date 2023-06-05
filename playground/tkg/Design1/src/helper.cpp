@@ -43,3 +43,13 @@ std::string trimOws(const std::string &str) {
 }
 
 std::string trimUntilCRLF(const std::string &str) { return str.substr(0, str.find(CRLF)); }
+
+std::string getExtension(const std::string &path) {
+  if (path.find(".cgi") && path.find(".cgi") + 4 == path.size())
+    return ".cgi";
+  else if (path.find(".py") && path.find(".py") + 3 == path.size())
+    return ".py";
+  else if (path.find(".php") && path.find(".php") + 4 == path.size())
+    return ".php";
+  return "";
+}

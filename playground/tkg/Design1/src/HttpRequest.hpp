@@ -76,6 +76,7 @@ class HttpRequest {
   const Host &getHost() const;
   bool methodIs(Method method) const;
   const RequestTarget &getRequestTarget() const;
+  const Method &getMethod() const;
   bool isChunked();
 
   static State readRequest(HttpRequest &req, IReadCloser *rc);

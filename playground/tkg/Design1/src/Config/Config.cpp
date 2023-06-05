@@ -6,6 +6,10 @@
 #include <ios>
 #include <iostream>
 
+#include "../helper.hpp"
+#include "HttpRequest.hpp"
+#include "validation.h"
+
 void printStrings(const char *prefix, std::vector<std::string> &strs) {
   if (strs.size() == 0) return;
   std::cout << prefix;
@@ -138,11 +142,23 @@ void LocationConf::printLocationConf() {
   }
 }
 
-const LocationConf &ServerConf::getLocationConf(const std::string &path) const {
+const LocationConf &ServerConf::getLocationConf(const HttpRequest *req) const {
+  const std::string &path = req->getRequestTarget().absolute_path;
+  const std::string &extension = getExtension(path);
+  const bool hasCGI = extension != "";
+
   std::vector<LocationConf>::const_iterator ret = location_confs_.begin();
   size_t match_len = 0;
   for (std::vector<LocationConf>::const_iterator loc_itr = location_confs_.begin(); loc_itr != location_confs_.end();
        loc_itr++) {
+    if (!isAcceptableMethod(&(*loc_itr), req->getMethod())) {
+      std::cout << "not acceptable method\n";
+      continue;
+    }
+    if (hasCGI && !contain(loc_itr->cgi_exts_, extension)) {
+      std::cout << "not acceptable CGI extension\n";
+      continue;
+    }
     if (path.find(loc_itr->path_) == 0 && match_len < loc_itr->path_.size()) {
       ret = loc_itr;
       match_len = loc_itr->path_.size();

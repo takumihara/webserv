@@ -4,7 +4,7 @@
 #include <string>
 
 #include "Config.hpp"
-
+#include "HttpRequest.hpp"
 #define ALPHA "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 #define DIGIT "0123456789"
 #define TCHAR "!#$%&'*+-.^_`|~" + DIGIT
@@ -22,5 +22,11 @@ bool isCGIExtension(const std::string &ext);
 bool isURL(const std::string &URL);
 bool is3xxStatus(const std::string &status);
 bool isServernameDuplicate(Config &conf);
+bool isAcceptableMethod(const LocationConf *conf, const HttpRequest::Method &method);
+
+template <typename Container, typename T>
+bool contain(const Container &container, const T &value) {
+  return std::find(container.begin(), container.end(), value) != container.end();
+}
 
 #endif

@@ -17,6 +17,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 
 #include "../Config/Config.hpp"
@@ -62,6 +63,7 @@ std::string GET::listFilesAndDirectories(const std::string &directory_path) {
 
 void GET::notify(struct kevent ev) {
   std::cout << "handle GET" << std::endl;
+  std::stringstream ss;
   (void)ev;
   char buff[FILE_READ_SIZE + 1];
   int res = read(id_, &buff[0], FILE_READ_SIZE);

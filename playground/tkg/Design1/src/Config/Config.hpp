@@ -8,6 +8,8 @@
 
 #define MiB 1048576
 
+class HttpRequest;
+
 class CommonConf {
  public:
   CommonConf() : max_body_size_(MiB), root_("/html"), autoindex_(false) {}
@@ -48,7 +50,7 @@ class ServerConf {
   std::vector<std::string> &getServerNames();
   std::string &getHostNames();
   int &getPorts();
-  const LocationConf &getLocationConf(const std::string &path) const;
+  const LocationConf &getLocationConf(const HttpRequest *req) const;
   std::string host_;
   int port_;
   std::vector<std::string> server_names_;

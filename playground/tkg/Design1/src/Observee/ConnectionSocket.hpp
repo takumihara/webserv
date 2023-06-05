@@ -18,13 +18,14 @@ class ConnectionSocket : public Observee {
         conf_(conf),
         request_(HttpRequest(id, port, conf)),
         response_(HttpResponse(id, port)),
-        rc_(rc) {}
+        rc_(rc),
+        extension_("") {}
   ~ConnectionSocket() { delete rc_; }
   void notify(struct kevent ev);
   void shutdown();
   void process();
-  void processGET(const ServerConf *serv_conf);
-  void execCGI(const ServerConf *serv_conf);
+  void processGET(const LocationConf &loc_conf);
+  void execCGI(const std::string &path);
   CGI *makeCGI(int id, int pid);
   GET *makeGET(int id);
   std::string getTargetPath(const LocationConf &loc);
@@ -65,10 +66,11 @@ class ConnectionSocket : public Observee {
  private:
   int port_;
   Config &conf_;
-  // std::string result_;
   HttpRequest request_;
   HttpResponse response_;
   IReadCloser *rc_;
+  std::string extension_;
+
   //   std::deque<HttpRequest> request_;
   //   std::deque<HttpResponse> response_;
 };
