@@ -10,6 +10,7 @@ bool shouldEscape(char c, Encoding mode);
 std::pair<std::string, UserInfo*> parseAuthority(std::string authority);
 bool validUserinfo(const std::string& user_info);
 std::string parseHost(const std::string& host);
+bool validRegNameHost(const std::string& host);
 bool validOptionalPort(std::string port);
 std::string parseScheme(std::string& raw_url);
 bool stringContainsCTLByte(const std::string& str);
@@ -51,7 +52,7 @@ URI* URI::parseRequestURI(const std::string& uri) { return new URI(uri, true); }
 // = authority
 // asterisk-form
 // 	= "*"
-URI::URI(std::string raw_uri, bool via_request) {
+URI::URI(std::string raw_uri, bool via_request) : user_info_(new UserInfo()) {
   // todo:
   if (stringContainsCTLByte(raw_uri)) {
     throw std::runtime_error("URI: invalid control character in URL");
@@ -131,21 +132,21 @@ URI::URI(std::string raw_uri, bool via_request) {
 
 std::pair<std::string, UserInfo*> parseAuthority(std::string authority) {
   std::string host;
-  size_t last_at = authority.find_last_of("@");
-  if (last_at == std::string::npos) {
+  size_t at_pos = authority.find("@");
+  if (at_pos == std::string::npos) {
     host = parseHost(authority);
     return std::make_pair(host, new UserInfo());
   }
-  host = parseHost(authority.substr(last_at + 1));
+  host = parseHost(authority.substr(at_pos + 1));
 
-  std::string raw_user_info = authority.substr(0, last_at);
+  std::string raw_user_info = authority.substr(0, at_pos);
   if (!validUserinfo(raw_user_info)) {
     throw std::runtime_error("URI: invalid userinfo");
   }
 
   size_t colon_pos = raw_user_info.find(":");
   UserInfo* user;
-  if (colon_pos != std::string::npos) {
+  if (colon_pos == std::string::npos) {
     raw_user_info = unescape(raw_user_info, encodeUserPassword);
     user = new UserInfo(raw_user_info);
   } else {
@@ -167,13 +168,13 @@ std::pair<std::string, UserInfo*> parseAuthority(std::string authority) {
 // It doesn't validate pct-encoded. The caller does that via func unescape.
 bool validUserinfo(const std::string& user_info) {
   for (std::string::const_iterator it = user_info.begin(); it != user_info.end(); ++it) {
-    if (std::isalnum(*it) || *it == '-' || *it == '.' || *it == '_' || *it == '~' || *it == '!' || *it == '$' ||
-        *it == '&' || *it == '\'' || *it == '(' || *it == ')' || *it == '*' || *it == '+' || *it == ',' || *it == ';' ||
-        *it == '=') {
+    if (isUnreserved(*it) || isSubDelims(*it) || *it == ':') {
       continue;
+    } else {
+      return false;
     }
   }
-  return true;
+  return std::count(user_info.begin(), user_info.end(), ':') <= 1;
 }
 
 std::string parseHost(const std::string& host) {
@@ -186,6 +187,9 @@ std::string parseHost(const std::string& host) {
     throw std::runtime_error("URI: IP-literal is not supported");
   }
   size_t colon_pos = host.find(":");
+  if (!validRegNameHost(host.substr(0, colon_pos))) {
+    throw std::runtime_error("URI: invalid host");
+  }
   if (colon_pos != std::string::npos) {
     std::string port = host.substr(colon_pos);
     if (!validOptionalPort(port)) {
@@ -193,6 +197,18 @@ std::string parseHost(const std::string& host) {
     }
   }
   return unescape(host, encodeHost);
+}
+
+// validRegNameHost does not check pct-encoded. The caller does that via func unescape.
+bool validRegNameHost(const std::string& host) {
+  for (std::string::const_iterator it = host.begin(); it != host.end(); ++it) {
+    if (isUnreserved(*it) || isSubDelims(*it)) {
+      continue;
+    } else {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool validOptionalPort(std::string port) {
@@ -307,6 +323,7 @@ const std::string& URI::getHost() const { return host_; };
 const std::string& URI::getPath() const { return path_; };
 const std::string& URI::getQuery() const { return raw_query_; }
 const std::string& URI::getFragment() const { return fragment_; }
+const UserInfo* URI::getUserInfo() const { return user_info_; }
 bool URI::isForceQuery() const { return force_query_; }
 const std::string& URI::getOpaque() const { return opaque_; }
 bool URI::isOmitHost() const { return omit_host_; }

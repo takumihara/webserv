@@ -26,6 +26,7 @@ class URI {
   const std::string& getPath() const;
   const std::string& getQuery() const;
   const std::string& getFragment() const;
+  const UserInfo* getUserInfo() const;
   const std::string& getOpaque() const;
   bool isForceQuery() const;
   bool isOmitHost() const;
@@ -36,7 +37,7 @@ class URI {
   URI(std::string raw_uri, bool via_request);
 
   std::string scheme_;
-  std::string host_;     // (authority) host or host:port
+  std::string host_;     // (authority) host
   UserInfo* user_info_;  // (authority) username and password information
   std::string path_;     // path (relative paths may omit leading slash)
   std::string raw_path_;

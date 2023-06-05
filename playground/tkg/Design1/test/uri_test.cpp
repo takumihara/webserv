@@ -5,13 +5,15 @@
 // URI
 
 TEST(URIParse, URIGeneral) {
-  URI *uri = URI::parse("http://www.example.com/info?query#fragment");
+  URI *uri = URI::parse("http://user:password@www.example.com/info?query#fragment");
 
   ASSERT_EQ(uri->getScheme(), "http");
   ASSERT_EQ(uri->getHost(), "www.example.com");
   ASSERT_EQ(uri->getPath(), "/info");
   ASSERT_EQ(uri->getQuery(), "query");
   ASSERT_EQ(uri->getFragment(), "fragment");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "user");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "password");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -26,6 +28,8 @@ TEST(URIParse, SchemaOnly) {
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -39,6 +43,8 @@ TEST(URIParse, EmptyHost) {
   ASSERT_EQ(uri->getPath(), "/");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -52,6 +58,8 @@ TEST(URIParse, PathSlash) {
   ASSERT_EQ(uri->getPath(), "//my/path");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -65,6 +73,38 @@ TEST(URIParse, HostWithPort) {
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
+  ASSERT_FALSE(uri->isForceQuery());
+  ASSERT_EQ(uri->getOpaque(), "");
+  ASSERT_FALSE(uri->isOmitHost());
+}
+
+TEST(URIParse, HostWithUser) {
+  URI *uri = URI::parse("https://user@localhost");
+
+  ASSERT_EQ(uri->getScheme(), "https");
+  ASSERT_EQ(uri->getHost(), "localhost");
+  ASSERT_EQ(uri->getPath(), "");
+  ASSERT_EQ(uri->getQuery(), "");
+  ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "user");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
+  ASSERT_FALSE(uri->isForceQuery());
+  ASSERT_EQ(uri->getOpaque(), "");
+  ASSERT_FALSE(uri->isOmitHost());
+}
+
+TEST(URIParse, HostWithUserAndPassword) {
+  URI *uri = URI::parse("https://user:password@localhost");
+
+  ASSERT_EQ(uri->getScheme(), "https");
+  ASSERT_EQ(uri->getHost(), "localhost");
+  ASSERT_EQ(uri->getPath(), "");
+  ASSERT_EQ(uri->getQuery(), "");
+  ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "user");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "password");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -80,6 +120,8 @@ TEST(URIParse, OmitHost) {
   ASSERT_EQ(uri->getPath(), "/");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_TRUE(uri->isOmitHost());
@@ -95,6 +137,8 @@ TEST(URIParse, Opaque) {
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getQuery(), "query");
   ASSERT_EQ(uri->getFragment(), "fragment");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "a");
   ASSERT_FALSE(uri->isOmitHost());
@@ -110,6 +154,8 @@ TEST(URIParse, URIPathEmpty) {
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getQuery(), "query");
   ASSERT_EQ(uri->getFragment(), "fragment");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -125,6 +171,8 @@ TEST(URIParse, RelativeGeneral) {
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getQuery(), "query");
   ASSERT_EQ(uri->getFragment(), "fragment");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -140,19 +188,23 @@ TEST(URIParse, RelativeAuthority) {
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
 }
 
 TEST(URIParse, RelativeAuthorityPathAbs) {
-  URI *uri = URI::parse("//localhost/path");
+  URI *uri = URI::parse("//localhost:80/path");
 
   ASSERT_EQ(uri->getScheme(), "");
-  ASSERT_EQ(uri->getHost(), "localhost");
+  ASSERT_EQ(uri->getHost(), "localhost:80");
   ASSERT_EQ(uri->getPath(), "/path");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -167,6 +219,8 @@ TEST(URIParse, DoubleSlash) {
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -182,6 +236,8 @@ TEST(URIParse, PathAbsolute) {
   ASSERT_EQ(uri->getPath(), "/path");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -196,6 +252,8 @@ TEST(URIParse, PathMultiSlash) {
   ASSERT_EQ(uri->getPath(), "//////a");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -211,6 +269,8 @@ TEST(URIParse, TripleSlash) {
   ASSERT_EQ(uri->getPath(), "///");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -226,6 +286,8 @@ TEST(URIParse, PathNoScheme) {
   ASSERT_EQ(uri->getPath(), "nc-seg/path");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -239,6 +301,8 @@ TEST(URIParse, Asterisk) {
   ASSERT_EQ(uri->getPath(), "*");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -252,6 +316,8 @@ TEST(URIParse, QuestionMark) {
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_TRUE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -267,6 +333,8 @@ TEST(URIParse, PathEmpty) {
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
   ASSERT_FALSE(uri->isForceQuery());
   ASSERT_EQ(uri->getOpaque(), "");
   ASSERT_FALSE(uri->isOmitHost());
@@ -296,6 +364,51 @@ TEST(URIParse, InvalidSemicolon) {
   }
 }
 
+TEST(URIParse, InvalidUserInfo) {
+  try {
+    URI *uri = URI::parse("http://user[name@example.com/");
+    FAIL();
+  } catch (std::runtime_error &e) {
+    ASSERT_STREQ(e.what(), "URI: invalid userinfo");
+  } catch (...) {
+    FAIL();
+  }
+}
+
+TEST(URIParse, InvalidMultiAt) {
+  try {
+    URI *uri = URI::parse("http://user@name@example.com/");
+    FAIL();
+  } catch (std::runtime_error &e) {
+    ASSERT_STREQ(e.what(), "URI: invalid host");
+  } catch (...) {
+    FAIL();
+  }
+}
+
+TEST(URIParse, InvalidUserInfoMultiColon) {
+  try {
+    URI *uri = URI::parse("http://username::password@example.com/");
+    FAIL();
+  } catch (std::runtime_error &e) {
+    ASSERT_STREQ(e.what(), "URI: invalid userinfo");
+  } catch (...) {
+    FAIL();
+  }
+}
+
+TEST(URIParse, InvalidHost) {
+  try {
+    URI *uri = URI::parse("http://e[xample.com/");
+    std::cout << uri->getUserInfo()->getString() << std::endl;
+    FAIL();
+  } catch (std::runtime_error &e) {
+    ASSERT_STREQ(e.what(), "URI: invalid host");
+  } catch (...) {
+    FAIL();
+  }
+}
+
 // Go accepts this
 // TEST(URIParse, InvalidPath) {
 //   try {
@@ -307,3 +420,5 @@ TEST(URIParse, InvalidSemicolon) {
 //     FAIL();
 //   }
 // }
+
+// "https://username@:@password@exa%40mple.com"
