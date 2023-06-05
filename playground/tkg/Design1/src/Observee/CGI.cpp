@@ -55,8 +55,7 @@ void CGI::notify(struct kevent ev) {
     std::cout << "res: " << res << std::endl;
     buff[res] = '\0';
     response_->appendBody(std::string(buff));
-    // todo: timeout is not properly deleted beacause of below code
-    // em_->updateTimer(this);
+    em_->updateTimer(this);
     std::cout << "cgi wip result: '" << response_->getBody() << "'" << std::endl;
   }
 }

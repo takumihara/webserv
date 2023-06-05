@@ -85,9 +85,7 @@ void GET::notify(struct kevent ev) {
       em_->remove(std::pair<t_id, t_type>(id_, FD));
       return;
     }
-    // todo: em_->updateTimer(this); cause seg fault
-    // beacause Timer event update and timer deletion is dupricate in changedEvent
-    // solution: change chengedEvent type from vector<kevent> to map(key:pair<ident,filter> value: kevent)
+    em_->updateTimer(this);
     std::cout << "GET wip result: '" << response_->getBody() << "'" << std::endl;
   }
 }

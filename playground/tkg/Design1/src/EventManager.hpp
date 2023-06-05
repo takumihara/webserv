@@ -29,14 +29,17 @@
 
 class EventManager {
  public:
-  typedef std::vector<struct kevent>::iterator changed_events_iterator;
-  typedef std::vector<struct kevent>::const_iterator changed_events_const_iterator;
+  typedef uintptr_t t_ident;
+  typedef short t_filter;
+  typedef std::pair<t_ident, t_filter> key_t;
+  typedef std::map<key_t, struct kevent>::iterator changed_events_iterator;
+  typedef std::map<key_t, struct kevent>::const_iterator changed_events_const_iterator;
 
   EventManager();
   void eventLoop();
   void add(const std::pair<t_id, t_type> &key, Observee *obs);
   void remove(const std::pair<t_id, t_type> &key);
-  void addChangedEvents(struct kevent kevent);
+  void addChangedEvents(key_t key, struct kevent kevent);
   void registerServerEvent(int fd, int port, Config &conf);
   void registerWriteEvent(uintptr_t fd);
   void registerReadEvent(uintptr_t fd);
@@ -58,7 +61,7 @@ class EventManager {
   };
 
   int kq_;
-  std::vector<struct kevent> changed_events_;
+  std::map<key_t, struct kevent> changed_events_;
   std::map<std::pair<t_id, t_type>, Observee *> observees_;
   static const int kMaxEventSize = 100;
 };
