@@ -14,14 +14,14 @@
 #define MIN_PORT_NUM 0
 #define MAX_PORT_NUM 65535
 
+// todo(thara): HttpRequestReader class
 HttpRequest::State HttpRequest::readRequest(HttpRequest &req, IReadCloser *rc) {
   std::string request;
 
   size_t size = rc->read(request, SOCKET_READ_SIZE);
 
-  // todo(thara): move this logic to ConnectionSocket
   if (size == 0) {
-    printf("closed fd = %d\n", req.sock_fd_);
+    DEBUG_PRINTF("closed fd = %d\n", req.sock_fd_);
     return HttpRequest::SocketClosed;
   }
   req.raw_data_ += request;
@@ -293,8 +293,6 @@ void HttpRequest::readChunkedBody() {
       // todo(thara):there is unread data in socket
       if (chunked_size_ == 0) {
         rest_ = raw_data_.substr(end + 2);
-        // todo(thara): I think we can remove this because I added re-initialization of HttpRequest
-        chunked_reading_state_ = ReadingChunkedSize;
         moveToNextState();
         return;
       }
