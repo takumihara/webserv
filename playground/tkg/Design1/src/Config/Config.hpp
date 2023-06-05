@@ -36,6 +36,8 @@ class LocationConf {
   std::map<std::string, bool> &getAllowedMethods();
   std::vector<std::string> &getCGIExtensions();
   std::string getTargetPath(const std::string &request_uri) const;
+  bool hasRedirectDirective() const;
+
   std::string path_;
   std::pair<std::string, std::string> redirect_;
   CommonConf common_;

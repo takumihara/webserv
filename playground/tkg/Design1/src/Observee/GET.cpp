@@ -75,6 +75,8 @@ void GET::notify(struct kevent ev) {
     response_->appendBody(std::string(buff));
     if (res == 0 || res == ev.data) {
       close(id_);
+      ss << response_->getBody().size();
+      response_->appendHeader("Content-Length", ss.str());
       response_->setStatus(200);
       parent_->obliviateChild(this);
       em_->deleteTimerEvent(id_);

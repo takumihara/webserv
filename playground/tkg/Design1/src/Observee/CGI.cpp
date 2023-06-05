@@ -15,6 +15,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 
 void CGI::shutdown() {
@@ -41,6 +42,8 @@ void CGI::notify(struct kevent ev) {
     waitpid(pid_, &status, 0);
     if (status == 0) {
       response_->setStatus(200);
+      ss << response_->getBody().size();
+      response_->appendHeader("Content-Length", ss.str());
     } else
       response_->setStatus(404);
     parent_->obliviateChild(this);

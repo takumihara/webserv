@@ -135,6 +135,14 @@ void ConnectionSocket::processGET(const LocationConf &loc_conf) {
 void ConnectionSocket::process() {
   const ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&request_);
+  // loc_conf is redirection block
+  if (loc_conf.hasRedirectDirective()) {
+    response_.setStatus(std::atoi(loc_conf.redirect_.first.c_str()));
+    response_.appendHeader("Location", loc_conf.redirect_.second);
+    em_->disableReadEvent(id_);
+    em_->registerWriteEvent(id_);
+    return;
+  }
   extension_ = getExtension(request_.getRequestTarget().absolute_path);
   if (request_.methodIs(HttpRequest::GET)) {
     // handle GET

@@ -104,7 +104,7 @@ std::string GetRequest() {
 
 std::string CGIRequest() {
   std::string request;
-  request += "POST /html/a.cgi?query HTTP/1.1\r\n";
+  request += "GET /html/a.cgi?query HTTP/1.1\r\n";
   request += "Host: localhost\r\n";
   request += "Content-Length:  5 \r\n";
   request += "Date: Wed, 16 Oct 2019 07:28:00 GMT\r\n";

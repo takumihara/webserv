@@ -173,3 +173,8 @@ std::string LocationConf::getTargetPath(const std::string &request_uri) const {
   target += request_uri;
   return target;
 }
+
+bool LocationConf::hasRedirectDirective() const {
+  if (redirect_.first != "") return true;
+  return false;
+}

@@ -15,13 +15,21 @@ void HttpResponse::setStatus(const int status) { status_ = status; }
 
 void HttpResponse::appendBody(const std::string &str) { body_ += str; }
 
+void HttpResponse::appendHeader(const std::string &key, const std::string &value) {
+  headers.push_back(header(key, value));
+}
+
 const std::string &HttpResponse::getBody() const { return body_; }
 
 void HttpResponse::createResponse() {
   std::stringstream ss;
 
-  ss << "HTTP/1.1 " << status_ << " status-message" << CRLF << "Content-Length: " << body_.size() << CRLF << CRLF
-     << body_ << CRLF;
+  ss << "HTTP/1.1 " << status_ << " status-message" << CRLF;
+  for (std::vector<header>::const_iterator itr = headers.cbegin(); itr != headers.cend(); itr++) {
+    ss << itr->first << ": " << itr->second << CRLF;
+  }
+  ss << CRLF;
+  ss << body_ << CRLF;
   response_ = ss.str();
   std::cout << response_;
   response_size_ = response_.size();
