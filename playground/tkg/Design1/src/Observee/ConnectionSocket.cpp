@@ -76,8 +76,10 @@ void ConnectionSocket::execCGI(const std::string &path) {
 }
 
 void ConnectionSocket::processGET(const LocationConf &loc_conf) {
+  if (!isAcceptableMethod(&loc_conf, HttpRequest::GET)) {
+    throw BadRequestException("No Suitable Location");
+  }
   const bool hasCGI = extension_ != "";
-
   // todo: . is for temporary implementation
   std::string path = "." + loc_conf.getTargetPath(request_.getRequestTarget().absolute_path);
   // check directory or file exists
@@ -89,12 +91,8 @@ void ConnectionSocket::processGET(const LocationConf &loc_conf) {
   // if CGI extension exist and that is not directory, try exec CGI
   if (hasCGI && !is_directory) {
     if (access(path.c_str(), X_OK) == 0 && contain(loc_conf.cgi_exts_, extension_)) {
-      try {
-        execCGI("." + loc_conf.getTargetPath(request_.getRequestTarget().absolute_path));
-        return;
-      } catch (std::runtime_error &e) {
-        std::cerr << e.what() << std::endl;
-      }
+      execCGI(path);
+      return;
     }
   }
   // check directory or file is readable

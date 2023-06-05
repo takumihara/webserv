@@ -6,6 +6,7 @@
 #include <ios>
 #include <iostream>
 
+#include "../debug.hpp"
 #include "../helper.hpp"
 #include "HttpRequest.hpp"
 #include "validation.h"
@@ -152,11 +153,9 @@ const LocationConf &ServerConf::getLocationConf(const HttpRequest *req) const {
   for (std::vector<LocationConf>::const_iterator loc_itr = location_confs_.begin(); loc_itr != location_confs_.end();
        loc_itr++) {
     if (!isAcceptableMethod(&(*loc_itr), req->getMethod())) {
-      std::cout << "not acceptable method\n";
       continue;
     }
     if (hasCGI && !contain(loc_itr->cgi_exts_, extension)) {
-      std::cout << "not acceptable CGI extension\n";
       continue;
     }
     if (path.find(loc_itr->path_) == 0 && match_len < loc_itr->path_.size()) {
