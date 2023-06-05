@@ -297,7 +297,7 @@ void Parser::analyseMaxBodySize() {
   DEBUG_PUTS("Analyse max body size");
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING) || !isAllDigit(tok.str_)) {
-    throw std::runtime_error("Max_body_size: invalid type or Not AllDigit");
+    throw std::runtime_error("max_body_size: invalid type or Not AllDigit");
   }
   std::stringstream sstream(tok.str_);
   if (scope_.top() == GENERAL) {
@@ -311,7 +311,7 @@ void Parser::analyseMaxBodySize() {
   }
   tok = readToken();
   if (!expectTokenType(tok, Token::SEMICOLON)) {
-    throw std::runtime_error("error_page: invalid grammar, need semicolon");
+    throw std::runtime_error("max_body_size: invalid grammar, need semicolon");
   }
 }
 

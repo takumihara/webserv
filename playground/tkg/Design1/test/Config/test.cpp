@@ -13,7 +13,10 @@
 #include <ios>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+
+bool includes(const std::string &str, const std::string &substr) { return str.find(substr) != std::string::npos; }
 
 static std::string readFile(const char *filename) {
   std::ifstream ifs(filename);
@@ -176,4 +179,57 @@ TEST(Conftest, OK_04_multiple_server) {
   const std::string res = stringifyConfig("./test/Config/input/OK_04_multiple_server.conf");
   EXPECT_EQ(res, ans);
 }
+
+TEST(Conftest, OK_05_test) {
+  const std::string ans = readFile("./test/Config/output/OK_05_test.conf");
+  const std::string res = stringifyConfig("./test/Config/input/OK_05_test.conf");
+  EXPECT_EQ(res, ans);
+}
+
+// NG TEST
+TEST(Conftest, NG_01_no_semicolon) {
+  try {
+    const std::string res = stringifyConfig("./test/Config/input/NG_01_no_semicolon.conf");
+    FAIL();
+  } catch (std::exception &e) {
+    EXPECT_TRUE(includes(e.what(), "semicolon"));
+  }
+}
+
+TEST(Conftest, NG_02_invalid_listen) {
+  try {
+    const std::string res = stringifyConfig("./test/Config/input/NG_02_invalid_listen.conf");
+    FAIL();
+  } catch (std::exception &e) {
+    EXPECT_TRUE(includes(e.what(), "listen:"));
+  }
+}
+
+TEST(Conftest, NG_03_invalid_autoindex) {
+  try {
+    const std::string res = stringifyConfig("./test/Config/input/NG_03_invalid_autoindex.conf");
+    FAIL();
+  } catch (std::exception &e) {
+    EXPECT_TRUE(includes(e.what(), "autoindex:"));
+  }
+}
+
+TEST(Conftest, NG_04_invalid_root) {
+  try {
+    const std::string res = stringifyConfig("./test/Config/input/NG_04_invalid_root.conf");
+    FAIL();
+  } catch (std::exception &e) {
+    EXPECT_TRUE(includes(e.what(), "root:"));
+  }
+}
+
+TEST(Conftest, NG_05_invalid_max_body_size) {
+  try {
+    const std::string res = stringifyConfig("./test/Config/input/NG_05_invalid_max_body_size.conf");
+    FAIL();
+  } catch (std::exception &e) {
+    EXPECT_TRUE(includes(e.what(), "max_body_size:"));
+  }
+}
+
 #endif
