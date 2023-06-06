@@ -4,16 +4,6 @@
 
 #include "UserInfo.hpp"
 
-enum Encoding {
-  encodePath,
-  encodePathSegment,
-  encodeHost,
-  encodeZone,
-  encodeUserPassword,
-  encodeQueryComponent,
-  encodeFragment
-};
-
 class URI {
  public:
   // todo: want it private

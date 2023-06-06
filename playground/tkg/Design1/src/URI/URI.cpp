@@ -3,10 +3,14 @@
 #include <algorithm>
 #include <utility>
 
+#include "../helper.hpp"
+#include "encoding.hpp"
 #include "helper.hpp"
 #include "validation.h"
 
-bool shouldEscape(char c, Encoding mode);
+using Encoding::Fragment;
+using Encoding::Path;
+
 std::pair<std::string, UserInfo*> parseAuthority(std::string authority);
 bool validUserinfo(const std::string& user_info);
 std::string parseHost(const std::string& host);
@@ -14,12 +18,6 @@ bool validRegNameHost(const std::string& host);
 bool validOptionalPort(std::string port);
 std::string parseScheme(std::string& raw_url);
 bool stringContainsCTLByte(const std::string& str);
-std::string escape(const std::string& str, Encoding mode);
-bool shouldEscape(char c, Encoding mode);
-std::string unescape(const std::string& str, Encoding mode);
-bool isUnreserved(char c);
-bool isSubDelims(char c);
-bool isGenDelims(char c);
 
 bool isReserved(char c);
 
@@ -38,20 +36,6 @@ URI* URI::parse(const std::string& raw_uri) {
 
 URI* URI::parseRequestURI(const std::string& uri) { return new URI(uri, true); }
 
-// when via_request is true
-// request-target
-// 	= origin-form
-// 	/ absolute-form
-// 	/ authority-form
-// 	/ asterisk-form
-// origin-form
-// = absolute-path [ "?" query ]
-// absolute-form
-// = absolute-URI
-// authority-form
-// = authority
-// asterisk-form
-// 	= "*"
 URI::URI(std::string raw_uri, bool via_request) : user_info_(new UserInfo()) {
   // todo:
   if (stringContainsCTLByte(raw_uri)) {
@@ -147,13 +131,13 @@ std::pair<std::string, UserInfo*> parseAuthority(std::string authority) {
   size_t colon_pos = raw_user_info.find(":");
   UserInfo* user;
   if (colon_pos == std::string::npos) {
-    raw_user_info = unescape(raw_user_info, encodeUserPassword);
+    raw_user_info = Encoding::unescape(raw_user_info, Encoding::UserPassword);
     user = new UserInfo(raw_user_info);
   } else {
     std::string username = raw_user_info.substr(0, colon_pos);
     std::string password = raw_user_info.substr(colon_pos + 1);
-    username = unescape(username, encodeUserPassword);
-    password = unescape(password, encodeUserPassword);
+    username = Encoding::unescape(username, Encoding::UserPassword);
+    password = Encoding::unescape(password, Encoding::UserPassword);
     user = new UserInfo(username, password);
   }
   return std::make_pair(host, user);
@@ -196,7 +180,7 @@ std::string parseHost(const std::string& host) {
       throw std::runtime_error("URI: invalid optional port");
     }
   }
-  return unescape(host, encodeHost);
+  return Encoding::unescape(host, Encoding::Host);
 }
 
 // validRegNameHost does not check pct-encoded. The caller does that via func unescape.
@@ -246,12 +230,19 @@ std::string parseScheme(std::string& raw_url) {
   return "";
 }
 
-// todo
-void URI::setFragment(const std::string& fragment) { fragment_ = fragment; }
+void URI::setFragment(const std::string& fragment) {
+  fragment_ = Encoding::unescape(fragment, Encoding::Fragment);
+  std::string escaped = Encoding::escape(fragment, Encoding::Fragment);
+  if (escaped == fragment) {
+    raw_fragment_ = "";
+  } else {
+    raw_fragment_ = fragment;
+  }
+}
 
 void URI::setPath(const std::string& path) {
-  path_ = unescape(path, encodePath);
-  if (path == escape(path, encodePath)) {
+  path_ = unescape(path, Encoding::Path);
+  if (path == escape(path, Encoding::Path)) {
     raw_path_ = "";
   } else {
     raw_path_ = path;
@@ -266,57 +257,6 @@ bool stringContainsCTLByte(const std::string& str) {
   }
   return false;
 }
-
-// todo
-std::string escape(const std::string& str, Encoding mode) {
-  (void)mode;
-
-  return str;
-}
-
-// todo
-std::string unescape(const std::string& str, Encoding mode) {
-  (void)mode;
-  return str;
-}
-
-bool isUnreserved(char c) { return std::isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~'; }
-
-bool isGenDelims(char c) {
-  switch (c) {
-    case ':':
-    case '/':
-    case '?':
-    case '#':
-    case '[':
-    case ']':
-    case '@':
-      return true;
-    default:
-      return false;
-  }
-}
-
-bool isSubDelims(char c) {
-  switch (c) {
-    case '!':
-    case '$':
-    case '&':
-    case '\'':
-    case '(':
-    case ')':
-    case '*':
-    case '+':
-    case ',':
-    case ';':
-    case '=':
-      return true;
-    default:
-      return false;
-  }
-}
-
-bool isReserved(char c) { return isGenDelims(c) || isSubDelims(c); }
 
 const std::string& URI::getScheme() const { return scheme_; };
 const std::string& URI::getHost() const { return host_; };

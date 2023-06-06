@@ -110,6 +110,21 @@ TEST(URIParse, HostWithUserAndPassword) {
   ASSERT_FALSE(uri->isOmitHost());
 }
 
+TEST(URIParse, Escaped) {
+  URI *uri = URI::parse("http://localhost/%40?%20");
+
+  ASSERT_EQ(uri->getScheme(), "http");
+  ASSERT_EQ(uri->getHost(), "localhost");
+  ASSERT_EQ(uri->getPath(), "/@");
+  ASSERT_EQ(uri->getQuery(), "%20");
+  ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUserInfo()->getUsername(), "");
+  ASSERT_EQ(uri->getUserInfo()->getPassword(), "");
+  ASSERT_FALSE(uri->isForceQuery());
+  ASSERT_EQ(uri->getOpaque(), "");
+  ASSERT_FALSE(uri->isOmitHost());
+}
+
 // URI -> path-absolute
 
 TEST(URIParse, OmitHost) {
@@ -409,16 +424,26 @@ TEST(URIParse, InvalidHost) {
   }
 }
 
-// Go accepts this
-// TEST(URIParse, InvalidPath) {
-//   try {
-//     URI *uri = URI::parse("https://\"<>localhost:8080");
-//     FAIL();
-//   } catch (std::runtime_error &e) {
-//     ASSERT_STREQ(e.what(), "invalid scheme");
-//   } catch (...) {
-//     FAIL();
-//   }
-// }
+TEST(URIParse, InvalidEscapedHost) {
+  try {
+    URI *uri = URI::parse("http://%20/");
+    std::cout << uri->getUserInfo()->getString() << std::endl;
+    FAIL();
+  } catch (std::runtime_error &e) {
+    ASSERT_STREQ(e.what(), "URI: invalid host");
+  } catch (...) {
+    FAIL();
+  }
+}
 
-// "https://username@:@password@exa%40mple.com"
+// Go accepts this
+TEST(URIParse, InvalidPath) {
+  try {
+    URI *uri = URI::parse("https://<>:8080");
+    FAIL();
+  } catch (std::runtime_error &e) {
+    ASSERT_STREQ(e.what(), "URI: invalid host");
+  } catch (...) {
+    FAIL();
+  }
+}
