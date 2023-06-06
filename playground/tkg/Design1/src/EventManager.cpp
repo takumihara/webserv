@@ -11,7 +11,14 @@ EventManager::EventManager() {
   }
 }
 
-void EventManager::addChangedEvents(struct kevent kevent) { changed_events_.push_back(kevent); }
+void EventManager::addChangedEvents(struct kevent kevent) {
+  t_key key(kevent.ident, kevent.filter);
+  if (changed_events_.find(key) == changed_events_.end())
+    changed_events_[key] = kevent;
+  else {
+    changed_events_[key].flags |= kevent.flags;
+  }
+}
 
 void EventManager::add(const std::pair<t_id, t_type> &key, Observee *obs) { observees_[key] = obs; }
 
@@ -62,8 +69,7 @@ void EventManager::updateTimer(Observee *obs) {
   if (obs->parent_) {
     updateTimer(obs->parent_);
   }
-  addChangedEvents(
-      (struct kevent){obs->id_, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+  addChangedEvents((struct kevent){obs->id_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
 }
 
 std::string getEventFilter(int flag) {
@@ -97,9 +103,9 @@ void EventManager::updateKqueue() {
   bzero(chlist, sizeof(struct kevent) * size);
   int i = 0;
   for (changed_events_const_iterator itr = changed_events_.begin(); itr != changed_events_.end(); itr++, i++) {
-    DEBUG_PRINTF("fd: %lu(%s:%s), ", (*itr).ident, getEventFilter((*itr).filter).c_str(),
-                 getEventFlags((*itr).flags).c_str());
-    EV_SET(&chlist[i], (*itr).ident, (*itr).filter, (*itr).flags, (*itr).fflags, (*itr).data, (*itr).udata);
+    const struct kevent &ev = itr->second;
+    DEBUG_PRINTF("fd: %lu(%s:%s), ", ev.ident, getEventFilter(ev.filter).c_str(), getEventFlags(ev.flags).c_str());
+    EV_SET(&chlist[i], ev.ident, ev.filter, ev.flags, ev.fflags, ev.data, ev.udata);
   }
   DEBUG_PUTS("");
   kevent(kq_, chlist, size, NULL, 0, NULL);

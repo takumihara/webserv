@@ -17,6 +17,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 
 #include "../Config/Config.hpp"
@@ -62,6 +63,7 @@ std::string GET::listFilesAndDirectories(const std::string &directory_path) {
 
 void GET::notify(struct kevent ev) {
   std::cout << "handle GET" << std::endl;
+  std::stringstream ss;
   (void)ev;
   char buff[FILE_READ_SIZE + 1];
   int res = read(id_, &buff[0], FILE_READ_SIZE);
@@ -73,6 +75,8 @@ void GET::notify(struct kevent ev) {
     response_->appendBody(std::string(buff));
     if (res == 0 || res == ev.data) {
       close(id_);
+      ss << response_->getBody().size();
+      response_->appendHeader("Content-Length", ss.str());
       response_->setStatus(200);
       parent_->obliviateChild(this);
       em_->deleteTimerEvent(id_);
@@ -81,9 +85,7 @@ void GET::notify(struct kevent ev) {
       em_->remove(std::pair<t_id, t_type>(id_, FD));
       return;
     }
-    // todo: em_->updateTimer(this); cause seg fault
-    // beacause Timer event update and timer deletion is dupricate in changedEvent
-    // solution: change chengedEvent type from vector<kevent> to map(key:pair<ident,filter> value: kevent)
+    em_->updateTimer(this);
     std::cout << "GET wip result: '" << response_->getBody() << "'" << std::endl;
   }
 }

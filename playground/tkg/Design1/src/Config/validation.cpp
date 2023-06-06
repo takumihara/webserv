@@ -5,6 +5,7 @@
 
 #include "../const.hpp"
 #include "Config.hpp"
+#include "HttpRequest.hpp"
 
 size_t skipSep(std::string &str, std::string sep, size_t pos) {
   while (str.find(sep, pos) == 0) {
@@ -131,4 +132,22 @@ bool isServernameDuplicate(Config &conf) {
     }
   }
   return true;
+}
+
+std::string methodToString(const HttpRequest::Method &method) {
+  if (method == HttpRequest::GET)
+    return "GET";
+  else if (method == HttpRequest::POST)
+    return "POST";
+  else if (method == HttpRequest::DELETE)
+    return "DELETE";
+  return "";
+}
+
+bool isAcceptableMethod(const LocationConf *conf, const HttpRequest::Method &method) {
+  if (conf->allowed_methods_.size() == 0)
+    return true;
+  else if (conf->allowed_methods_.find(methodToString(method)) != conf->allowed_methods_.end())
+    return true;
+  return false;
 }

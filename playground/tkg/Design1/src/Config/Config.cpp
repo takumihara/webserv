@@ -6,10 +6,15 @@
 #include <ios>
 #include <iostream>
 
-void printStrings(const char *prefix, std::vector<std::string> &strs) {
+#include "../debug.hpp"
+#include "../helper.hpp"
+#include "HttpRequest.hpp"
+#include "validation.h"
+
+void printStrings(const char *prefix, const std::vector<std::string> &strs) {
   if (strs.size() == 0) return;
   std::cout << prefix;
-  for (std::vector<std::string>::iterator itr = strs.begin(); itr != strs.end(); itr++) {
+  for (std::vector<std::string>::const_iterator itr = strs.cbegin(); itr != strs.cend(); itr++) {
     std::cout << *itr << " ";
   }
   std::cout << std::endl;
@@ -106,12 +111,13 @@ int &ServerConf::getPorts() { return port_; }
 std::vector<std::string> &ServerConf::getServerNames() { return server_names_; }
 
 // LocationConf class method
-void LocationConf::printAllowedMethod() {
+void LocationConf::printAllowedMethod() const {
   std::cout << "      Method: ";
   if (allowed_methods_.empty())
     std::cout << "All";
   else {
-    for (std::map<std::string, bool>::iterator itr = allowed_methods_.begin(); itr != allowed_methods_.end(); itr++) {
+    for (std::map<std::string, bool>::const_iterator itr = allowed_methods_.cbegin(); itr != allowed_methods_.cend();
+         itr++) {
       std::cout << itr->first << " ";
     }
   }
@@ -122,7 +128,7 @@ std::map<std::string, bool> &LocationConf::getAllowedMethods() { return allowed_
 
 std::vector<std::string> &LocationConf::getCGIExtensions() { return cgi_exts_; }
 
-void LocationConf::printLocationConf() {
+void LocationConf::printLocationConf() const {
   std::cout << "      path: " << this->path_ << std::endl;
   printStrings("      cgi_ext: ", this->cgi_exts_);
   printRedirect(this, 3);
@@ -132,17 +138,27 @@ void LocationConf::printLocationConf() {
   printAutoindex(this, 3);
   printAllowedMethod();
 
-  for (std::map<std::string, std::string>::iterator itr = common_.error_pages_.begin();
-       itr != common_.error_pages_.end(); itr++) {
+  for (std::map<std::string, std::string>::const_iterator itr = common_.error_pages_.cbegin();
+       itr != common_.error_pages_.cend(); itr++) {
     std::cout << "      error_status and path: " << itr->first << " " << itr->second << std::endl;
   }
 }
 
-const LocationConf &ServerConf::getLocationConf(const std::string &path) const {
+const LocationConf &ServerConf::getLocationConf(const HttpRequest *req) const {
+  const std::string &path = req->getRequestTarget().absolute_path;
+  const std::string &extension = getExtension(path);
+  const bool hasCGI = extension != "";
+
   std::vector<LocationConf>::const_iterator ret = location_confs_.begin();
   size_t match_len = 0;
   for (std::vector<LocationConf>::const_iterator loc_itr = location_confs_.begin(); loc_itr != location_confs_.end();
        loc_itr++) {
+    if (!isAcceptableMethod(&(*loc_itr), req->getMethod())) {
+      continue;
+    }
+    if (hasCGI && !contain(loc_itr->cgi_exts_, extension)) {
+      continue;
+    }
     if (path.find(loc_itr->path_) == 0 && match_len < loc_itr->path_.size()) {
       ret = loc_itr;
       match_len = loc_itr->path_.size();
@@ -156,4 +172,9 @@ std::string LocationConf::getTargetPath(const std::string &request_uri) const {
   if (target[target.size() - 1] == '/' && request_uri[0] == '/') target.erase(target.size() - 1);
   target += request_uri;
   return target;
+}
+
+bool LocationConf::hasRedirectDirective() const {
+  if (redirect_.first != "") return true;
+  return false;
 }
