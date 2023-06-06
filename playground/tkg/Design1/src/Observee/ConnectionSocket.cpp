@@ -190,6 +190,6 @@ void ConnectionSocket::notify(struct kevent ev) {
     request_.refresh();
     response_.createResponse();
     response_.sendResponse(*em_);
-    request_ = HttpRequest(id_, port_, conf_);
+    request_ = HttpRequest(id_, conf_);
   }
 }

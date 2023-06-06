@@ -392,8 +392,6 @@ const std::string &HttpRequest::getBody() const { return body_; }
 const HttpRequest::RequestTarget &HttpRequest::getRequestTarget() const { return request_line_.request_target; }
 const HttpRequest::Method &HttpRequest::getMethod() const { return request_line_.method; }
 const HttpRequest::Host &HttpRequest::getHost() const { return headers_.host; }
-const int &HttpRequest::getPort() const { return port_; }
-void HttpRequest::setPort(int port) { port_ = port; }
 bool HttpRequest::isChunked() {
   std::vector<TransferEncoding> &transferEncodings = headers_.transfer_encodings;
   return std::find(transferEncodings.begin(), transferEncodings.end(), HttpRequest::Chunked) != transferEncodings.end();

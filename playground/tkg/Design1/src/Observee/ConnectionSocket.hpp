@@ -16,7 +16,7 @@ class ConnectionSocket : public Observee {
       : Observee(id, "connection", em, parent),
         port_(port),
         conf_(conf),
-        request_(HttpRequest(id, port, conf)),
+        request_(HttpRequest(id, conf)),
         response_(HttpResponse(id, port)),
         rc_(rc) {}
   ~ConnectionSocket() { delete rc_; }

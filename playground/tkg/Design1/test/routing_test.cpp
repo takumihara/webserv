@@ -18,8 +18,7 @@ TEST(Routing, basic) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -34,8 +33,7 @@ TEST(Routing, basic_no_such_server) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -50,8 +48,7 @@ TEST(Routing, multi_loc_first) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -66,8 +63,7 @@ TEST(Routing, multi_loc_second) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -82,8 +78,7 @@ TEST(Routing, multi_loc_third) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[2]);
 }
@@ -98,8 +93,7 @@ TEST(Routing, multi_loc_no_match) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -114,8 +108,7 @@ TEST(Routing, multi_serv_first) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -130,8 +123,7 @@ TEST(Routing, multi_serv_second) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[1].location_confs_[0]);
 }
@@ -146,8 +138,7 @@ TEST(Routing, multi_serv_no_such_server) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -162,8 +153,7 @@ TEST(Routing, multi_serv_loc_1S_1L) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -178,8 +168,7 @@ TEST(Routing, multi_serv_loc_1S_2L) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -194,8 +183,7 @@ TEST(Routing, multi_serv_loc_1S_noL) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -210,8 +198,7 @@ TEST(Routing, multi_serv_loc_2S_1L) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[1].location_confs_[0]);
 }
@@ -226,8 +213,7 @@ TEST(Routing, multi_serv_loc_2S_3L) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[1].location_confs_[2]);
 }
@@ -242,8 +228,7 @@ TEST(Routing, multi_serv_loc_2S_noL) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[1].location_confs_[0]);
 }
@@ -258,8 +243,7 @@ TEST(Routing, multi_serv_loc_noS_2L) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -274,8 +258,7 @@ TEST(Routing, multi_serv_loc_noS_noL) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -290,8 +273,7 @@ TEST(Routing, limit_method_get) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -306,8 +288,7 @@ TEST(Routing, limit_method_post) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -322,8 +303,7 @@ TEST(Routing, limit_method_noM) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -338,8 +318,7 @@ TEST(Routing, allowed_ext_cgi) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -354,8 +333,7 @@ TEST(Routing, allowed_ext_py) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -370,8 +348,7 @@ TEST(Routing, allowed_ext_noExt) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -386,8 +363,7 @@ TEST(Routing, allowed_ext_pathLen) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -402,8 +378,7 @@ TEST(Routing, allowed_ext_pathLen_api) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[2]);
 }
@@ -418,8 +393,7 @@ TEST(Routing, allowed_ext_pathLen_noPath) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -434,8 +408,7 @@ TEST(Routing, limit_method_pathLen) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[2]);
 }
@@ -450,8 +423,7 @@ TEST(Routing, limit_method_pathLen_path1) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -466,8 +438,7 @@ TEST(Routing, limit_method_pathLen_noPath) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -482,8 +453,7 @@ TEST(Routing, limit_method_pathLen_noM) {
   }
   HttpRequest req(0, 0, conf);
   HttpRequest::readRequest(req, rc);
-  req.setPort(80);
-  const ServerConf *serv_conf = conf.getServerConf(req.getPort(), req.getHost().uri_host);
+  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
