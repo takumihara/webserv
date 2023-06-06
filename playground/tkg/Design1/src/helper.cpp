@@ -63,6 +63,7 @@ std::string getExtension(const std::string &path) {
   for (std::size_t i = 0; i < segments.size(); i++) {
     // remove param
     std::string trimed_seg = segments[i].substr(0, segments[i].find(';'));
+    trimed_seg = trimed_seg.substr(0, trimed_seg.find(','));
     std::size_t ext_pos = trimed_seg.rfind(".cgi");
     if (ext_pos != std::string::npos && ext_pos + 4 == trimed_seg.size()) return ".cgi";
     ext_pos = trimed_seg.rfind(".php");
