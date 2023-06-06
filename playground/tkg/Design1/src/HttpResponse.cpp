@@ -63,10 +63,8 @@ void HttpResponse::refresh(EventManager &em) {
   sending_response_size_ = 0;
   response_size_ = 0;
   (void)port_;
-  em.addChangedEvents(EventManager::key_t(sock_fd_, EVFILT_WRITE),
-                      (struct kevent){static_cast<uintptr_t>(sock_fd_), EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
-  em.addChangedEvents(EventManager::key_t(sock_fd_, EVFILT_READ),
-                      (struct kevent){static_cast<uintptr_t>(sock_fd_), EVFILT_READ, EV_ENABLE, 0, 0, 0});
+  em.addChangedEvents((struct kevent){static_cast<uintptr_t>(sock_fd_), EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
+  em.addChangedEvents((struct kevent){static_cast<uintptr_t>(sock_fd_), EVFILT_READ, EV_ENABLE, 0, 0, 0});
   // em.addChangedEvents(
   //    (struct kevent){sock_fd_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
   response_ = "";

@@ -30,10 +30,8 @@ void ServerSocket::notify(struct kevent ev) {
   if (connection_fd == -1) {
     throw std::runtime_error("accept error");
   }
-  em_->addChangedEvents(EventManager::key_t(static_cast<uintptr_t>(connection_fd), EVFILT_READ),
-                        (struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_READ, EV_ADD, 0, 0, 0});
-  em_->addChangedEvents(EventManager::key_t(static_cast<uintptr_t>(connection_fd), EVFILT_TIMER),
-                        (struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_TIMER, EV_ADD | EV_ENABLE,
+  em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_READ, EV_ADD, 0, 0, 0});
+  em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_TIMER, EV_ADD | EV_ENABLE,
                                         NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
   ConnectionSocket *obs = new ConnectionSocket(connection_fd, port_, conf_, em_, this, new FDReadCloser(connection_fd));
   em_->add(std::pair<t_id, t_type>(connection_fd, FD), obs);

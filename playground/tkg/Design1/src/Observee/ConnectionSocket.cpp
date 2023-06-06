@@ -182,8 +182,7 @@ void ConnectionSocket::notify(struct kevent ev) {
       std::cerr << e.what() << std::endl;
       close(ev.ident);
       em_->remove(std::pair<t_id, t_type>(ev.ident, FD));
-      em_->addChangedEvents(EventManager::key_t(ev.ident, EVFILT_TIMER),
-                            (struct kevent){static_cast<uintptr_t>(ev.ident), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+      em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(ev.ident), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
     }
   }
   if (ev.filter == EVFILT_WRITE) {
