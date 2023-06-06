@@ -18,8 +18,7 @@ class ConnectionSocket : public Observee {
         conf_(conf),
         request_(HttpRequest(id, port, conf)),
         response_(HttpResponse(id, port)),
-        rc_(rc),
-        extension_("") {}
+        rc_(rc) {}
   ~ConnectionSocket() { delete rc_; }
   void notify(struct kevent ev);
   void shutdown();
