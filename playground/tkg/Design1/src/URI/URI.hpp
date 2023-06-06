@@ -17,7 +17,8 @@ enum Encoding {
 class URI {
  public:
   // todo: want it private
-  URI(){};
+  URI() : user_info_(new UserInfo), omit_host_(false), force_query_(false){};
+  ~URI() { delete user_info_; }
   static URI* parse(const std::string& uri);
   static URI* parseRequestURI(const std::string& uri);
 
