@@ -21,23 +21,23 @@ bool shouldEscape(char c, Encoding::Type mode) {
       }
       break;
     case Encoding::Path:
-      if (c == '/' || c == ':' || c == '@' || c == '%') {
+      if (c == '/' || c == ':' || c == '@') {
         return false;
       }
       break;
     case Encoding::PathSegment:
-      if (c == ':' || c == '@' || c == '%') {
+      if (c == ':' || c == '@') {
         return false;
       }
       break;
-    case Encoding::UserPassword:
-      if (c == ':' || c == '%') {
+    case Encoding::UserInfo:
+      if (c == ':') {
         return false;
       }
       break;
     case Encoding::QueryComponent:
     case Encoding::Fragment:
-      if (c == ':' || c == '%' || c == '/' || c == '?') {
+      if (c == ':' || c == '@' || c == '/' || c == '?') {
         return false;
       }
     default:

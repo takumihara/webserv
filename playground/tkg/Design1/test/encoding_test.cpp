@@ -40,17 +40,17 @@ TEST(Encoding, PathSegment) {
   EXPECT_EQ(unescape(escaped, PathSegment), unescaped);
 }
 
-TEST(Encoding, UserPassword) {
+TEST(Encoding, UserInfo) {
   std::string unescaped = "user:password";
   std::string escaped = "user:password";
-  EXPECT_EQ(escape(unescaped, UserPassword), escaped);
-  EXPECT_EQ(unescape(escaped, UserPassword), unescaped);
+  EXPECT_EQ(escape(unescaped, UserInfo), escaped);
+  EXPECT_EQ(unescape(escaped, UserInfo), unescaped);
 
   std::string original = " :%20";
   escaped = "%20:%20";
   unescaped = " : ";
-  EXPECT_EQ(escape(original, UserPassword), escaped);
-  EXPECT_EQ(unescape(escaped, UserPassword), unescaped);
+  EXPECT_EQ(escape(original, UserInfo), escaped);
+  EXPECT_EQ(unescape(escaped, UserInfo), unescaped);
 }
 
 TEST(Encoding, QueryComponent) {

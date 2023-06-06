@@ -6,7 +6,7 @@ enum Type {
   PathSegment,
   Host,
   // encodeZone,
-  UserPassword,
+  UserInfo,
   QueryComponent,
   Fragment
 };

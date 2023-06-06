@@ -131,13 +131,13 @@ std::pair<std::string, UserInfo*> parseAuthority(std::string authority) {
   size_t colon_pos = raw_user_info.find(":");
   UserInfo* user;
   if (colon_pos == std::string::npos) {
-    raw_user_info = Encoding::unescape(raw_user_info, Encoding::UserPassword);
+    raw_user_info = Encoding::unescape(raw_user_info, Encoding::UserInfo);
     user = new UserInfo(raw_user_info);
   } else {
     std::string username = raw_user_info.substr(0, colon_pos);
     std::string password = raw_user_info.substr(colon_pos + 1);
-    username = Encoding::unescape(username, Encoding::UserPassword);
-    password = Encoding::unescape(password, Encoding::UserPassword);
+    username = Encoding::unescape(username, Encoding::UserInfo);
+    password = Encoding::unescape(password, Encoding::UserInfo);
     user = new UserInfo(username, password);
   }
   return std::make_pair(host, user);
