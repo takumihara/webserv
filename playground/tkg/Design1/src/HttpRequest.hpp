@@ -46,9 +46,8 @@ class HttpRequest {
     std::tm date;
   };
 
-  HttpRequest(int fd, int port, Config &conf)
+  HttpRequest(int fd, Config &conf)
       : sock_fd_(fd),
-        port_(port),
         state_(ReadingStartLine),
         chunked_size_(0),
         chunked_reading_state_(ReadingChunkedSize),
@@ -57,7 +56,6 @@ class HttpRequest {
   HttpRequest &operator=(const HttpRequest &other) {
     if (this != &other) {
       this->sock_fd_ = other.sock_fd_;
-      this->port_ = other.port_;
       this->raw_data_ = other.raw_data_;
       this->rest_ = other.rest_;
       this->state_ = other.state_;
@@ -109,7 +107,6 @@ class HttpRequest {
 
  private:
   int sock_fd_;
-  int port_;
   std::string raw_data_;
   std::string rest_;
   State state_;
