@@ -52,7 +52,7 @@ URI* URI::parseRequestURI(const std::string& uri) { return new URI(uri, true); }
 // = authority
 // asterisk-form
 // 	= "*"
-URI::URI(std::string raw_uri, bool via_request) : user_info_(new UserInfo()) {
+URI::URI(std::string raw_uri, bool via_request) : user_info_(new UserInfo()), omit_host_(false), force_query_(false) {
   // todo:
   if (stringContainsCTLByte(raw_uri)) {
     throw std::runtime_error("URI: invalid control character in URL");
