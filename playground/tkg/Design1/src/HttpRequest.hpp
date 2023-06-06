@@ -74,6 +74,8 @@ class HttpRequest {
   void refresh();
   const std::string &getBody() const;
   const Host &getHost() const;
+  const int &getPort() const;
+  void setPort(int port);
   bool methodIs(Method method) const;
   const RequestTarget &getRequestTarget() const;
   const Method &getMethod() const;

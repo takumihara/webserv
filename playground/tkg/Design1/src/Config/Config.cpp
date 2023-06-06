@@ -11,10 +11,10 @@
 #include "HttpRequest.hpp"
 #include "validation.h"
 
-void printStrings(const char *prefix, std::vector<std::string> &strs) {
+void printStrings(const char *prefix, const std::vector<std::string> &strs) {
   if (strs.size() == 0) return;
   std::cout << prefix;
-  for (std::vector<std::string>::iterator itr = strs.begin(); itr != strs.end(); itr++) {
+  for (std::vector<std::string>::const_iterator itr = strs.cbegin(); itr != strs.cend(); itr++) {
     std::cout << *itr << " ";
   }
   std::cout << std::endl;
@@ -111,12 +111,13 @@ int &ServerConf::getPorts() { return port_; }
 std::vector<std::string> &ServerConf::getServerNames() { return server_names_; }
 
 // LocationConf class method
-void LocationConf::printAllowedMethod() {
+void LocationConf::printAllowedMethod() const {
   std::cout << "      Method: ";
   if (allowed_methods_.empty())
     std::cout << "All";
   else {
-    for (std::map<std::string, bool>::iterator itr = allowed_methods_.begin(); itr != allowed_methods_.end(); itr++) {
+    for (std::map<std::string, bool>::const_iterator itr = allowed_methods_.cbegin(); itr != allowed_methods_.cend();
+         itr++) {
       std::cout << itr->first << " ";
     }
   }
@@ -127,7 +128,7 @@ std::map<std::string, bool> &LocationConf::getAllowedMethods() { return allowed_
 
 std::vector<std::string> &LocationConf::getCGIExtensions() { return cgi_exts_; }
 
-void LocationConf::printLocationConf() {
+void LocationConf::printLocationConf() const {
   std::cout << "      path: " << this->path_ << std::endl;
   printStrings("      cgi_ext: ", this->cgi_exts_);
   printRedirect(this, 3);
@@ -137,8 +138,8 @@ void LocationConf::printLocationConf() {
   printAutoindex(this, 3);
   printAllowedMethod();
 
-  for (std::map<std::string, std::string>::iterator itr = common_.error_pages_.begin();
-       itr != common_.error_pages_.end(); itr++) {
+  for (std::map<std::string, std::string>::const_iterator itr = common_.error_pages_.cbegin();
+       itr != common_.error_pages_.cend(); itr++) {
     std::cout << "      error_status and path: " << itr->first << " " << itr->second << std::endl;
   }
 }

@@ -19,6 +19,15 @@ class CommonConf {
         index_(conf.index_),
         autoindex_(conf.autoindex_),
         error_pages_(conf.error_pages_) {}
+  bool operator==(const CommonConf &rhs) const {
+    bool flag = true;
+    flag &= max_body_size_ == rhs.max_body_size_;
+    flag &= root_ == rhs.root_;
+    flag &= index_ == rhs.index_;
+    flag &= autoindex_ == rhs.autoindex_;
+    flag &= error_pages_ == rhs.error_pages_;
+    return flag;
+  }
   std::string getIndexFile(std::string path) const;
   std::size_t max_body_size_;
   std::string root_;
@@ -31,8 +40,17 @@ class LocationConf {
  public:
   LocationConf(const std::string &path, const std::pair<std::string, std::string> redir, const CommonConf &conf)
       : path_(path), redirect_(redir), common_(conf) {}
-  void printLocationConf();
-  void printAllowedMethod();
+  bool operator==(const LocationConf &rhs) const {
+    bool flag = true;
+    flag &= path_ == rhs.path_;
+    flag &= redirect_ == rhs.redirect_;
+    flag &= allowed_methods_ == rhs.allowed_methods_;
+    flag &= cgi_exts_ == rhs.cgi_exts_;
+    flag &= common_ == rhs.common_;
+    return flag;
+  }
+  void printLocationConf() const;
+  void printAllowedMethod() const;
   std::map<std::string, bool> &getAllowedMethods();
   std::vector<std::string> &getCGIExtensions();
   std::string getTargetPath(const std::string &request_uri) const;
