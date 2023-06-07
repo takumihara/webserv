@@ -29,7 +29,7 @@ void HttpResponse::createResponse() {
   appendHeader("Content-Length", ss.str());
   ss.str("");
   ss.clear(std::stringstream::goodbit);
-  // stus-line
+  // status-line
   ss << "HTTP/1.1 " << status_ << " " << conf_->cache_.statusMsg_[status_] << CRLF;
   // header-fields
   for (std::vector<header>::const_iterator itr = headers.cbegin(); itr != headers.cend(); itr++) {

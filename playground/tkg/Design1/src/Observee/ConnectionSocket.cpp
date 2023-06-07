@@ -129,7 +129,7 @@ void ConnectionSocket::processGET() {
   em_->registerReadEvent(fd);
 }
 
-void ConnectionSocket::processErrorPage(LocationConf *conf) {
+void ConnectionSocket::processErrorPage(const LocationConf *conf) {
   std::stringstream ss;
   ss << response_.getStatus();
   std::map<std::string, std::string>::const_iterator itr = conf->common_.error_pages_.find(ss.str());
@@ -193,8 +193,8 @@ void ConnectionSocket::notify(struct kevent ev) {
     response_.sendResponse();
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
-      request_.refresh();
-      response_.refresh();
+      request_ = HttpRequest(id_, &conf_);
+      response_ = HttpResponse(id_, port_, &conf_);
       em_->disableWriteEvent(id_);
       em_->registerReadEvent(id_);
     }
