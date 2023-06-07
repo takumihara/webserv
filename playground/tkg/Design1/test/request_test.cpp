@@ -2,6 +2,7 @@
 
 #include "../src/Config/Config.hpp"
 #include "../src/EventManager.hpp"
+#include "../src/HttpException.hpp"
 #include "../src/HttpRequest.hpp"
 #include "mock/MockReadCloser.hpp"
 
@@ -37,7 +38,7 @@ TEST(Request, NoHostFeild) {
   try {
     HttpRequest::readRequest(req, rc);
     FAIL();
-  } catch (HttpRequest::BadRequestException &e) {
+  } catch (BadRequestException &e) {
     ASSERT_EQ(std::string(e.what()), std::string("missing host header"));
   } catch (...) {
     FAIL();
@@ -54,7 +55,7 @@ TEST(Request, BothContentLengthAndTransferEncoding) {
     HttpRequest::readRequest(req, rc);
     std::cout << "No Exception" << std::endl;
     FAIL();
-  } catch (HttpRequest::BadRequestException &e) {
+  } catch (BadRequestException &e) {
     ASSERT_EQ(std::string(e.what()), std::string("both content-length and transfer-encoding are present"));
   } catch (...) {
     std::cout << "Wrong Exception" << std::endl;
@@ -74,7 +75,7 @@ TEST(Request, TooBigContentLength) {
     HttpRequest::readRequest(req, rc);
     std::cout << "No Exception" << std::endl;
     FAIL();
-  } catch (HttpRequest::BadRequestException &e) {
+  } catch (BadRequestException &e) {
     ASSERT_EQ(std::string(e.what()), std::string("Http Request: invalid content-length"));
   } catch (...) {
     std::cout << "Wrong Exception" << std::endl;
@@ -93,7 +94,7 @@ TEST(Request, NegativeContentLength) {
     HttpRequest::readRequest(req, rc);
     std::cout << "No Exception" << std::endl;
     FAIL();
-  } catch (HttpRequest::BadRequestException &e) {
+  } catch (BadRequestException &e) {
     ASSERT_EQ(std::string(e.what()), std::string("Http Request: invalid content-length"));
   } catch (...) {
     std::cout << "Wrong Exception" << std::endl;

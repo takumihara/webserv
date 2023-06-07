@@ -1,12 +1,12 @@
 #ifndef CONNECTION_SOCKET_HPP_
 #define CONNECTION_SOCKET_HPP_
 
-#include "../EventManager.hpp"
-#include "../IO/IReadCloser.hpp"
-// #include "CGI.hpp"
 #include <deque>
 
+#include "../EventManager.hpp"
+#include "../IO/IReadCloser.hpp"
 #include "Observee.hpp"
+
 class CGI;
 class GET;
 
@@ -27,40 +27,8 @@ class ConnectionSocket : public Observee {
   void execCGI(const std::string &path);
   CGI *makeCGI(int id, int pid);
   GET *makeGET(int id);
-  std::string getTargetPath(const LocationConf &loc);
-  std::string getIndexFile(const LocationConf &conf, std::string path);
   void addChild(Observee *obs);
   void removeChild(Observee *obs);
-  void disableReadAndAddWriteEvent(uintptr_t read, uintptr_t write);
-  void disableReadAndAddReadEvent(uintptr_t parent, uintptr_t child);
-
-  class HttpException : public std::runtime_error {
-   public:
-    HttpException(int statusCode, const std::string &statusMessage)
-        : std::runtime_error(statusMessage), statusCode_(statusCode) {}
-    int statusCode() const { return statusCode_; }
-
-   private:
-    int statusCode_;
-  };
-
-  class BadRequestException : public HttpException {
-   public:
-    BadRequestException(const std::string &message) : HttpException(400, message) {}
-  };
-
-  class ResourceNotFoundException : public HttpException {
-   public:
-    ResourceNotFoundException(const std::string &message) : HttpException(404, message) {}
-  };
-  class ResourceForbidenException : public HttpException {
-   public:
-    ResourceForbidenException(const std::string &message) : HttpException(403, message) {}
-  };
-  class InternalServerErrorException : public HttpException {
-   public:
-    InternalServerErrorException(const std::string &message) : HttpException(500, message) {}
-  };
 
  private:
   int port_;

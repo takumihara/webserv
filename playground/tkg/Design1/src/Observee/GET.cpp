@@ -21,7 +21,9 @@
 #include <stdexcept>
 
 #include "../Config/Config.hpp"
+#include "../HttpException.hpp"
 #include "../HttpResponse.hpp"
+
 void GET::shutdown() {
   DEBUG_PUTS("GET shutdown");
   close(id_);
@@ -36,7 +38,7 @@ std::string GET::listFilesAndDirectories(const std::string &directory_path) {
   std::string ret = "";
 
   if ((dir = opendir(directory_path.c_str())) == NULL) {
-    throw ConnectionSocket::InternalServerErrorException("listFilesAndDirectories: opendir error");
+    throw InternalServerErrorException("listFilesAndDirectories: opendir error");
   }
   while ((entry = readdir(dir)) != NULL) {
     std::string file_path;

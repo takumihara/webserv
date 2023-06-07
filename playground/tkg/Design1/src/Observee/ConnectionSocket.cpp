@@ -19,6 +19,7 @@
 #include <stdexcept>
 
 #include "../Config/validation.h"
+#include "../HttpException.hpp"
 #include "CGI.hpp"
 #include "GET.hpp"
 #include "helper.hpp"
@@ -179,6 +180,7 @@ void ConnectionSocket::notify(struct kevent ev) {
       // } catch (const HttpRequest::NotAllowedException &e) {
       // } catch (const HttpRequest::VersionNotSupportedException &e) {
     } catch (std::runtime_error &e) {
+      // todo: all error(readRequest and process) is handled here
       std::cerr << e.what() << std::endl;
       close(ev.ident);
       em_->remove(std::pair<t_id, t_type>(ev.ident, FD));

@@ -8,6 +8,7 @@
 
 #include "Config/validation.h"
 #include "EventManager.hpp"
+#include "HttpException.hpp"
 #include "const.hpp"
 #include "helper.hpp"
 
