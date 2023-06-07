@@ -88,7 +88,7 @@ test: server tester
 	./server_binary > test/test.log 2>&1 &
 	@sleep 1
 	-./tester
-	@pkill server_binary
+	@-pkill server_binary
 	@rm server_binary
 
 test-%: server tester

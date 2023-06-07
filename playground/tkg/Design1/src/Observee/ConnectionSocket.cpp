@@ -82,7 +82,7 @@ void ConnectionSocket::processGET(const LocationConf &loc_conf) {
   }
   const bool hasCGI = extension_ != "";
   // todo: . is for temporary implementation
-  std::string path = "." + loc_conf.getTargetPath(request_.getRequestTarget().absolute_path);
+  std::string path = "." + loc_conf.getTargetPath(request_.getRequestTarget()->getPath());
   // check directory or file exists
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
@@ -142,7 +142,7 @@ void ConnectionSocket::process() {
     em_->registerWriteEvent(id_);
     return;
   }
-  extension_ = getExtension(request_.getRequestTarget().absolute_path);
+  extension_ = getExtension(request_.getRequestTarget()->getPath());
   if (request_.methodIs(HttpRequest::GET)) {
     // handle GET
     try {

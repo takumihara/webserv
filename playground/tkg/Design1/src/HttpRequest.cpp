@@ -51,7 +51,7 @@ HttpRequest::State HttpRequest::readRequest(HttpRequest &req, IReadCloser *rc) {
 }
 
 bool HttpRequest::isReceivingBody() {
-  if (request_line_.method == GET || request_line_.method == DELETE || (!isChunked() && headers_.content_length == 0)) {
+  if (method_ == GET || method_ == DELETE || (!isChunked() && headers_.content_length == 0)) {
     return false;
   }
   return true;
@@ -59,31 +59,30 @@ bool HttpRequest::isReceivingBody() {
 void HttpRequest::parseStartline() {
   std::stringstream ss = std::stringstream(raw_data_);
   std::string method;
-  std::string requestTarget;
+  std::string request_target;
   std::string version;
 
   std::getline(ss, method, SP);
-  std::getline(ss, requestTarget, SP);
+  std::getline(ss, request_target, SP);
   std::getline(ss, version, '\r');
   // ss >> version;
 
   assignAndValidateMethod(method);
-  assignAndValidateRequestTarget(requestTarget);
+  assignAndValidateRequestTarget(request_target);
   assignAndValidateVersion(version);
 
   DEBUG_PUTS("REQUEST LINE PARSED");
-  DEBUG_PRINTF("method: '%s' request target: absolute_path -'%s' query - '%s' version: '%s'\n", method.c_str(),
-               request_line_.request_target.absolute_path.c_str(), request_line_.request_target.query.c_str(),
-               version.c_str());
+  DEBUG_PRINTF("method: '%s' request target: absolute_path -'%s' version: '%s'\n", method.c_str(),
+               request_target.c_str(), version.c_str());
 }
 
 void HttpRequest::assignAndValidateMethod(const std::string &method) {
   if (method == "GET") {
-    request_line_.method = GET;
+    method_ = GET;
   } else if (method == "POST") {
-    request_line_.method = POST;
+    method_ = POST;
   } else if (method == "DELETE") {
-    request_line_.method = DELETE;
+    method_ = DELETE;
   } else if (method == "PUT" || method == "PATCH" || method == "HEAD" || method == "OPTIONS") {
     throw NotAllowedException("Http Request: method not allowed");
   } else {
@@ -93,13 +92,7 @@ void HttpRequest::assignAndValidateMethod(const std::string &method) {
 
 void HttpRequest::assignAndValidateRequestTarget(const std::string &request_target) {
   if (request_target[0] == '/') {
-    // todo(thara): more validation
-    request_line_.request_target.type = OriginForm;
-    size_t pos = request_target.find_first_of('?');
-    request_line_.request_target.absolute_path = request_target.substr(0, pos);
-    if (pos != std::string::npos) {
-      request_line_.request_target.query = request_target.substr(request_target.find_first_of('?') + 1);
-    }
+    request_target_ = URI::parseRequestURI(request_target);
   } else {
     throw BadRequestException("Http Request: invalid request target");
   }
@@ -107,7 +100,7 @@ void HttpRequest::assignAndValidateRequestTarget(const std::string &request_targ
 
 void HttpRequest::assignAndValidateVersion(const std::string &version) {
   if (version == "HTTP/1.1") {
-    request_line_.version = HTTP1_1;
+    version_ = HTTP1_1;
   } else {
     throw VersionNotSupportedException("Http Request: invalid version");
   }
@@ -384,12 +377,12 @@ void HttpRequest::refresh() {
   raw_data_ = rest_;
   rest_ = "";
 }
-bool HttpRequest::methodIs(Method method) const { return request_line_.method == method; };
+bool HttpRequest::methodIs(Method method) const { return method_ == method; };
 
 const std::string &HttpRequest::getBody() const { return body_; }
 
-const HttpRequest::RequestTarget &HttpRequest::getRequestTarget() const { return request_line_.request_target; }
-const HttpRequest::Method &HttpRequest::getMethod() const { return request_line_.method; }
+URI *HttpRequest::getRequestTarget() const { return request_target_; }
+const HttpRequest::Method &HttpRequest::getMethod() const { return method_; }
 const HttpRequest::Host &HttpRequest::getHost() const { return headers_.host; }
 bool HttpRequest::isChunked() {
   std::vector<TransferEncoding> &transferEncodings = headers_.transfer_encodings;

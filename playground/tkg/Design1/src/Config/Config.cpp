@@ -145,7 +145,7 @@ void LocationConf::printLocationConf() const {
 }
 
 const LocationConf &ServerConf::getLocationConf(const HttpRequest *req) const {
-  const std::string &path = req->getRequestTarget().absolute_path;
+  const std::string &path = req->getRequestTarget()->getPath();
   const std::string &extension = getExtension(path);
   const bool hasCGI = extension != "";
 
