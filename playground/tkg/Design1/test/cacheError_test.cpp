@@ -26,7 +26,7 @@ TEST(error, basic) {
   conf.makePortServConfMap();
   conf.cache_.initStatusErrorPageMap(&conf);
   std::string ref = readFile("test/www/error/error.html");
-  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["404/test/www/error/error.html"]);
+  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["400/test/www/error/error.html"]);
   EXPECT_TRUE(true);
 }
 
@@ -36,8 +36,8 @@ TEST(error, basic2) {
   Config conf = parser.parse("test/www/config/cache.conf");
   conf.makePortServConfMap();
   conf.cache_.initStatusErrorPageMap(&conf);
-  std::string ref = readFile("test/www/error/error2.html");
-  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["500/test/www/error/error2.html"]);
+  std::string ref = readFile("test/www/error/500error.html");
+  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["500/test/www/error/500error.html"]);
   EXPECT_TRUE(true);
 }
 
@@ -47,8 +47,8 @@ TEST(error, basic3) {
   Config conf = parser.parse("test/www/config/cache.conf");
   conf.makePortServConfMap();
   conf.cache_.initStatusErrorPageMap(&conf);
-  std::string ref = readFile("test/www/error/error2.html");
-  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["403/test/www/error/error2.html"]);
+  std::string ref = readFile("test/www/error/403error.html");
+  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["403/test/www/error/403error.html"]);
   EXPECT_TRUE(true);
 }
 
