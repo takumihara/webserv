@@ -113,7 +113,7 @@ n ␍␊chunks.    (eleven octets of data)
 std::string getRequest(const std::string &arg) {
   std::string request = "";
   if (arg == "chunked") {
-    request += "GETS /index.html HTTP/1.1\r\n";
+    request += "GET /html/index.html HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
     request += "Transfer-Encoding: chunked\r\n";
     request += "\r\n";

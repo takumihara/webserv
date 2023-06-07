@@ -24,7 +24,10 @@ class HttpResponse {
   void createResponse();
   void sendResponse(EventManager &em);
   void refresh(EventManager &em);
+  int getStatus() const;
   void setStatus(const int status);
+  void setErrorMassage(const std::string &msg);
+  void setStatusAndMassage(const int status, const std::string &msg);
   void appendHeader(const std::string &key, const std::string &value);
   void appendBody(const std::string &str);
   const std::string &getBody() const;
@@ -33,7 +36,7 @@ class HttpResponse {
   int sock_fd_;
   int port_;
   int status_;
-  // Config &conf_;
+  std::string error_msg_;
   std::string body_;
   std::string response_;
   std::vector<header> headers;

@@ -11,7 +11,13 @@
 #include "EventManager.hpp"
 #include "const.hpp"
 
+int HttpResponse::getStatus() const { return status_; };
 void HttpResponse::setStatus(const int status) { status_ = status; }
+void HttpResponse::setErrorMassage(const std::string &msg) { error_msg_ = msg; }
+void HttpResponse::setStatusAndMassage(const int status, const std::string &msg) {
+  status_ = status;
+  error_msg_ = msg;
+}
 
 void HttpResponse::appendBody(const std::string &str) { body_ += str; }
 
@@ -23,6 +29,10 @@ const std::string &HttpResponse::getBody() const { return body_; }
 
 void HttpResponse::createResponse() {
   std::stringstream ss;
+  ss << body_.size();
+  appendHeader("Content-Length", ss.str());
+  ss.str("");
+  ss.clear(std::stringstream::goodbit);
 
   ss << "HTTP/1.1 " << status_ << " status-message" << CRLF;
   for (std::vector<header>::const_iterator itr = headers.cbegin(); itr != headers.cend(); itr++) {
@@ -67,6 +77,6 @@ void HttpResponse::refresh(EventManager &em) {
   em.addChangedEvents((struct kevent){static_cast<uintptr_t>(sock_fd_), EVFILT_READ, EV_ENABLE, 0, 0, 0});
   // em.addChangedEvents(
   //    (struct kevent){sock_fd_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
-  response_ = "";
-  body_ = "";
+  response_.clear();
+  body_.clear();
 }

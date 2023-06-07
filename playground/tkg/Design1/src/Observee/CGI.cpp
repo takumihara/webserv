@@ -29,7 +29,6 @@ void CGI::shutdown() {
 
 void CGI::notify(struct kevent ev) {
   std::cout << "handle CGI" << std::endl;
-  std::stringstream ss;
   (void)ev;
   char buff[FILE_READ_SIZE + 1];
   int status;
@@ -41,11 +40,9 @@ void CGI::notify(struct kevent ev) {
     close(id_);
     waitpid(pid_, &status, 0);
     if (status == 0) {
-      response_->setStatus(200);
-      ss << response_->getBody().size();
-      response_->appendHeader("Content-Length", ss.str());
+      response_->setStatusAndMassage(200, "OK");
     } else
-      response_->setStatus(500);
+      response_->setStatusAndMassage(500, "Internal Server Error");
     parent_->obliviateChild(this);
     em_->deleteTimerEvent(id_);
     em_->registerWriteEvent(parent_->id_);

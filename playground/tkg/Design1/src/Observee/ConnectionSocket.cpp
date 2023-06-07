@@ -16,6 +16,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 
 #include "../Config/validation.h"
@@ -114,7 +115,7 @@ void ConnectionSocket::processGET(const LocationConf &loc_conf) {
         throw e;
       }
       DEBUG_PUTS("autoindex");
-      response_.setStatus(200);
+      response_.setStatusAndMassage(200, "OK");
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
       return;  // 200 OK
@@ -148,8 +149,9 @@ void ConnectionSocket::process() {
     try {
       processGET(loc_conf);
     } catch (HttpException &e) {
+      throw e;
       std::cerr << e.what() << std::endl;
-      response_.setStatus(e.statusCode());
+      response_.setStatusAndMassage(e.statusCode(), e.what());
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
     }
@@ -159,6 +161,30 @@ void ConnectionSocket::process() {
     // handle DELETE
   }
   DEBUG_PUTS("PROCESSING FINISHED");
+}
+
+void ConnectionSocket::processErrorPage(const LocationConf &conf) {
+  std::stringstream ss;
+  ss << response_.getStatus();
+  std::map<std::string, std::string>::const_iterator iter = conf.common_.error_pages_.find(ss.str());
+  if (iter == conf.common_.error_pages_.end()) return;
+  std::string filename = iter->second;
+  // todo: . is temporary implementaion
+  if (filename[0] != '/') filename = "." + conf_.common_.root_ + "/" + filename;
+  std::cout << filename << std::endl;
+  if (access(filename.c_str(), R_OK) != 0) {
+    throw ResourceForbidenException("access Read error");  // 403 Forbiden
+  }
+  std::ifstream file;
+  file.open(filename.c_str());
+  if (!file) {
+    std::cout << "Failed to open the file." << std::endl;
+    return;
+  }
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+  response_.appendBody(buffer.str());
+  file.close();
 }
 
 void ConnectionSocket::notify(struct kevent ev) {
@@ -179,12 +205,17 @@ void ConnectionSocket::notify(struct kevent ev) {
       // } catch (const HttpRequest::NotImplementedException &e) {
       // } catch (const HttpRequest::NotAllowedException &e) {
       // } catch (const HttpRequest::VersionNotSupportedException &e) {
-    } catch (std::runtime_error &e) {
-      // todo: all error(readRequest and process) is handled here
-      std::cerr << e.what() << std::endl;
-      close(ev.ident);
-      em_->remove(std::pair<t_id, t_type>(ev.ident, FD));
-      em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(ev.ident), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+    } catch (HttpException &e) {
+      // all error(readRequest and process) is handled here
+      response_.setStatusAndMassage(e.statusCode(), e.what());
+      if (e.statusCode() != 400) {
+        // error_page directive is ignored when invalid request
+        const ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
+        const LocationConf &loc_conf = serv_conf->getLocationConf(&request_);
+        processErrorPage(loc_conf);
+      }
+      em_->disableReadEvent(id_);
+      em_->registerWriteEvent(id_);
     }
   }
   if (ev.filter == EVFILT_WRITE) {
@@ -192,6 +223,8 @@ void ConnectionSocket::notify(struct kevent ev) {
     request_.refresh();
     response_.createResponse();
     response_.sendResponse(*em_);
+    response_.refresh(*em_);
     request_ = HttpRequest(id_, conf_);
+    response_ = HttpResponse(id_, port_);
   }
 }
