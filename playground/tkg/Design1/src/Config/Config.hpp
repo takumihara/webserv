@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "Cache.hpp"
+
 #define MiB 1048576
 
 class HttpRequest;
@@ -97,6 +99,7 @@ class Config {
 
   int limit_connection_;
   CommonConf common_;
+  Cache cache_;
   std::vector<ServerConf> server_confs_;
   std::map<int, std::vector<ServerConf *> > port_servConf_map_;
 };

@@ -34,7 +34,7 @@ void HttpResponse::createResponse() {
   ss.str("");
   ss.clear(std::stringstream::goodbit);
 
-  ss << "HTTP/1.1 " << status_ << " status-message" << CRLF;
+  ss << "HTTP/1.1 " << status_ << " " << error_msg_ << CRLF;
   for (std::vector<header>::const_iterator itr = headers.cbegin(); itr != headers.cend(); itr++) {
     ss << itr->first << ": " << itr->second << CRLF;
   }

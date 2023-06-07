@@ -39,7 +39,7 @@ TEST(E2E, Get) {
 TEST(E2E, ObsFold) {
   std::string res = sendRequest(ObsFoldRequest());
 
-  EXPECT_EQ(res, std::string(""));
+  EXPECT_TRUE(includes(res, "HTTP/1.1 400 Bad Request"));
 }
 
 bool includes(const std::string &str, const std::string &substr) { return str.find(substr) != std::string::npos; }

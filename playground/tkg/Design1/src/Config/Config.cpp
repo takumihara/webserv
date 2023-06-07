@@ -178,3 +178,5 @@ bool LocationConf::hasRedirectDirective() const {
   if (redirect_.first != "") return true;
   return false;
 }
+
+

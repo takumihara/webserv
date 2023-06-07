@@ -2,6 +2,8 @@
 #define HTTP_EXCEPTION_HPP_
 #include <stdexcept>
 
+#include "../const.hpp"
+
 class HttpException : public std::runtime_error {
  public:
   HttpException(int statusCode, const std::string &statusMessage)

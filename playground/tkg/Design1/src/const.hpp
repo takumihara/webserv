@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <string>
 
 #define SOCKET_READ_SIZE 100

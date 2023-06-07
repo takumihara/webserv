@@ -207,7 +207,7 @@ void ConnectionSocket::notify(struct kevent ev) {
       // } catch (const HttpRequest::VersionNotSupportedException &e) {
     } catch (HttpException &e) {
       // all error(readRequest and process) is handled here
-      response_.setStatusAndMassage(e.statusCode(), e.what());
+      response_.setStatusAndMassage(e.statusCode(), cache_.statusMsg_[e.statusCode()]);
       if (e.statusCode() != 400) {
         // error_page directive is ignored when invalid request
         const ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);

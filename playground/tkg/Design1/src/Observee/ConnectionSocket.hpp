@@ -3,6 +3,7 @@
 
 #include <deque>
 
+// #include "../Config/Cache.hpp"
 #include "../EventManager.hpp"
 #include "../IO/IReadCloser.hpp"
 #include "Observee.hpp"
@@ -37,6 +38,7 @@ class ConnectionSocket : public Observee {
   HttpRequest request_;
   HttpResponse response_;
   IReadCloser *rc_;
+  Cache cache_;
   std::string extension_;
 
   //   std::deque<HttpRequest> request_;
