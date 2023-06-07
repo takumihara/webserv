@@ -87,7 +87,7 @@ void HttpRequest::assignAndValidateMethod(const std::string &method) {
   } else if (method == "PUT" || method == "PATCH" || method == "HEAD" || method == "OPTIONS") {
     throw NotAllowedException("Http Request: method not allowed");
   } else {
-    throw std::runtime_error("Http Request: invalid method");
+    throw NotImplementedException("Http Request: invalid method");
   }
 }
 
