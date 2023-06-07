@@ -78,32 +78,6 @@ class HttpRequest {
   bool isChunked();
 
   static State readRequest(HttpRequest &req, IReadCloser *rc);
-  class HttpException : public std::runtime_error {
-   public:
-    HttpException(int statusCode, const std::string &statusMessage)
-        : std::runtime_error(statusMessage), statusCode_(statusCode) {}
-
-    int statusCode() const { return statusCode_; }
-
-   private:
-    int statusCode_;
-  };
-  class BadRequestException : public HttpException {
-   public:
-    BadRequestException(const std::string &message) : HttpException(400, message) {}
-  };
-  class NotImplementedException : public HttpException {
-   public:
-    NotImplementedException(const std::string &message) : HttpException(501, message) {}
-  };
-  class NotAllowedException : public HttpException {
-   public:
-    NotAllowedException(const std::string &message) : HttpException(405, message) {}
-  };
-  class VersionNotSupportedException : public HttpException {
-   public:
-    VersionNotSupportedException(const std::string &message) : HttpException(505, message) {}
-  };
 
  private:
   int sock_fd_;
