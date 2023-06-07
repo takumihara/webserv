@@ -3,12 +3,13 @@ SRC_DIR = src
 
 SRC_DIRS = $(shell find $(SRC_DIR) -type d -print | grep -v "Client\|*")
 SERVER_SRCS_WO_MAIN	= $(filter-out %main.cpp, $(foreach path, $(SRC_DIRS), $(wildcard $(path)/*.cpp)))
+$(info $(SERVER_SRCS_WO_MAIN))
 SERVER_SRCS	= $(SERVER_SRCS_WO_MAIN) $(SRC_DIR)/main.cpp
 
 VPATH = $(shell find $(SRC_DIR) -type d -print | grep -v "Client\|*")
 
 OBJ_DIR = obj
-SERVER_OBJS    = $(addprefix $(OBJ_DIR)/, $(notdir $(SERVER_SRCS:%.cpp=%.o)))
+SERVER_OBJS    = $(addprefix $(OBJ_DIR)/, $(SERVER_SRCS:%.cpp=%.o))
 
 DEPENDS = $(addprefix $(OBJ_DIR)/, $(notdir $(SERVER_SRCS:%.cpp=%.d)))
 
@@ -43,8 +44,7 @@ clean:
 	$(RM) $(SERVER_OBJS) $(TEST_OBJS) $(DEPENDS)
 
 fclean: clean
-	$(RM) client server test/test.log tester
-
+	$(RM) -r client $(OBJ_DIR) test/test.log $(TEST_OBJ_DIR)
 
 re: fclean all
 
@@ -58,7 +58,7 @@ debug:
 TEST_SRC_DIRS := $(testdir) $(testdir)/mock
 TEST_SRCS := $(foreach dir, $(TEST_SRC_DIRS), $(wildcard $(dir)/*.cpp)) $(SERVER_SRCS_WO_MAIN)
 TEST_OBJ_DIR := $(testdir)/obj
-TEST_OBJS := $(addprefix $(TEST_OBJ_DIR)/, $(notdir $(TEST_SRCS:%.cpp=%.o)))
+TEST_OBJS := $(addprefix $(TEST_OBJ_DIR)/, $(TEST_SRCS:%.cpp=%.o))
 
 VPATH += $(TEST_SRC_DIRS)
 
@@ -88,8 +88,8 @@ test: server tester
 	./server_binary > test/test.log 2>&1 &
 	@sleep 1
 	-./tester
-	@rm server_binary
 	@pkill server_binary
+	@rm server_binary
 
 test-%: server tester
 	-./tester --gtest_filter=${@:test-%=%}
