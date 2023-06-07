@@ -5,3 +5,4 @@ void toLower(std::string &str);
 std::string escape(const std::string &str);
 std::string trimOws(const std::string &str);
 std::string trimUntilCRLF(const std::string &str);
+std::string getExtension(const std::string &path);

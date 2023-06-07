@@ -29,8 +29,11 @@
 
 class EventManager {
  public:
-  typedef std::vector<struct kevent>::iterator changed_events_iterator;
-  typedef std::vector<struct kevent>::const_iterator changed_events_const_iterator;
+  typedef uintptr_t t_ident;
+  typedef short t_filter;
+  typedef std::pair<t_ident, t_filter> t_key;
+  typedef std::map<t_key, struct kevent>::iterator changed_events_iterator;
+  typedef std::map<t_key, struct kevent>::const_iterator changed_events_const_iterator;
 
   EventManager();
   void eventLoop();
@@ -58,7 +61,7 @@ class EventManager {
   };
 
   int kq_;
-  std::vector<struct kevent> changed_events_;
+  std::map<t_key, struct kevent> changed_events_;
   std::map<std::pair<t_id, t_type>, Observee *> observees_;
   static const int kMaxEventSize = 100;
 };

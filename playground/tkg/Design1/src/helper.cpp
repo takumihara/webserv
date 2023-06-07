@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "Config/validation.h"
 #include "const.hpp"
 
 bool in(const std::string &str, const std::string *arr, size_t size) {
@@ -43,3 +44,32 @@ std::string trimOws(const std::string &str) {
 }
 
 std::string trimUntilCRLF(const std::string &str) { return str.substr(0, str.find(CRLF)); }
+
+std::vector<std::string> splitToSegment(const std::string &path) {
+  std::vector<std::string> segments;
+  std::size_t start = 0, end = path.find('/');
+  while (end != std::string::npos) {
+    segments.push_back(path.substr(start, end - start));
+    start = end + 1;
+    end = path.find('/', start);
+  }
+  segments.push_back(path.substr(start));
+  return segments;
+}
+
+// path must not have query
+std::string getExtension(const std::string &path) {
+  std::vector<std::string> segments = splitToSegment(path);
+  for (std::size_t i = 0; i < segments.size(); i++) {
+    // remove param
+    std::string trimed_seg = segments[i].substr(0, segments[i].find(';'));
+    trimed_seg = trimed_seg.substr(0, trimed_seg.find(','));
+    std::size_t ext_pos = trimed_seg.rfind(".cgi");
+    if (ext_pos != std::string::npos && ext_pos + 4 == trimed_seg.size()) return ".cgi";
+    ext_pos = trimed_seg.rfind(".php");
+    if (ext_pos != std::string::npos && ext_pos + 4 == trimed_seg.size()) return ".php";
+    ext_pos = trimed_seg.rfind(".py");
+    if (ext_pos != std::string::npos && ext_pos + 3 == trimed_seg.size()) return ".py";
+  }
+  return "";
+}
