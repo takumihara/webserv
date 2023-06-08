@@ -15,7 +15,6 @@ class HttpException : public std::runtime_error {
   int statusCode_;
 };
 
-
 // 3xx status code
 class RedirectMovedPermanently : public HttpException {
  public:
@@ -36,7 +35,6 @@ class RedirectPermanentRedirect : public HttpException {
  public:
   RedirectPermanentRedirect(const std::string &message) : HttpException(308, message) {}
 };
-
 
 // 4xx status code
 class BadRequestException : public HttpException {

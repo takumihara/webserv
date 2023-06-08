@@ -180,7 +180,6 @@ void ConnectionSocket::notify(struct kevent ev) {
       if (loc_conf_) {
         // error_page directive is ignored when bad request
         processErrorPage(loc_conf_);
-        // todo: redirect handle need to be done here?
       }
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
@@ -194,8 +193,8 @@ void ConnectionSocket::notify(struct kevent ev) {
     response_.sendResponse();
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
-      request_ = HttpRequest(id_, &conf_);
-      response_ = HttpResponse(id_, port_, &conf_);
+      request_.refresh();
+      response_.refresh();
       em_->disableWriteEvent(id_);
       em_->registerReadEvent(id_);
     }
