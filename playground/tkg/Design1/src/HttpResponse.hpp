@@ -16,9 +16,11 @@ class EventManager;
 class HttpResponse {
  public:
   typedef std::pair<std::string, std::string> header;
+  enum State { Free, Sending, End };
 
   HttpResponse(int fd, int port, Config *conf)
       : sock_fd_(fd),
+        state_(Free),
         port_(port),
         status_(0),
         conf_(conf),
@@ -28,16 +30,18 @@ class HttpResponse {
         sending_response_size_(0) {}
   ~HttpResponse(){};
   void createResponse();
-  bool sendResponse(EventManager &em);
-  void refresh(EventManager &em);
+  void sendResponse();
+  void refresh();
   int getStatus() const;
   void setStatus(const int status);
   void appendHeader(const std::string &key, const std::string &value);
   void appendBody(const std::string &str);
   const std::string &getBody() const;
+  const State &getState() const { return state_; }
 
  private:
   int sock_fd_;
+  State state_;
   int port_;
   int status_;
   Config *conf_;

@@ -109,12 +109,8 @@ void ConnectionSocket::processGET() {
       if (idx_path != "") path = idx_path;
     }
     if (idx_path == "" && loc_conf_->common_.autoindex_) {
-      try {
-        response_.appendBody(GET::listFilesAndDirectories(path));
-      } catch (HttpException &e) {
-        throw e;
-      }
       DEBUG_PUTS("autoindex");
+      response_.appendBody(GET::listFilesAndDirectories(path));
       response_.setStatus(200);
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
@@ -132,33 +128,6 @@ void ConnectionSocket::processGET() {
   em_->registerReadEvent(fd);
 }
 
-void ConnectionSocket::process() {
-  ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
-  loc_conf_ = serv_conf->getLocationConf(&request_);
-  // loc_conf is redirection block
-  if (loc_conf_->hasRedirectDirective()) {
-    response_.setStatus(std::atoi(loc_conf_->getRedirectStatus().c_str()));
-    response_.appendHeader("Location", loc_conf_->getRedirectURI());
-    em_->disableReadEvent(id_);
-    em_->registerWriteEvent(id_);
-    return;
-  }
-  extension_ = getExtension(request_.getRequestTarget().absolute_path);
-  if (request_.methodIs(HttpRequest::GET)) {
-    // handle GET
-    try {
-      processGET();
-    } catch (HttpException &e) {
-      throw e;
-    }
-  } else if (request_.methodIs(HttpRequest::POST)) {
-    // handle POST
-  } else if (request_.methodIs(HttpRequest::DELETE)) {
-    // handle DELETE
-  }
-  DEBUG_PUTS("PROCESSING FINISHED");
-}
-
 void ConnectionSocket::processErrorPage(LocationConf *conf) {
   std::stringstream ss;
   ss << response_.getStatus();
@@ -172,6 +141,26 @@ void ConnectionSocket::processErrorPage(LocationConf *conf) {
   }
 }
 
+void ConnectionSocket::process() {
+  ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
+  loc_conf_ = serv_conf->getLocationConf(&request_);
+  // loc_conf is redirection block
+  if (loc_conf_->hasRedirectDirective()) {
+    response_.setStatus(std::atoi(loc_conf_->getRedirectStatus().c_str()));
+    response_.appendHeader("Location", loc_conf_->getRedirectURI());
+    throw RedirectMovedPermanently("redirection");
+  }
+  extension_ = getExtension(request_.getRequestTarget().absolute_path);
+  if (request_.methodIs(HttpRequest::GET)) {
+    processGET();
+  } else if (request_.methodIs(HttpRequest::POST)) {
+    // handle POST
+  } else if (request_.methodIs(HttpRequest::DELETE)) {
+    // handle DELETE
+  }
+  DEBUG_PUTS("PROCESSING FINISHED");
+}
+
 void ConnectionSocket::notify(struct kevent ev) {
   DEBUG_PUTS("ConnectionSocket notify");
   if (ev.filter == EVFILT_READ) {
@@ -180,18 +169,17 @@ void ConnectionSocket::notify(struct kevent ev) {
       HttpRequest::State state = HttpRequest::readRequest(request_, rc_);
       if (state == HttpRequest::FinishedReading) {
         DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.getBody()).c_str());
-
         this->process();
       } else if (state == HttpRequest::SocketClosed) {
         shutdown();
       }
     } catch (HttpException &e) {
-      // all error(readRequest and process) is handled here
+      // all 3xx 4xx 5xx exception(readRequest and process) is catched here
+      std::cerr << e.what();
       response_.setStatus(e.statusCode());
       if (loc_conf_) {
         // error_page directive is ignored when bad request
         processErrorPage(loc_conf_);
-        // todo: redirect handle need to be done here?
       }
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
@@ -200,10 +188,11 @@ void ConnectionSocket::notify(struct kevent ev) {
   if (ev.filter == EVFILT_WRITE) {
     DEBUG_PUTS("handle_response() called");
     response_.createResponse();
-    if (response_.sendResponse(*em_)) {
+    response_.sendResponse();
+    if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
-      request_ = HttpRequest(id_, &conf_);
-      response_ = HttpResponse(id_, port_, &conf_);
+      request_.refresh();
+      response_.refresh();
       em_->disableWriteEvent(id_);
       em_->registerReadEvent(id_);
     }
