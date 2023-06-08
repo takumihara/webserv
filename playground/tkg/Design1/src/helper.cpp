@@ -73,3 +73,7 @@ std::string getExtension(const std::string &path) {
   }
   return "";
 }
+
+bool isExecutable(const char *path) { return access(path, X_OK) == 0; }
+
+bool isReadable(const char *path) { return access(path, R_OK) == 0; }

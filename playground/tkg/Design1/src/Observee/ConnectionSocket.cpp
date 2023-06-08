@@ -81,7 +81,6 @@ void ConnectionSocket::processGET() {
   if (!isAcceptableMethod(loc_conf_, HttpRequest::GET)) {
     throw BadRequestException("No Suitable Location");
   }
-  const bool hasCGI = extension_ != "";
   // todo: . is for temporary implementation
   std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget().absolute_path);
   // check directory or file exists
@@ -91,14 +90,15 @@ void ConnectionSocket::processGET() {
   }
   bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
   // if CGI extension exist and that is not directory, try exec CGI
+  const bool hasCGI = extension_ != "";
   if (hasCGI && !is_directory) {
-    if (access(path.c_str(), X_OK) == 0 && contain(loc_conf_->cgi_exts_, extension_)) {
+    if (isExecutable(path.c_str()) && contain(loc_conf_->cgi_exts_, extension_)) {
       execCGI(path);
       return;
     }
   }
   // check directory or file is readable
-  if (access(path.c_str(), R_OK) != 0) {
+  if (!isReadable(path.c_str())) {
     throw ResourceForbidenException("access Read error");  // 403 Forbiden
   }
   if (is_directory) {
