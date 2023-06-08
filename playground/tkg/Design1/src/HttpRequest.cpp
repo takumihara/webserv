@@ -49,7 +49,7 @@ HttpRequest::State HttpRequest::readRequest(HttpRequest &req, IReadCloser *rc) {
 }
 
 bool HttpRequest::isReceivingBody() {
-  if (method_ == GET || method_ == DELETE || (!isChunked() && headers_.content_length == 0)) {
+  if ((!isChunked() && headers_.content_length == 0)) {
     return false;
   }
   return true;
