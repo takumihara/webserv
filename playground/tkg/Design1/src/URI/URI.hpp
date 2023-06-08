@@ -7,7 +7,7 @@
 class URI {
  public:
   // todo: want it private
-  URI() : user_info_(new UserInfo), omit_host_(false), force_query_(false){};
+  URI() : user_info_(NULL), omit_host_(false), force_query_(false){};
   ~URI() { delete user_info_; }
   static URI* parse(const std::string& uri);
   static URI* parseRequestURI(const std::string& uri);
@@ -18,11 +18,16 @@ class URI {
   const std::string& getQuery() const;
   const std::string& getFragment() const;
   const UserInfo* getUserInfo() const;
+  std::string getUsername() const;
+  std::string getPassword() const;
   const std::string& getOpaque() const;
+  std::string recompose() const;
   bool isForceQuery() const;
   bool isOmitHost() const;
 
-  const URI& resolveReference(const URI& ref) const;
+  std::string escapedPath() const;
+
+  URI* resolveReference(const URI& ref) const;
 
  private:
   URI(std::string raw_uri, bool via_request);

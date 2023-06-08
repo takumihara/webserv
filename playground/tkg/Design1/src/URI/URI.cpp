@@ -19,8 +19,6 @@ bool validOptionalPort(std::string port);
 std::string parseScheme(std::string& raw_url);
 bool stringContainsCTLByte(const std::string& str);
 
-bool isReserved(char c);
-
 URI* URI::parse(const std::string& raw_uri) {
   const size_t fragment_pos = raw_uri.find("#");
   std::string fragment;
@@ -36,7 +34,7 @@ URI* URI::parse(const std::string& raw_uri) {
 
 URI* URI::parseRequestURI(const std::string& uri) { return new URI(uri, true); }
 
-URI::URI(std::string raw_uri, bool via_request) : user_info_(new UserInfo()), omit_host_(false), force_query_(false) {
+URI::URI(std::string raw_uri, bool via_request) : user_info_(NULL), omit_host_(false), force_query_(false) {
   // todo:
   if (stringContainsCTLByte(raw_uri)) {
     throw std::runtime_error("URI: invalid control character in URL");
@@ -114,12 +112,13 @@ URI::URI(std::string raw_uri, bool via_request) : user_info_(new UserInfo()), om
   setPath(raw_uri);
 }
 
+// todo(thara): refactor
 std::pair<std::string, UserInfo*> parseAuthority(std::string authority) {
   std::string host;
   size_t at_pos = authority.find("@");
   if (at_pos == std::string::npos) {
     host = parseHost(authority);
-    return std::make_pair(host, new UserInfo());
+    return std::make_pair(host, (UserInfo*)NULL);
   }
   host = parseHost(authority.substr(at_pos + 1));
 
@@ -258,12 +257,159 @@ bool stringContainsCTLByte(const std::string& str) {
   return false;
 }
 
+// merge merges the base URI with the ref URI and returns the merged URI
+// if ref is an absolute URI, then ref is returned
+std::string merge(const std::string& base, const std::string& ref) {
+  if (ref == "") {
+    return base;
+  }
+  if (ref[0] != '/') {
+    size_t last_slash = base.rfind("/");
+    if (last_slash == std::string::npos) {
+      return ref;
+    } else {
+      return base.substr(0, last_slash + 1) + ref;
+    }
+  }
+  return ref;
+}
+
+std::string removeDotSegments(const std::string& path) {
+  if (path == "") {
+    return "";
+  }
+
+  std::string elem;
+  // this a is space for `/`
+  std::string dst = "a";
+  std::string remaining;
+  bool found = true;
+  bool first = true;
+
+  if (path[0] == '/') {
+    remaining = path.substr(1);
+  } else {
+    remaining = path;
+  }
+
+  while (found) {
+    std::cout << dst << std::endl;
+    size_t first_slash = remaining.find("/");
+    elem = remaining.substr(0, first_slash);
+    if (first_slash == std::string::npos) {
+      found = false;
+    } else {
+      remaining = remaining.substr(first_slash + 1);
+    }
+
+    if (elem == ".") {
+      continue;
+    } else if (elem == "..") {
+      size_t last_slash = dst.rfind("/");
+      if (last_slash == std::string::npos) {
+        dst = "a";
+        first = true;
+      } else {
+        dst = dst.substr(0, last_slash);
+        first = false;
+      }
+    } else {
+      if (!first) {
+        dst += "/";
+      }
+      dst += elem;
+      first = false;
+    }
+  }
+
+  if ((elem == "." || elem == "..") && dst.size() != 1) {
+    dst += "/";
+  }
+  dst[0] = '/';
+  return dst;
+}
+
+// caller has to be absolute-URI
+URI* URI::resolveReference(const URI& ref) const {
+  URI* uri = new URI(ref);
+
+  if (ref.scheme_ == "") {
+    uri->scheme_ = scheme_;
+  }
+  if (ref.scheme_ != "" || ref.host_ != "" || ref.user_info_ != NULL) {
+    // if it has authority
+    uri->setPath(removeDotSegments(ref.escapedPath()));
+    return uri;
+  }
+  uri->host_ = host_;
+  uri->user_info_ = user_info_;
+  std::string path = merge(escapedPath(), ref.escapedPath());
+  path = removeDotSegments(path);
+  uri->setPath(path);
+  if (ref.path_ == "" && !ref.force_query_ && ref.raw_query_ == "") {
+    uri->raw_query_ = raw_query_;
+  }
+  return uri;
+}
+
+std::string URI::recompose() const {
+  std::string res;
+  if (scheme_ != "") {
+    res += scheme_ + ":";
+  }
+  if (opaque_ != "") {
+    res += opaque_;
+  } else {
+    if (host_ != "" || path_ != "" || user_info_ != NULL) {
+      res += "//";
+    }
+    if (user_info_ != NULL) {
+      res += user_info_->getString() + "@";
+    }
+    res += Encoding::escape(host_, Encoding::Host);
+
+    std::string path = escapedPath();
+    if (path != "" && path[0] != '/' && host_ != "") {
+      res += "/";
+    }
+    if (res.size() == 0) {
+      // RFC 3986 4.2
+      std::string segment = path.substr(0, path.find("/"));
+      if (segment.find(":") != std::string::npos) {
+        res += "./";
+      }
+    }
+    res += path;
+  }
+  if (force_query_ || raw_query_ != "") {
+    res += "?" + raw_query_;
+  }
+  if (fragment_ != "") {
+    res += "#" + escape(fragment_, Encoding::Fragment);
+  }
+  return res;
+}
+
 const std::string& URI::getScheme() const { return scheme_; };
 const std::string& URI::getHost() const { return host_; };
 const std::string& URI::getPath() const { return path_; };
 const std::string& URI::getQuery() const { return raw_query_; }
 const std::string& URI::getFragment() const { return fragment_; }
 const UserInfo* URI::getUserInfo() const { return user_info_; }
+std::string URI::getUsername() const {
+  if (user_info_ == NULL) {
+    return "";
+  }
+  return user_info_->getUsername();
+}
+std::string URI::getPassword() const {
+  if (user_info_ == NULL) {
+    return "";
+  }
+  return user_info_->getPassword();
+}
 bool URI::isForceQuery() const { return force_query_; }
 const std::string& URI::getOpaque() const { return opaque_; }
 bool URI::isOmitHost() const { return omit_host_; }
+
+std::string URI::escapedPath() const { return escape(path_, Encoding::Path); }
