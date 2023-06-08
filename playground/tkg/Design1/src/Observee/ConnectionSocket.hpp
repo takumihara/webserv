@@ -10,6 +10,7 @@
 
 class CGI;
 class GET;
+class POST;
 
 class ConnectionSocket : public Observee {
  public:
@@ -26,10 +27,13 @@ class ConnectionSocket : public Observee {
   void shutdown();
   void process();
   void processGET();
+  void processPOST();
+  void processDELETE();
   void processErrorPage(const LocationConf *conf);
   void execCGI(const std::string &path);
   CGI *makeCGI(int id, int pid);
   GET *makeGET(int id);
+  POST *makePOST(int id);
   void addChild(Observee *obs);
   void removeChild(Observee *obs);
 

@@ -26,7 +26,6 @@ TEST(E2E, Get) {
   std::string res = sendRequest(GetRequest());
 
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
-  std::cerr << res << std::endl;
   ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
 }
 
@@ -96,10 +95,11 @@ std::string sendRequest(const std::string &request) {
 
 std::string GetRequest() {
   std::string request;
-  request += "GET /html/index.html?query HTTP/1.1\r\n";
+  request += "GET /html/index.html HTTP/1.1\r\n";
   request += "Host: localhost\r\n";
   request += "Content-Length:5\r\n";
   request += "\r\n";
+  request += "hello";
   return request;
 }
 
@@ -107,7 +107,7 @@ std::string CGIRequest() {
   std::string request;
   request += "GET /html/a.cgi?query HTTP/1.1\r\n";
   request += "Host: localhost\r\n";
-  request += "Content-Length:  5 \r\n";
+  request += "Content-Length:  6 \r\n";
   request += "Date: Wed, 16 Oct 2019 07:28:00 GMT\r\n";
   request += "\r\n";
   request += "Body";

@@ -52,9 +52,9 @@ class ResourceNotFoundException : public HttpException {
   ResourceNotFoundException(const std::string &message) : HttpException(404, message) {}
 };
 
-class NotAllowedException : public HttpException {
+class MethodNotAllowedException : public HttpException {
  public:
-  NotAllowedException(const std::string &message) : HttpException(405, message) {}
+  MethodNotAllowedException(const std::string &message) : HttpException(405, message) {}
 };
 
 // 5xx error status code

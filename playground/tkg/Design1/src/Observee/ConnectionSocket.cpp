@@ -23,6 +23,7 @@
 #include "../HttpException.hpp"
 #include "CGI.hpp"
 #include "GET.hpp"
+#include "POST.hpp"
 #include "helper.hpp"
 
 void ConnectionSocket::shutdown() {
@@ -34,6 +35,12 @@ void ConnectionSocket::shutdown() {
 
 GET *ConnectionSocket::makeGET(int fd) {
   GET *obs = new GET(fd, em_, this, &response_);
+  this->monitorChild(obs);
+  return obs;
+}
+
+POST *ConnectionSocket::makePOST(int fd) {
+  POST *obs = new POST(fd, em_, this, &request_);
   this->monitorChild(obs);
   return obs;
 }
@@ -75,6 +82,47 @@ void ConnectionSocket::execCGI(const std::string &path) {
     em_->disableReadEvent(id_);
     em_->registerReadEvent(need_fd);
   }
+}
+
+void ConnectionSocket::processPOST() {
+  // todo:
+  if (!isAcceptableMethod(loc_conf_, HttpRequest::POST)) {
+    throw BadRequestException("No Suitable Location");
+  }
+  // todo: . is for temporary implementation
+  std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
+  // check file is already exist or not, and temporarily set statusCode.
+  struct stat st;
+  if (!isAllDirectoryWritable(path)) throw ResourceForbidenException("access Write error");  // 403 Forbiden
+  const bool file_exist = stat(path.c_str(), &st) != -1;
+  if (file_exist) {
+    response_.setStatus(200);
+    bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
+    // POST method is not allowedif targetURI is directory
+    if (is_directory) throw MethodNotAllowedException("POST is not allowed to directory");
+    // check writable if file exist
+    if (!isWritable(path.c_str())) throw ResourceForbidenException("acess write error");
+  }
+  // if CGI extension exist, try exec CGI
+  const bool hasCGI = extension_ != "";
+  if (hasCGI) {
+    if (isExecutable(path.c_str()) && contain(loc_conf_->cgi_exts_, extension_)) {
+      execCGI(path);
+      return;
+    }
+  }
+  // set temporary status code
+  if (file_exist)
+    response_.setStatus(200);
+  else
+    response_.setStatus(201);
+  int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC);
+  if (fd < 0) throw ResourceForbidenException("open error");
+  POST *obs = makePOST(fd);
+  em_->add(std::pair<t_id, t_type>(fd, FD), obs);
+  em_->disableReadEvent(id_);
+  em_->registerWriteEvent(fd);
+  return;
 }
 
 void ConnectionSocket::processGET() {
@@ -155,6 +203,7 @@ void ConnectionSocket::process() {
     processGET();
   } else if (request_.methodIs(HttpRequest::POST)) {
     // handle POST
+    processPOST();
   } else if (request_.methodIs(HttpRequest::DELETE)) {
     // handle DELETE
   }
