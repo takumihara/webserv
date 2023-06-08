@@ -23,7 +23,7 @@ HttpRequest::State HttpRequest::readRequest(HttpRequest &req, IReadCloser *rc) {
 
   if (size == 0) {
     DEBUG_PRINTF("closed fd = %d\n", req.sock_fd_);
-    return HttpRequest::SocketClosed;
+    throw std::runtime_error("closed client socket");
   }
   req.raw_data_ += request;
 

@@ -219,8 +219,6 @@ void ConnectionSocket::notify(struct kevent ev) {
       if (state == HttpRequest::FinishedReading) {
         DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.getBody()).c_str());
         this->process();
-      } else if (state == HttpRequest::SocketClosed) {
-        shutdown();
       }
     } catch (HttpException &e) {
       // all 3xx 4xx 5xx exception(readRequest and process) is catched here
