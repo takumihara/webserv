@@ -55,6 +55,8 @@ class LocationConf {
   void printAllowedMethod() const;
   std::map<std::string, bool> &getAllowedMethods();
   std::vector<std::string> &getCGIExtensions();
+  const std::string &getRedirectStatus() const;
+  const std::string &getRedirectURI() const;
   std::string getTargetPath(const std::string &request_uri) const;
   bool hasRedirectDirective() const;
 
@@ -72,7 +74,7 @@ class ServerConf {
   std::vector<std::string> &getServerNames();
   std::string &getHostNames();
   int &getPorts();
-  const LocationConf &getLocationConf(const HttpRequest *req) const;
+  LocationConf *getLocationConf(const HttpRequest *req);
   std::string host_;
   int port_;
   std::vector<std::string> server_names_;
@@ -93,7 +95,7 @@ class Config {
 
   void printConfig();
   void printPortServConfMap();
-  const ServerConf *getServerConf(const int port, const std::string &host);
+  ServerConf *getServerConf(const int port, const std::string &host);
   int getLimitConnection() const;
   int getMaxBodySize() const;
 

@@ -40,9 +40,9 @@ void CGI::notify(struct kevent ev) {
     close(id_);
     waitpid(pid_, &status, 0);
     if (status == 0) {
-      response_->setStatusAndMassage(200, "OK");
+      response_->setStatus(200);
     } else
-      response_->setStatusAndMassage(500, "Internal Server Error");
+      response_->setStatus(500);
     parent_->obliviateChild(this);
     em_->deleteTimerEvent(id_);
     em_->registerWriteEvent(parent_->id_);

@@ -13,11 +13,6 @@
 
 int HttpResponse::getStatus() const { return status_; };
 void HttpResponse::setStatus(const int status) { status_ = status; }
-void HttpResponse::setErrorMassage(const std::string &msg) { error_msg_ = msg; }
-void HttpResponse::setStatusAndMassage(const int status, const std::string &msg) {
-  status_ = status;
-  error_msg_ = msg;
-}
 
 void HttpResponse::appendBody(const std::string &str) { body_ += str; }
 
@@ -34,7 +29,7 @@ void HttpResponse::createResponse() {
   ss.str("");
   ss.clear(std::stringstream::goodbit);
 
-  ss << "HTTP/1.1 " << status_ << " " << error_msg_ << CRLF;
+  ss << "HTTP/1.1 " << status_ << " " << conf_.cache_.statusMsg_[status_] << CRLF;
   for (std::vector<header>::const_iterator itr = headers.cbegin(); itr != headers.cend(); itr++) {
     ss << itr->first << ": " << itr->second << CRLF;
   }
@@ -46,7 +41,7 @@ void HttpResponse::createResponse() {
   sending_response_size_ = 0;
 }
 
-void HttpResponse::sendResponse(EventManager &event_manager) {
+bool HttpResponse::sendResponse(EventManager &event_manager) {
   const char *response = response_.c_str();
   std::cout << "sending response \n";
   int size = response_size_ - sending_response_size_;
@@ -66,7 +61,9 @@ void HttpResponse::sendResponse(EventManager &event_manager) {
   std::cout << "response size: " << response_size_ << "(" << sending_response_size_ << std::endl;
   if (sending_response_size_ == response_size_) {
     refresh(event_manager);
+    return true;
   }
+  return false;
 }
 
 void HttpResponse::refresh(EventManager &em) {

@@ -17,6 +17,7 @@ class Cache {
   void cacheErrorPages(const CommonConf *conf);
   void initStatusErrorPageMap(const Config *conf);
   void initStatusMsg();
+  std::string *getErrorPageContent(int status, std::string &path);
 
   t_map error_page_paths_;
   t_map_star status_errorPage_map_;
