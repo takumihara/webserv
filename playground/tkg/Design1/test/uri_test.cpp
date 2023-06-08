@@ -914,3 +914,14 @@ TEST(ResolveReference, RFCCases) {
   ASSERT_EQ(uri->recompose(), "http:g");
   // "http://a/b/c/g"
 }
+
+TEST(URI, Recompose) {
+  URI *uri;
+
+  uri = URI::parse("scheme://");
+  ASSERT_EQ(uri->recompose(), "scheme:");
+  uri = URI::parse("scheme://host");
+  ASSERT_EQ(uri->recompose(), "scheme://host");
+  uri = URI::parse("scheme://host/");
+  ASSERT_EQ(uri->recompose(), "scheme://host/");
+}

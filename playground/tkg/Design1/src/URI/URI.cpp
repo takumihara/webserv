@@ -370,7 +370,7 @@ std::string URI::recompose() const {
 
     std::string path = escapedPath();
     if (path != "" && path[0] != '/' && host_ != "") {
-      path = "/";
+      res += "/";
     }
     if (res.size() == 0) {
       // RFC 3986 4.2
