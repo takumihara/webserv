@@ -28,13 +28,16 @@ void HttpResponse::createResponse() {
   appendHeader("Content-Length", ss.str());
   ss.str("");
   ss.clear(std::stringstream::goodbit);
-
-  ss << "HTTP/1.1 " << status_ << " " << conf_.cache_.statusMsg_[status_] << CRLF;
+  // stus-line
+  ss << "HTTP/1.1 " << status_ << " " << conf_->cache_.statusMsg_[status_] << CRLF;
+  // header-fields
   for (std::vector<header>::const_iterator itr = headers.cbegin(); itr != headers.cend(); itr++) {
     ss << itr->first << ": " << itr->second << CRLF;
   }
   ss << CRLF;
+  // body
   ss << body_ << CRLF;
+
   response_ = ss.str();
   std::cout << response_;
   response_size_ = response_.size();
@@ -70,10 +73,7 @@ void HttpResponse::refresh(EventManager &em) {
   sending_response_size_ = 0;
   response_size_ = 0;
   (void)port_;
-  em.addChangedEvents((struct kevent){static_cast<uintptr_t>(sock_fd_), EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
-  em.addChangedEvents((struct kevent){static_cast<uintptr_t>(sock_fd_), EVFILT_READ, EV_ENABLE, 0, 0, 0});
-  // em.addChangedEvents(
-  //    (struct kevent){sock_fd_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+  (void)em;
   response_.clear();
   body_.clear();
 }

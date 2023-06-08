@@ -17,7 +17,7 @@ class HttpResponse {
  public:
   typedef std::pair<std::string, std::string> header;
 
-  HttpResponse(int fd, int port, Config &conf)
+  HttpResponse(int fd, int port, Config *conf)
       : sock_fd_(fd),
         port_(port),
         status_(0),
@@ -40,7 +40,7 @@ class HttpResponse {
   int sock_fd_;
   int port_;
   int status_;
-  Config conf_;
+  Config *conf_;
   std::string body_;
   std::string response_;
   std::vector<header> headers;

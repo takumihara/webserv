@@ -225,7 +225,7 @@ void HttpRequest::analyzeContentLength(const std::string &value) {
 
   // todo: handle overflow
   const int val = std::atoi(value.c_str());
-  if (val < 0 || conf_.getMaxBodySize() < val) {
+  if (val < 0 || conf_->getMaxBodySize() < val) {
     throw BadRequestException("Http Request: invalid content-length");
   }
   headers_.content_length = val;
