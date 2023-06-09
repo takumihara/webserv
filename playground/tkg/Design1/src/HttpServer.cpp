@@ -33,7 +33,7 @@ void HttpServer::setup() {
   Parser parser;
   conf_ = parser.parse(filename_);
   conf_.makePortServConfMap();
-  conf_.cache_.initStatusErrorPageMap(&conf_);
+  conf_.cache_.initCache(&conf_);
   if (!isServernameDuplicate(conf_)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }

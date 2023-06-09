@@ -17,26 +17,25 @@ static std::string readFile(const char *filename) {
   return std::string((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 }
 
-// key is "statuscode" + "errorpage abs-path"
-// example: 404/error/404.html
+void Cache::initCache(const Config *conf) {
+  initStatusMsg();
+  initStatusErrorPageMap(conf);
+}
+
 void Cache::cacheErrorPages(const CommonConf *conf) {
-  std::map<std::string, std::string> error_pages = conf->error_pages_;
-  std::string root = conf->root_;
-  std::string key;
+  const std::map<std::string, std::string> &error_pages = conf->error_pages_;
+  const std::string &root = conf->root_;
   std::string file;
   for (t_map::const_iterator itr = error_pages.cbegin(); itr != error_pages.cend(); itr++) {
-    key = itr->first;
     file = itr->second;
     // translate into abs-path when error page path is relative-path
     if (itr->second[0] != '/') file = root + "/" + file;
-    key += file;
-    if (status_errorPage_map_.find(key) != status_errorPage_map_.end()) continue;
+    if (status_errorPage_map_.find(file) != status_errorPage_map_.end()) continue;
     if (error_page_paths_.find(file) == error_page_paths_.end()) {
       std::cerr << file << std::endl;
-      std::cerr << key << std::endl;
       error_page_paths_[file] = readFile(("." + file).c_str());
     }
-    status_errorPage_map_[key] = &error_page_paths_[file];
+    status_errorPage_map_[file] = &error_page_paths_[file];
   }
 }
 
@@ -52,13 +51,6 @@ void Cache::initStatusErrorPageMap(const Config *conf) {
     }
   }
   return;
-}
-
-std::string *Cache::getErrorPageContent(int status, std::string &path) {
-  std::stringstream ss;
-
-  ss << status << path;
-  return status_errorPage_map_[ss.str()];
 }
 
 void Cache::initStatusMsg() {
