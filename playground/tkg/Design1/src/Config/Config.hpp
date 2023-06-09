@@ -14,7 +14,7 @@ class HttpRequest;
 
 class CommonConf {
  public:
-  CommonConf() : max_body_size_(MiB), root_("/html"), autoindex_(false) {}
+  CommonConf() : max_body_size_(MiB), root_("/"), autoindex_(false) {}
   CommonConf(const CommonConf &conf)
       : max_body_size_(conf.max_body_size_),
         root_(conf.root_),

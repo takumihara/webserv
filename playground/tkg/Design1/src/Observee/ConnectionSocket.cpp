@@ -160,14 +160,11 @@ void ConnectionSocket::process() {
 }
 
 void ConnectionSocket::processErrorPage(LocationConf *conf) {
-  std::stringstream ss;
-  ss << response_.getStatus();
   std::map<std::string, std::string>::const_iterator itr = conf->common_.error_pages_.find(ss.str());
   if (itr != conf->common_.error_pages_.end()) {
     std::string filename = itr->second;
     if (filename[0] != '/') filename = conf->common_.root_ + "/" + filename;
-    ss << filename;
-    std::string *error_page = conf_.cache_.status_errorPage_map_[ss.str()];
+    std::string *error_page = conf_.cache_.status_errorPage_map_[filename];
     if (error_page) response_.appendBody(*error_page);
   }
 }

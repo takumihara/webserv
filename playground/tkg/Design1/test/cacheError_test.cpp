@@ -20,43 +20,39 @@ static std::string readFile(const char *filename) {
 }
 
 TEST(error, basic) {
-  IReadCloser *rc = new MockReadCloser("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n");
   Parser parser;
   Config conf = parser.parse("test/www/config/cache.conf");
   conf.makePortServConfMap();
-  conf.cache_.initStatusErrorPageMap(&conf);
+  conf.cache_.initCache(&conf);
   std::string ref = readFile("test/www/error/error.html");
-  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["400/test/www/error/error.html"]);
+  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["/test/www/error/error.html"]);
   EXPECT_TRUE(true);
 }
 
 TEST(error, basic2) {
-  IReadCloser *rc = new MockReadCloser("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n");
   Parser parser;
   Config conf = parser.parse("test/www/config/cache.conf");
   conf.makePortServConfMap();
-  conf.cache_.initStatusErrorPageMap(&conf);
+  conf.cache_.initCache(&conf);
   std::string ref = readFile("test/www/error/500error.html");
-  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["500/test/www/error/500error.html"]);
+  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["/test/www/error/500error.html"]);
   EXPECT_TRUE(true);
 }
 
 TEST(error, basic3) {
-  IReadCloser *rc = new MockReadCloser("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n");
   Parser parser;
   Config conf = parser.parse("test/www/config/cache.conf");
   conf.makePortServConfMap();
-  conf.cache_.initStatusErrorPageMap(&conf);
+  conf.cache_.initCache(&conf);
   std::string ref = readFile("test/www/error/403error.html");
-  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["403/test/www/error/403error.html"]);
+  EXPECT_EQ(ref, *conf.cache_.status_errorPage_map_["/test/www/error/403error.html"]);
   EXPECT_TRUE(true);
 }
 
 TEST(error, basic4) {
-  IReadCloser *rc = new MockReadCloser("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n");
   Parser parser;
   Config conf = parser.parse("test/www/config/cache.conf");
   conf.makePortServConfMap();
-  conf.cache_.initStatusErrorPageMap(&conf);
-  EXPECT_TRUE(conf.cache_.status_errorPage_map_["402/test/www/error/error2.html"] == NULL);
+  conf.cache_.initCache(&conf);
+  EXPECT_TRUE(conf.cache_.status_errorPage_map_["/test/www/error/no_such_error2.html"] == NULL);
 }

@@ -42,6 +42,12 @@ void Parser::analyseLimitConnection(void) {
   return;
 }
 
+void Parser::setDefaultServer() {
+  ServerConf serv = ServerConf(conf_.common_);
+  serv.server_names_.push_back("_");
+  conf_.server_confs_.push_back(serv);
+}
+
 void Parser::analyseServer() {
   DEBUG_PUTS("Analyse server");
   if (scope_.top() != GENERAL) {
@@ -136,6 +142,12 @@ void Parser::analyseRoot() {
   if (!expectTokenType(tok, Token::SEMICOLON)) {
     throw std::runtime_error("root: invalid grammar, need semicolon");
   }
+}
+
+void Parser::setDefaultLocation() {
+  ServerConf &serv = conf_.server_confs_.back();
+  LocationConf loc = LocationConf("/", serv.redirect_, serv.common_);
+  conf_.server_confs_.push_back(serv);
 }
 
 void Parser::analyseLocation() {
@@ -361,6 +373,10 @@ Config Parser::parse(const char *conf_file) {
       (this->*direct)();
     } else if (expectTokenType(cur, Token::CLOSE_BRACE)) {
       if (scope_.size() == 0) break;
+      if (scope_.top() == GENERAL && conf_.server_confs_.size() == 0)
+        setDefaultServer();
+      else if (scope_.top() == SERVER && conf_.server_confs_.back().location_confs_.size() == 0)
+        setDefaultLocation();
       scope_.pop();
     } else {
       throw std::runtime_error("parse: no such directive");

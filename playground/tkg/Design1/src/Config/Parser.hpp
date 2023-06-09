@@ -71,6 +71,8 @@ class Parser {
   void analyseRedirect();
   void analyseMaxBodySize();
   void analyseCGIExtension();
+  void setDefaultServer();
+  void setDefaultLocation();
   void setHost(std::string &host);
   void setPort(std::string &port);
   void setRedirect(std::string &status, std::string &uri, scope scp);
