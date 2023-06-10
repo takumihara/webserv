@@ -117,7 +117,7 @@ void ConnectionSocket::processPOST() {
   else
     response_.setStatus(201);
   int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC);
-  if (fd < 0) throw ResourceForbidenException("open error");
+  if (fd < 0) throw InternalServerErrorException("open error");
   POST *obs = makePOST(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
   em_->disableReadEvent(id_);
