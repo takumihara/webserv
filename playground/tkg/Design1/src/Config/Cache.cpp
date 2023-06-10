@@ -30,12 +30,10 @@ void Cache::cacheErrorPages(const CommonConf *conf) {
     file = itr->second;
     // translate into abs-path when error page path is relative-path
     if (itr->second[0] != '/') file = root + "/" + file;
-    if (status_errorPage_map_.find(file) != status_errorPage_map_.end()) continue;
     if (error_page_paths_.find(file) == error_page_paths_.end()) {
       std::cerr << file << std::endl;
       error_page_paths_[file] = readFile(("." + file).c_str());
     }
-    status_errorPage_map_[file] = &error_page_paths_[file];
   }
 }
 
