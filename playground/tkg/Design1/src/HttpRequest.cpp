@@ -23,7 +23,7 @@ HttpRequest::State HttpRequest::readRequest(HttpRequest &req, IReadCloser *rc) {
 
   if (size == 0) {
     DEBUG_PRINTF("closed fd = %d\n", req.sock_fd_);
-    return HttpRequest::SocketClosed;
+    throw std::runtime_error("closed client socket");
   }
   req.raw_data_ += request;
 
@@ -49,7 +49,7 @@ HttpRequest::State HttpRequest::readRequest(HttpRequest &req, IReadCloser *rc) {
 }
 
 bool HttpRequest::isReceivingBody() {
-  if (method_ == GET || method_ == DELETE || (!isChunked() && headers_.content_length == 0)) {
+  if ((!isChunked() && headers_.content_length == 0)) {
     return false;
   }
   return true;
@@ -82,7 +82,7 @@ void HttpRequest::assignAndValidateMethod(const std::string &method) {
   } else if (method == "DELETE") {
     method_ = DELETE;
   } else if (method == "PUT" || method == "PATCH" || method == "HEAD" || method == "OPTIONS") {
-    throw NotAllowedException("Http Request: method not allowed");
+    throw MethodNotAllowedException("Http Request: method not allowed");
   } else {
     throw NotImplementedException("Http Request: invalid method");
   }

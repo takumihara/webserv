@@ -8,3 +8,5 @@ std::string trimUntilCRLF(const std::string &str);
 std::string getExtension(const std::string &path);
 bool isExecutable(const char *path);
 bool isReadable(const char *path);
+bool isWritable(const char *path);
+bool isAllDirectoryWritable(std::string &path);

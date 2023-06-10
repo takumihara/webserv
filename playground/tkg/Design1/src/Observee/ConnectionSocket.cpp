@@ -23,6 +23,7 @@
 #include "../HttpException.hpp"
 #include "CGI.hpp"
 #include "GET.hpp"
+#include "POST.hpp"
 #include "helper.hpp"
 
 void ConnectionSocket::shutdown() {
@@ -34,6 +35,12 @@ void ConnectionSocket::shutdown() {
 
 GET *ConnectionSocket::makeGET(int fd) {
   GET *obs = new GET(fd, em_, this, &response_);
+  this->monitorChild(obs);
+  return obs;
+}
+
+POST *ConnectionSocket::makePOST(int fd) {
+  POST *obs = new POST(fd, em_, this, &request_);
   this->monitorChild(obs);
   return obs;
 }
@@ -75,6 +82,47 @@ void ConnectionSocket::execCGI(const std::string &path) {
     em_->disableReadEvent(id_);
     em_->registerReadEvent(need_fd);
   }
+}
+
+void ConnectionSocket::processPOST() {
+  // todo:
+  if (!isAcceptableMethod(loc_conf_, HttpRequest::POST)) {
+    throw BadRequestException("No Suitable Location");
+  }
+  // todo: . is for temporary implementation
+  std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
+  // check file is already exist or not, and temporarily set statusCode.
+  struct stat st;
+  if (!isAllDirectoryWritable(path)) throw ResourceForbidenException("access Write error");  // 403 Forbiden
+  const bool file_exist = stat(path.c_str(), &st) != -1;
+  if (file_exist) {
+    response_.setStatus(200);
+    bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
+    // POST method is not allowedif targetURI is directory
+    if (is_directory) throw MethodNotAllowedException("POST is not allowed to directory");
+    // check writable if file exist
+    if (!isWritable(path.c_str())) throw ResourceForbidenException("acess write error");
+  }
+  // if CGI extension exist, try exec CGI
+  const bool hasCGI = extension_ != "";
+  if (hasCGI) {
+    if (isExecutable(path.c_str()) && contain(loc_conf_->cgi_exts_, extension_)) {
+      execCGI(path);
+      return;
+    }
+  }
+  // set temporary status code
+  if (file_exist)
+    response_.setStatus(200);
+  else
+    response_.setStatus(201);
+  int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC);
+  if (fd < 0) throw InternalServerErrorException("open error");
+  POST *obs = makePOST(fd);
+  em_->add(std::pair<t_id, t_type>(fd, FD), obs);
+  em_->disableReadEvent(id_);
+  em_->registerWriteEvent(fd);
+  return;
 }
 
 void ConnectionSocket::processGET() {
@@ -129,7 +177,7 @@ void ConnectionSocket::processGET() {
   em_->registerReadEvent(fd);
 }
 
-void ConnectionSocket::processErrorPage(LocationConf *conf) {
+void ConnectionSocket::processErrorPage(const LocationConf *conf) {
   std::stringstream ss;
   ss << response_.getStatus();
   std::map<std::string, std::string>::const_iterator itr = conf->common_.error_pages_.find(ss.str());
@@ -155,6 +203,7 @@ void ConnectionSocket::process() {
     processGET();
   } else if (request_.methodIs(HttpRequest::POST)) {
     // handle POST
+    processPOST();
   } else if (request_.methodIs(HttpRequest::DELETE)) {
     // handle DELETE
   }
@@ -170,8 +219,6 @@ void ConnectionSocket::notify(struct kevent ev) {
       if (state == HttpRequest::FinishedReading) {
         DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.getBody()).c_str());
         this->process();
-      } else if (state == HttpRequest::SocketClosed) {
-        shutdown();
       }
     } catch (HttpException &e) {
       // all 3xx 4xx 5xx exception(readRequest and process) is catched here
@@ -193,8 +240,8 @@ void ConnectionSocket::notify(struct kevent ev) {
     response_.sendResponse();
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
-      request_.refresh();
-      response_.refresh();
+      request_ = HttpRequest(id_, &conf_);
+      response_ = HttpResponse(id_, port_, &conf_);
       em_->disableWriteEvent(id_);
       em_->registerReadEvent(id_);
     }

@@ -77,3 +77,19 @@ std::string getExtension(const std::string &path) {
 bool isExecutable(const char *path) { return access(path, X_OK) == 0; }
 
 bool isReadable(const char *path) { return access(path, R_OK) == 0; }
+
+bool isWritable(const char *path) { return access(path, W_OK) == 0; }
+
+bool isAllDirectoryWritable(std::string &path) {
+  std::cout << path << std::endl;
+  std::vector<std::string> segments = splitToSegment(path);
+  for (std::size_t i = 1; i < segments.size(); i++) {
+    std::string partial_path = "";
+    for (std::size_t j = 0; j < i; j++) {
+      partial_path += segments[j];
+      if (j + 1 != i) partial_path += "/";
+    }
+    if (!isWritable(partial_path.c_str())) return false;
+  }
+  return true;
+}
