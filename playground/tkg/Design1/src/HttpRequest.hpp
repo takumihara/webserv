@@ -12,6 +12,7 @@
 
 #include "./Config/Config.hpp"
 #include "./IO/IReadCloser.hpp"
+#include "./URI/URI.hpp"
 
 class EventManager;
 
@@ -19,22 +20,10 @@ class HttpRequest {
  public:
   enum State { ReadingStartLine, ReadingHeaders, ReadingChunkedBody, ReadingBody, FinishedReading, SocketClosed, End };
   enum ReadingChunkedState { ReadingChunkedSize, ReadingChunkedData };
-  enum RequestTargetType { OriginForm, AbsoluteForm, AuthorityForm, AsteriskForm };
   enum Method { GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH };
   enum Version { HTTP1_1 };
   enum HeaderField { HostField, ContentLengthField, TransferEncodingField, DateField };
   enum TransferEncoding { Chunked, Compress, Deflate, Gzip };
-  struct RequestTarget {
-    RequestTargetType type;
-    // origin form
-    std::string absolute_path;
-    std::string query;
-  };
-  struct RequestLine {
-    Method method;
-    RequestTarget request_target;
-    Version version;
-  };
   struct Host {
     std::string uri_host;
     int port;
@@ -51,15 +40,18 @@ class HttpRequest {
         state_(ReadingStartLine),
         chunked_size_(0),
         chunked_reading_state_(ReadingChunkedSize),
-        conf_(conf) {}
-  ~HttpRequest(){};
+        conf_(conf),
+        request_target_(NULL) {}
+  ~HttpRequest() { delete request_target_; };
   HttpRequest &operator=(const HttpRequest &other) {
     if (this != &other) {
       this->sock_fd_ = other.sock_fd_;
       this->raw_data_ = other.raw_data_;
       this->rest_ = other.rest_;
       this->state_ = other.state_;
-      this->request_line_ = other.request_line_;
+      this->method_ = other.method_;
+      this->version_ = other.version_;
+      this->request_target_ = other.request_target_;
       this->headers_ = other.headers_;
       this->received_fields_ = other.received_fields_;
       this->body_ = other.body_;
@@ -73,7 +65,7 @@ class HttpRequest {
   const std::string &getBody() const;
   const Host &getHost() const;
   bool methodIs(Method method) const;
-  const RequestTarget &getRequestTarget() const;
+  URI *getRequestTarget() const;
   const Method &getMethod() const;
   bool isChunked();
 
@@ -84,15 +76,18 @@ class HttpRequest {
   std::string raw_data_;
   std::string rest_;
   State state_;
-
-  RequestLine request_line_;
-  Headers headers_;
-  std::set<HeaderField> received_fields_;
-  std::string body_;
   size_t chunked_size_;
   ReadingChunkedState chunked_reading_state_;
+
+  std::set<HeaderField> received_fields_;
   Config *conf_;
   const static char *kSupportedTransferEncodings[];
+
+  Method method_;
+  Version version_;
+  URI *request_target_;
+  Headers headers_;
+  std::string body_;
 
   std::string getEndingChars() const;
   void trimToEndingChars();

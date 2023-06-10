@@ -2,7 +2,6 @@
 #define HTTP_EXCEPTION_HPP_
 #include <stdexcept>
 
-#include "../const.hpp"
 
 class HttpException : public std::runtime_error {
  public:
@@ -14,6 +13,7 @@ class HttpException : public std::runtime_error {
  private:
   int statusCode_;
 };
+
 
 // 3xx status code
 class RedirectMovedPermanently : public HttpException {
@@ -35,6 +35,7 @@ class RedirectPermanentRedirect : public HttpException {
  public:
   RedirectPermanentRedirect(const std::string &message) : HttpException(308, message) {}
 };
+
 
 // 4xx status code
 class BadRequestException : public HttpException {

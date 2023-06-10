@@ -74,7 +74,7 @@ class ServerConf {
   std::vector<std::string> &getServerNames();
   std::string &getHostNames();
   int &getPorts();
-  LocationConf *getLocationConf(const HttpRequest *req);
+  LocationConf *getLocationConf(const HttpRequest *req) const;
   std::string host_;
   int port_;
   std::vector<std::string> server_names_;

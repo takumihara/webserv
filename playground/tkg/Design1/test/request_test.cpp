@@ -13,7 +13,7 @@ TEST(Request, Get) {
   bool finished = HttpRequest::readRequest(req, rc);
 
   ASSERT_TRUE(finished);
-  ASSERT_EQ(req.getRequestTarget().absolute_path, "/");
+  ASSERT_EQ(req.getRequestTarget()->getPath(), "/");
   ASSERT_TRUE(req.methodIs(HttpRequest::GET));
   ASSERT_EQ(req.getHost().uri_host, "localhost");
   ASSERT_EQ(req.getBody(), "");

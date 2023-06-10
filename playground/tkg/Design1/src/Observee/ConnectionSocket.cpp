@@ -82,7 +82,8 @@ void ConnectionSocket::processGET() {
     throw BadRequestException("No Suitable Location");
   }
   // todo: . is for temporary implementation
-  std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget().absolute_path);
+
+  std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
   // check directory or file exists
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
@@ -129,6 +130,8 @@ void ConnectionSocket::processGET() {
 }
 
 void ConnectionSocket::processErrorPage(LocationConf *conf) {
+  std::stringstream ss;
+  ss << response_.getStatus();
   std::map<std::string, std::string>::const_iterator itr = conf->common_.error_pages_.find(ss.str());
   if (itr != conf->common_.error_pages_.end()) {
     std::string filename = itr->second;
@@ -147,7 +150,7 @@ void ConnectionSocket::process() {
     response_.appendHeader("Location", loc_conf_->getRedirectURI());
     throw RedirectMovedPermanently("redirection");
   }
-  extension_ = getExtension(request_.getRequestTarget().absolute_path);
+  extension_ = getExtension(request_.getRequestTarget()->getPath());
   if (request_.methodIs(HttpRequest::GET)) {
     processGET();
   } else if (request_.methodIs(HttpRequest::POST)) {
@@ -180,6 +183,8 @@ void ConnectionSocket::notify(struct kevent ev) {
       }
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
+    } catch (std::runtime_error &e) {
+      shutdown();
     }
   }
   if (ev.filter == EVFILT_WRITE) {

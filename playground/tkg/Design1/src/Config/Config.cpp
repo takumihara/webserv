@@ -147,14 +147,14 @@ void LocationConf::printLocationConf() const {
   }
 }
 
-LocationConf *ServerConf::getLocationConf(const HttpRequest *req) {
-  const std::string &path = req->getRequestTarget().absolute_path;
+LocationConf *ServerConf::getLocationConf(const HttpRequest *req) const {
+  const std::string &path = req->getRequestTarget()->getPath();
   const std::string &extension = getExtension(path);
   const bool hasCGI = extension != "";
 
-  std::vector<LocationConf>::iterator ret = location_confs_.begin();
+  std::vector<LocationConf>::const_iterator ret = location_confs_.cbegin();
   size_t match_len = 0;
-  for (std::vector<LocationConf>::iterator loc_itr = location_confs_.begin(); loc_itr != location_confs_.end();
+  for (std::vector<LocationConf>::const_iterator loc_itr = location_confs_.cbegin(); loc_itr != location_confs_.cend();
        loc_itr++) {
     if (!isAcceptableMethod(&(*loc_itr), req->getMethod())) {
       continue;
@@ -167,7 +167,7 @@ LocationConf *ServerConf::getLocationConf(const HttpRequest *req) {
       match_len = loc_itr->path_.size();
     }
   }
-  return &(*ret);
+  return const_cast<LocationConf *>(&(*ret));
 }
 
 std::string LocationConf::getTargetPath(const std::string &request_uri) const {
