@@ -35,7 +35,7 @@ class HttpRequest {
     std::tm date;
   };
 
-  HttpRequest(int fd, Config &conf)
+  HttpRequest(int fd, Config *conf)
       : sock_fd_(fd),
         state_(ReadingStartLine),
         chunked_size_(0),
@@ -78,8 +78,9 @@ class HttpRequest {
   State state_;
   size_t chunked_size_;
   ReadingChunkedState chunked_reading_state_;
+
   std::set<HeaderField> received_fields_;
-  Config &conf_;
+  Config *conf_;
   const static char *kSupportedTransferEncodings[];
 
   Method method_;

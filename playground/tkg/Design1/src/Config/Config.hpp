@@ -6,13 +6,15 @@
 #include <string>
 #include <vector>
 
+#include "Cache.hpp"
+
 #define MiB 1048576
 
 class HttpRequest;
 
 class CommonConf {
  public:
-  CommonConf() : max_body_size_(MiB), root_("/html"), autoindex_(false) {}
+  CommonConf() : max_body_size_(MiB), root_("/"), autoindex_(false) {}
   CommonConf(const CommonConf &conf)
       : max_body_size_(conf.max_body_size_),
         root_(conf.root_),
@@ -53,6 +55,8 @@ class LocationConf {
   void printAllowedMethod() const;
   std::map<std::string, bool> &getAllowedMethods();
   std::vector<std::string> &getCGIExtensions();
+  const std::string &getRedirectStatus() const;
+  const std::string &getRedirectURI() const;
   std::string getTargetPath(const std::string &request_uri) const;
   bool hasRedirectDirective() const;
 
@@ -70,7 +74,7 @@ class ServerConf {
   std::vector<std::string> &getServerNames();
   std::string &getHostNames();
   int &getPorts();
-  const LocationConf &getLocationConf(const HttpRequest *req) const;
+  LocationConf *getLocationConf(const HttpRequest *req) const;
   std::string host_;
   int port_;
   std::vector<std::string> server_names_;
@@ -91,12 +95,13 @@ class Config {
 
   void printConfig();
   void printPortServConfMap();
-  const ServerConf *getServerConf(const int port, const std::string &host);
+  ServerConf *getServerConf(const int port, const std::string &host);
   int getLimitConnection() const;
   int getMaxBodySize() const;
 
   int limit_connection_;
   CommonConf common_;
+  Cache cache_;
   std::vector<ServerConf> server_confs_;
   std::map<int, std::vector<ServerConf *> > port_servConf_map_;
 };

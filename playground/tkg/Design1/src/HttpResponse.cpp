@@ -11,6 +11,7 @@
 #include "EventManager.hpp"
 #include "const.hpp"
 
+int HttpResponse::getStatus() const { return status_; };
 void HttpResponse::setStatus(const int status) { status_ = status; }
 
 void HttpResponse::appendBody(const std::string &str) { body_ += str; }
@@ -22,23 +23,33 @@ void HttpResponse::appendHeader(const std::string &key, const std::string &value
 const std::string &HttpResponse::getBody() const { return body_; }
 
 void HttpResponse::createResponse() {
+  if (state_ != Free) return;
   std::stringstream ss;
-
-  ss << "HTTP/1.1 " << status_ << " status-message" << CRLF;
+  ss << body_.size();
+  appendHeader("Content-Length", ss.str());
+  ss.str("");
+  ss.clear(std::stringstream::goodbit);
+  // stus-line
+  ss << "HTTP/1.1 " << status_ << " " << conf_->cache_.statusMsg_[status_] << CRLF;
+  // header-fields
   for (std::vector<header>::const_iterator itr = headers.cbegin(); itr != headers.cend(); itr++) {
     ss << itr->first << ": " << itr->second << CRLF;
   }
   ss << CRLF;
+  // body
   ss << body_ << CRLF;
+
   response_ = ss.str();
   std::cout << response_;
   response_size_ = response_.size();
   sending_response_size_ = 0;
+  state_ = Sending;
 }
 
-void HttpResponse::sendResponse(EventManager &event_manager) {
+void HttpResponse::sendResponse() {
+  DEBUG_PUTS("sending response");
+  if (state_ != Sending) return;
   const char *response = response_.c_str();
-  std::cout << "sending response \n";
   int size = response_size_ - sending_response_size_;
   if (size > SOCKET_WRITE_SIZE) {
     size = SOCKET_WRITE_SIZE;
@@ -54,19 +65,16 @@ void HttpResponse::sendResponse(EventManager &event_manager) {
             << " (size:" << res << ")" << std::endl;
   sending_response_size_ += size;
   std::cout << "response size: " << response_size_ << "(" << sending_response_size_ << std::endl;
-  if (sending_response_size_ == response_size_) {
-    refresh(event_manager);
-  }
+  if (sending_response_size_ == response_size_) state_ = End;
 }
 
-void HttpResponse::refresh(EventManager &em) {
+void HttpResponse::refresh() {
+  (void)port_;
+  state_ = Free;
+  status_ = 0;
+  body_.clear();
+  response_.clear();
+  headers.clear();
   sending_response_size_ = 0;
   response_size_ = 0;
-  (void)port_;
-  em.addChangedEvents((struct kevent){static_cast<uintptr_t>(sock_fd_), EVFILT_WRITE, EV_DISABLE, 0, 0, 0});
-  em.addChangedEvents((struct kevent){static_cast<uintptr_t>(sock_fd_), EVFILT_READ, EV_ENABLE, 0, 0, 0});
-  // em.addChangedEvents(
-  //    (struct kevent){sock_fd_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
-  response_ = "";
-  body_ = "";
 }

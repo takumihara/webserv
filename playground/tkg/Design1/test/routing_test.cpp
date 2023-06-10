@@ -16,11 +16,11 @@ TEST(Routing, basic) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, basic_no_such_server) {
@@ -31,11 +31,11 @@ TEST(Routing, basic_no_such_server) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, multi_loc_first) {
@@ -46,11 +46,11 @@ TEST(Routing, multi_loc_first) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, multi_loc_second) {
@@ -61,11 +61,11 @@ TEST(Routing, multi_loc_second) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
 
 TEST(Routing, multi_loc_third) {
@@ -76,11 +76,11 @@ TEST(Routing, multi_loc_third) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[2]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[2]);
 }
 
 TEST(Routing, multi_loc_no_match) {
@@ -91,11 +91,11 @@ TEST(Routing, multi_loc_no_match) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, multi_serv_first) {
@@ -106,11 +106,11 @@ TEST(Routing, multi_serv_first) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, multi_serv_second) {
@@ -121,11 +121,11 @@ TEST(Routing, multi_serv_second) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[1].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[1].location_confs_[0]);
 }
 
 TEST(Routing, multi_serv_no_such_server) {
@@ -136,11 +136,11 @@ TEST(Routing, multi_serv_no_such_server) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, multi_serv_loc_1S_1L) {
@@ -151,11 +151,11 @@ TEST(Routing, multi_serv_loc_1S_1L) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, multi_serv_loc_1S_2L) {
@@ -166,11 +166,11 @@ TEST(Routing, multi_serv_loc_1S_2L) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
 
 TEST(Routing, multi_serv_loc_1S_noL) {
@@ -181,11 +181,11 @@ TEST(Routing, multi_serv_loc_1S_noL) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, multi_serv_loc_2S_1L) {
@@ -196,11 +196,11 @@ TEST(Routing, multi_serv_loc_2S_1L) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[1].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[1].location_confs_[0]);
 }
 
 TEST(Routing, multi_serv_loc_2S_3L) {
@@ -211,11 +211,11 @@ TEST(Routing, multi_serv_loc_2S_3L) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[1].location_confs_[2]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[1].location_confs_[2]);
 }
 
 TEST(Routing, multi_serv_loc_2S_noL) {
@@ -226,11 +226,11 @@ TEST(Routing, multi_serv_loc_2S_noL) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[1].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[1].location_confs_[0]);
 }
 
 TEST(Routing, multi_serv_loc_noS_2L) {
@@ -241,11 +241,11 @@ TEST(Routing, multi_serv_loc_noS_2L) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
 
 TEST(Routing, multi_serv_loc_noS_noL) {
@@ -256,11 +256,11 @@ TEST(Routing, multi_serv_loc_noS_noL) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, limit_method_get) {
@@ -271,11 +271,11 @@ TEST(Routing, limit_method_get) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, limit_method_post) {
@@ -286,11 +286,11 @@ TEST(Routing, limit_method_post) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
 
 TEST(Routing, limit_method_noM) {
@@ -301,11 +301,11 @@ TEST(Routing, limit_method_noM) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, allowed_ext_cgi) {
@@ -316,11 +316,11 @@ TEST(Routing, allowed_ext_cgi) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, allowed_ext_py) {
@@ -331,11 +331,11 @@ TEST(Routing, allowed_ext_py) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
 
 TEST(Routing, allowed_ext_noExt) {
@@ -346,11 +346,11 @@ TEST(Routing, allowed_ext_noExt) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, allowed_ext_pathLen) {
@@ -361,11 +361,11 @@ TEST(Routing, allowed_ext_pathLen) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
 
 TEST(Routing, allowed_ext_pathLen_api) {
@@ -376,11 +376,11 @@ TEST(Routing, allowed_ext_pathLen_api) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[2]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[2]);
 }
 
 TEST(Routing, allowed_ext_pathLen_noPath) {
@@ -391,11 +391,11 @@ TEST(Routing, allowed_ext_pathLen_noPath) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
 
 TEST(Routing, limit_method_pathLen) {
@@ -406,11 +406,11 @@ TEST(Routing, limit_method_pathLen) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[2]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[2]);
 }
 
 TEST(Routing, limit_method_pathLen_path1) {
@@ -421,11 +421,11 @@ TEST(Routing, limit_method_pathLen_path1) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[1]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
 
 TEST(Routing, limit_method_pathLen_noPath) {
@@ -436,11 +436,11 @@ TEST(Routing, limit_method_pathLen_noPath) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
 
 TEST(Routing, limit_method_pathLen_noM) {
@@ -451,9 +451,9 @@ TEST(Routing, limit_method_pathLen_noM) {
   if (!isServernameDuplicate(conf)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
-  HttpRequest req(0, conf);
+  HttpRequest req(0, &conf);
   HttpRequest::readRequest(req, rc);
-  const ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&req);
-  EXPECT_TRUE(loc_conf == conf.server_confs_[0].location_confs_[0]);
+  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  LocationConf *loc_conf = serv_conf->getLocationConf(&req);
+  EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }

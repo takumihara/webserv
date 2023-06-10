@@ -1,5 +1,6 @@
 #include "HttpServer.hpp"
 
+#include "./Config/Cache.hpp"
 #include "./Config/Config.hpp"
 #include "./Config/Parser.hpp"
 #include "./Config/validation.h"
@@ -32,6 +33,7 @@ void HttpServer::setup() {
   Parser parser;
   conf_ = parser.parse(filename_);
   conf_.makePortServConfMap();
+  conf_.cache_.initCache(&conf_);
   if (!isServernameDuplicate(conf_)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }

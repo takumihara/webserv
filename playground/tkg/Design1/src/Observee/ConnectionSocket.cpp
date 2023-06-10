@@ -16,6 +16,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 
 #include "../Config/validation.h"
@@ -76,13 +77,13 @@ void ConnectionSocket::execCGI(const std::string &path) {
   }
 }
 
-void ConnectionSocket::processGET(const LocationConf &loc_conf) {
-  if (!isAcceptableMethod(&loc_conf, HttpRequest::GET)) {
+void ConnectionSocket::processGET() {
+  if (!isAcceptableMethod(loc_conf_, HttpRequest::GET)) {
     throw BadRequestException("No Suitable Location");
   }
-  const bool hasCGI = extension_ != "";
   // todo: . is for temporary implementation
-  std::string path = "." + loc_conf.getTargetPath(request_.getRequestTarget()->getPath());
+
+  std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
   // check directory or file exists
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
@@ -90,36 +91,33 @@ void ConnectionSocket::processGET(const LocationConf &loc_conf) {
   }
   bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
   // if CGI extension exist and that is not directory, try exec CGI
+  const bool hasCGI = extension_ != "";
   if (hasCGI && !is_directory) {
-    if (access(path.c_str(), X_OK) == 0 && contain(loc_conf.cgi_exts_, extension_)) {
+    if (isExecutable(path.c_str()) && contain(loc_conf_->cgi_exts_, extension_)) {
       execCGI(path);
       return;
     }
   }
   // check directory or file is readable
-  if (access(path.c_str(), R_OK) != 0) {
+  if (!isReadable(path.c_str())) {
     throw ResourceForbidenException("access Read error");  // 403 Forbiden
   }
   if (is_directory) {
     // see through index files (if no index files and autoindex is on, you should create directory list)
     std::string idx_path;
-    if (loc_conf.common_.index_.size() != 0) {
-      idx_path = loc_conf.common_.getIndexFile(path);
+    if (loc_conf_->common_.index_.size() != 0) {
+      idx_path = loc_conf_->common_.getIndexFile(path);
       if (idx_path != "") path = idx_path;
     }
-    if (idx_path == "" && loc_conf.common_.autoindex_) {
-      try {
-        response_.appendBody(GET::listFilesAndDirectories(path));
-      } catch (HttpException &e) {
-        throw e;
-      }
+    if (idx_path == "" && loc_conf_->common_.autoindex_) {
       DEBUG_PUTS("autoindex");
+      response_.appendBody(GET::listFilesAndDirectories(path));
       response_.setStatus(200);
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
       return;  // 200 OK
     }
-    if (idx_path == "" && !loc_conf.common_.autoindex_) {
+    if (idx_path == "" && !loc_conf_->common_.autoindex_) {
       throw ResourceNotFoundException("no index and autoindex");  // 404 Not Found
     }
   }
@@ -131,28 +129,30 @@ void ConnectionSocket::processGET(const LocationConf &loc_conf) {
   em_->registerReadEvent(fd);
 }
 
+void ConnectionSocket::processErrorPage(LocationConf *conf) {
+  std::stringstream ss;
+  ss << response_.getStatus();
+  std::map<std::string, std::string>::const_iterator itr = conf->common_.error_pages_.find(ss.str());
+  if (itr != conf->common_.error_pages_.end()) {
+    std::string filename = itr->second;
+    if (filename[0] != '/') filename = conf->common_.root_ + "/" + filename;
+    if (conf_.cache_.error_page_paths_.find(filename) != conf_.cache_.error_page_paths_.end())
+      response_.appendBody(conf_.cache_.error_page_paths_[filename]);
+  }
+}
+
 void ConnectionSocket::process() {
-  const ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
-  const LocationConf &loc_conf = serv_conf->getLocationConf(&request_);
+  ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
+  loc_conf_ = serv_conf->getLocationConf(&request_);
   // loc_conf is redirection block
-  if (loc_conf.hasRedirectDirective()) {
-    response_.setStatus(std::atoi(loc_conf.redirect_.first.c_str()));
-    response_.appendHeader("Location", loc_conf.redirect_.second);
-    em_->disableReadEvent(id_);
-    em_->registerWriteEvent(id_);
-    return;
+  if (loc_conf_->hasRedirectDirective()) {
+    response_.setStatus(std::atoi(loc_conf_->getRedirectStatus().c_str()));
+    response_.appendHeader("Location", loc_conf_->getRedirectURI());
+    throw RedirectMovedPermanently("redirection");
   }
   extension_ = getExtension(request_.getRequestTarget()->getPath());
   if (request_.methodIs(HttpRequest::GET)) {
-    // handle GET
-    try {
-      processGET(loc_conf);
-    } catch (HttpException &e) {
-      std::cerr << e.what() << std::endl;
-      response_.setStatus(e.statusCode());
-      em_->disableReadEvent(id_);
-      em_->registerWriteEvent(id_);
-    }
+    processGET();
   } else if (request_.methodIs(HttpRequest::POST)) {
     // handle POST
   } else if (request_.methodIs(HttpRequest::DELETE)) {
@@ -169,29 +169,34 @@ void ConnectionSocket::notify(struct kevent ev) {
       HttpRequest::State state = HttpRequest::readRequest(request_, rc_);
       if (state == HttpRequest::FinishedReading) {
         DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.getBody()).c_str());
-
         this->process();
       } else if (state == HttpRequest::SocketClosed) {
         shutdown();
       }
-      // todo(thara): handle exceptions
-      // } catch (const HttpRequest::BadRequestException &e) {
-      // } catch (const HttpRequest::NotImplementedException &e) {
-      // } catch (const HttpRequest::NotAllowedException &e) {
-      // } catch (const HttpRequest::VersionNotSupportedException &e) {
+    } catch (HttpException &e) {
+      // all 3xx 4xx 5xx exception(readRequest and process) is catched here
+      std::cerr << e.what();
+      response_.setStatus(e.statusCode());
+      if (loc_conf_) {
+        // error_page directive is ignored when bad request
+        processErrorPage(loc_conf_);
+      }
+      em_->disableReadEvent(id_);
+      em_->registerWriteEvent(id_);
     } catch (std::runtime_error &e) {
-      // todo: all error(readRequest and process) is handled here
-      std::cerr << e.what() << std::endl;
-      close(ev.ident);
-      em_->remove(std::pair<t_id, t_type>(ev.ident, FD));
-      em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(ev.ident), EVFILT_TIMER, EV_DELETE, 0, 0, NULL});
+      shutdown();
     }
   }
   if (ev.filter == EVFILT_WRITE) {
     DEBUG_PUTS("handle_response() called");
-    request_.refresh();
     response_.createResponse();
-    response_.sendResponse(*em_);
-    request_ = HttpRequest(id_, conf_);
+    response_.sendResponse();
+    if (response_.getState() == HttpResponse::End) {
+      loc_conf_ = NULL;
+      request_.refresh();
+      response_.refresh();
+      em_->disableWriteEvent(id_);
+      em_->registerReadEvent(id_);
+    }
   }
 }

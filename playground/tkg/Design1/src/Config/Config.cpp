@@ -25,7 +25,7 @@ void printStrings(const char *prefix, const std::vector<std::string> &strs) {
 std::string CommonConf::getIndexFile(std::string path) const {
   if (path[path.size() - 1] != '/') path += "/";
   for (std::vector<std::string>::const_iterator itr = index_.cbegin(); itr != index_.cend(); itr++) {
-    if (access((path + (*itr)).c_str(), R_OK) == 0) {
+    if (isReadable((path + (*itr)).c_str())) {
       return path + *itr;
     }
   }
@@ -67,7 +67,7 @@ void Config::printPortServConfMap() {
   }
 }
 
-const ServerConf *Config::getServerConf(int port, const std::string &host) {
+ServerConf *Config::getServerConf(int port, const std::string &host) {
   std::vector<ServerConf *> servs = port_servConf_map_[port];
   for (std::vector<ServerConf *>::iterator serv_itr = servs.begin(); serv_itr != servs.end(); serv_itr++) {
     std::vector<std::string> &names = (*serv_itr)->getServerNames();
@@ -128,6 +128,9 @@ std::map<std::string, bool> &LocationConf::getAllowedMethods() { return allowed_
 
 std::vector<std::string> &LocationConf::getCGIExtensions() { return cgi_exts_; }
 
+const std::string &LocationConf::getRedirectStatus() const { return redirect_.first; }
+const std::string &LocationConf::getRedirectURI() const { return redirect_.second; }
+
 void LocationConf::printLocationConf() const {
   std::cout << "      path: " << this->path_ << std::endl;
   printStrings("      cgi_ext: ", this->cgi_exts_);
@@ -144,14 +147,14 @@ void LocationConf::printLocationConf() const {
   }
 }
 
-const LocationConf &ServerConf::getLocationConf(const HttpRequest *req) const {
+LocationConf *ServerConf::getLocationConf(const HttpRequest *req) const {
   const std::string &path = req->getRequestTarget()->getPath();
   const std::string &extension = getExtension(path);
   const bool hasCGI = extension != "";
 
-  std::vector<LocationConf>::const_iterator ret = location_confs_.begin();
+  std::vector<LocationConf>::const_iterator ret = location_confs_.cbegin();
   size_t match_len = 0;
-  for (std::vector<LocationConf>::const_iterator loc_itr = location_confs_.begin(); loc_itr != location_confs_.end();
+  for (std::vector<LocationConf>::const_iterator loc_itr = location_confs_.cbegin(); loc_itr != location_confs_.cend();
        loc_itr++) {
     if (!isAcceptableMethod(&(*loc_itr), req->getMethod())) {
       continue;
@@ -164,7 +167,7 @@ const LocationConf &ServerConf::getLocationConf(const HttpRequest *req) const {
       match_len = loc_itr->path_.size();
     }
   }
-  return *ret;
+  return const_cast<LocationConf *>(&(*ret));
 }
 
 std::string LocationConf::getTargetPath(const std::string &request_uri) const {

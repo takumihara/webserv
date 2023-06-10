@@ -65,7 +65,6 @@ std::string GET::listFilesAndDirectories(const std::string &directory_path) {
 
 void GET::notify(struct kevent ev) {
   std::cout << "handle GET" << std::endl;
-  std::stringstream ss;
   (void)ev;
   char buff[FILE_READ_SIZE + 1];
   int res = read(id_, &buff[0], FILE_READ_SIZE);
@@ -77,8 +76,6 @@ void GET::notify(struct kevent ev) {
     response_->appendBody(std::string(buff));
     if (res == 0 || res == ev.data) {
       close(id_);
-      ss << response_->getBody().size();
-      response_->appendHeader("Content-Length", ss.str());
       response_->setStatus(200);
       parent_->obliviateChild(this);
       em_->deleteTimerEvent(id_);
