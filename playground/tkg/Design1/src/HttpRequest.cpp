@@ -32,13 +32,11 @@ HttpRequest::State HttpRequest::readRequest(HttpRequest &req, IReadCloser *rc) {
   if (req.state_ == ReadingStartLine && req.isActionable()) {
     req.trimToEndingChars();
     req.parseStartline();
-    req.refresh();
     req.moveToNextState();
   }
   if (req.state_ == ReadingHeaders && req.isActionable()) {
     req.trimToEndingChars();
     req.parseHeaders();
-    req.refresh();
     req.moveToNextState();
   }
   if (req.state_ == ReadingChunkedBody) {
@@ -225,7 +223,7 @@ void HttpRequest::analyzeContentLength(const std::string &value) {
 
   // todo: handle overflow
   const int val = std::atoi(value.c_str());
-  if (val < 0 || conf_.getMaxBodySize() < val) {
+  if (val < 0 || conf_->getMaxBodySize() < val) {
     throw BadRequestException("Http Request: invalid content-length");
   }
   headers_.content_length = val;
@@ -356,6 +354,8 @@ std::string HttpRequest::getEndingChars() const {
 }
 
 void HttpRequest::moveToNextState() {
+  raw_data_ = rest_;
+  rest_.clear();
   switch (state_) {
     case ReadingStartLine:
       state_ = ReadingHeaders;
@@ -381,9 +381,16 @@ void HttpRequest::moveToNextState() {
 }
 
 void HttpRequest::refresh() {
-  raw_data_ = rest_;
-  rest_ = "";
+  raw_data_.clear();
+  rest_.clear();
+  state_ = ReadingStartLine;
+  request_line_ = RequestLine();
+  headers_ = Headers();
+  body_.clear();
+  chunked_size_ = 0;
+  chunked_reading_state_ = ReadingChunkedSize;
 }
+
 bool HttpRequest::methodIs(Method method) const { return request_line_.method == method; };
 
 const std::string &HttpRequest::getBody() const { return body_; }

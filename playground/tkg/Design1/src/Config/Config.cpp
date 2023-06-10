@@ -25,7 +25,7 @@ void printStrings(const char *prefix, const std::vector<std::string> &strs) {
 std::string CommonConf::getIndexFile(std::string path) const {
   if (path[path.size() - 1] != '/') path += "/";
   for (std::vector<std::string>::const_iterator itr = index_.cbegin(); itr != index_.cend(); itr++) {
-    if (access((path + (*itr)).c_str(), R_OK) == 0) {
+    if (isReadable((path + (*itr)).c_str())) {
       return path + *itr;
     }
   }

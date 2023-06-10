@@ -26,6 +26,7 @@ TEST(E2E, Get) {
   std::string res = sendRequest(GetRequest());
 
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
+  std::cerr << res << std::endl;
   ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
 }
 
@@ -116,7 +117,7 @@ std::string CGIRequest() {
 
 std::string ChunkedRequest() {
   std::string request;
-  request += "POST /index.html HTTP/1.1\r\n";
+  request += "POST /html/index.html HTTP/1.1\r\n";
   request += "Host: localhost\r\n";
   request += "Transfer-Encoding: chunked, chunked     , chunked  \r\n";
   request += "\r\n";
@@ -127,7 +128,7 @@ std::string ChunkedRequest() {
 
 std::string ObsFoldRequest() {
   std::string request;
-  request += "GET /index.html HTTP/1.1\r\n";
+  request += "GET /html/index.html HTTP/1.1\r\n";
   request += "Host: localhost\r\n";
   request += "SomeHeader: SomeValue  \r\n";
   request += " continuous value\r\n";
