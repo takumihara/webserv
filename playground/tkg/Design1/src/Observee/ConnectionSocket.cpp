@@ -240,8 +240,8 @@ void ConnectionSocket::notify(struct kevent ev) {
     response_.sendResponse();
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
-      request_.refresh();
-      response_.refresh();
+      request_ = HttpRequest(id_, &conf_);
+      response_ = HttpResponse(id_, port_, &conf_);
       em_->disableWriteEvent(id_);
       em_->registerReadEvent(id_);
     }
