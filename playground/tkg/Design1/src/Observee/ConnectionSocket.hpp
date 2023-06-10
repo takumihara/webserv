@@ -11,6 +11,7 @@
 class CGI;
 class GET;
 class POST;
+extern bool pending;
 
 class ConnectionSocket : public Observee {
  public:
