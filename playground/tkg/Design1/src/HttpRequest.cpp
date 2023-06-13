@@ -314,6 +314,7 @@ void HttpRequest::readChunkedBody() {
 
 void HttpRequest::readBody() {
   body_ = raw_data_.substr(0, headers_.content_length);
+  rest_ = raw_data_.substr(headers_.content_length);
   moveToNextState();
 }
 
@@ -356,12 +357,10 @@ void HttpRequest::moveToNextState() {
       state_ = ReadingHeaders;
       break;
     case ReadingHeaders:
-      if (isReceivingBody()) {
-        if (isChunked()) {
-          state_ = ReadingChunkedBody;
-        } else {
-          state_ = ReadingBody;
-        }
+      if (isChunked()) {
+        state_ = ReadingChunkedBody;
+      } else if (headers_.content_length != 0) {
+        state_ = ReadingBody;
       } else {
         state_ = FinishedReading;
       }

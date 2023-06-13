@@ -14,6 +14,7 @@ std::string CGIRequest();
 std::string GetRequest();
 std::string ChunkedRequest();
 std::string ObsFoldRequest();
+std::string PendingRequest();
 
 TEST(E2E, CGI) {
   std::string res = sendRequest(CGIRequest());
@@ -35,6 +36,14 @@ TEST(E2E, Get) {
 //   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
 //   ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
 // }
+
+TEST(E2E, pending_request) {
+  std::string res = sendRequest(PendingRequest());
+  std::cerr << res << std::endl;
+
+  EXPECT_TRUE(includes(res, "<!DOCTYPE html>"));
+  EXPECT_TRUE(includes(res, "CGI Response \n"));
+}
 
 TEST(E2E, ObsFold) {
   std::string res = sendRequest(ObsFoldRequest());
@@ -79,7 +88,7 @@ std::string sendRequest(const std::string &request) {
   if (write_res == -1) {
     perror("sendto");
   }
-
+  usleep(20000);
   char response[1000];
   memset(response, 0, 1000);
   if (read(sock, response, 1000) == -1) {
@@ -133,5 +142,22 @@ std::string ObsFoldRequest() {
   request += "SomeHeader: SomeValue  \r\n";
   request += " continuous value\r\n";
   request += "\r\n";
+  return request;
+}
+
+std::string PendingRequest() {
+  std::string request;
+  request += "GET /html/index.html HTTP/1.1\r\n";
+  request += "Host: localhost\r\n";
+  request += "Content-Length:  6 \r\n";
+  request += "Date: Wed, 16 Oct 2019 07:28:00 GMT\r\n";
+  request += "\r\n";
+  request += "Body";
+  request += "\r\n";
+  request += "GET /html/a.cgi?query HTTP/1.1\r\n";
+  request += "Host: localhost\r\n";
+  request += "Content-Length:  0\r\n";
+  request += "\r\n";
+
   return request;
 }
