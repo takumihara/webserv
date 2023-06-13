@@ -7,8 +7,8 @@
 #include "../src/Config/Parser.hpp"
 #include "../src/Config/validation.h"
 #include "../src/EventManager.hpp"
-#include "../src/HttpRequest.hpp"
 #include "../src/HttpResponse.hpp"
+#include "HttpRequest.hpp"
 #include "mock/MockReadCloser.hpp"
 
 static std::string readFile(const char *filename) {

@@ -293,7 +293,6 @@ std::string removeDotSegments(const std::string& path) {
   }
 
   while (found) {
-    std::cout << dst << std::endl;
     size_t first_slash = remaining.find("/");
     elem = remaining.substr(0, first_slash);
     if (first_slash == std::string::npos) {

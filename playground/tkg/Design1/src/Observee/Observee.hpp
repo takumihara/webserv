@@ -14,10 +14,10 @@
 #include <set>
 
 #include "../Config/Config.hpp"
-#include "../HttpRequest.hpp"
 #include "../HttpResponse.hpp"
 #include "../const.hpp"
 #include "../debug.hpp"
+#include "HttpRequest.hpp"
 
 typedef uintptr_t t_id;
 typedef short t_type;

@@ -215,8 +215,8 @@ void ConnectionSocket::notify(struct kevent ev) {
   if (ev.filter == EVFILT_READ) {
     DEBUG_PUTS("handle_request() called");
     try {
-      HttpRequest::State state = HttpRequest::readRequest(request_, rc_);
-      if (state == HttpRequest::FinishedReading) {
+      HttpRequestReader::State state = rreader_.readRequest();
+      if (state == HttpRequestReader::FinishedReading) {
         DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.getBody()).c_str());
         this->process();
       }
@@ -240,7 +240,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     response_.sendResponse();
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
-      request_ = HttpRequest(id_, &conf_);
+      request_ = HttpRequest();
       response_ = HttpResponse(id_, port_, &conf_);
       em_->disableWriteEvent(id_);
       em_->registerReadEvent(id_);
