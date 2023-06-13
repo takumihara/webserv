@@ -15,18 +15,20 @@
 #define MIN_PORT_NUM 0
 #define MAX_PORT_NUM 65535
 
+bool pending = false;
+
 // todo(thara): HttpRequestReader class
 HttpRequest::State HttpRequest::readRequest(HttpRequest &req, IReadCloser *rc) {
   std::string request;
+  if (!pending) {
+    size_t size = rc->read(request, SOCKET_READ_SIZE);
 
-  size_t size = rc->read(request, SOCKET_READ_SIZE);
-
-  if (size == 0) {
-    DEBUG_PRINTF("closed fd = %d\n", req.sock_fd_);
-    throw std::runtime_error("closed client socket");
+    if (size == 0) {
+      DEBUG_PRINTF("closed fd = %d\n", req.sock_fd_);
+      throw std::runtime_error("closed client socket");
+    }
+    req.raw_data_ += request;
   }
-  req.raw_data_ += request;
-
   std::cout << "read from socket(fd:" << req.sock_fd_ << ")"
             << ":'" << escape(req.raw_data_) << "'" << std::endl;
   if (req.state_ == ReadingStartLine && req.isActionable()) {
@@ -312,6 +314,7 @@ void HttpRequest::readChunkedBody() {
 
 void HttpRequest::readBody() {
   body_ = raw_data_.substr(0, headers_.content_length);
+  rest_ = raw_data_.substr(headers_.content_length);
   moveToNextState();
 }
 
@@ -354,12 +357,10 @@ void HttpRequest::moveToNextState() {
       state_ = ReadingHeaders;
       break;
     case ReadingHeaders:
-      if (isReceivingBody()) {
-        if (isChunked()) {
-          state_ = ReadingChunkedBody;
-        } else {
-          state_ = ReadingBody;
-        }
+      if (isChunked()) {
+        state_ = ReadingChunkedBody;
+      } else if (headers_.content_length != 0) {
+        state_ = ReadingBody;
       } else {
         state_ = FinishedReading;
       }
@@ -374,9 +375,10 @@ void HttpRequest::moveToNextState() {
 }
 
 void HttpRequest::refresh() {
-  raw_data_.clear();
+  // raw_data_ = rest_;
   rest_.clear();
   state_ = ReadingStartLine;
+  received_fields_.clear();
   headers_ = Headers();
   body_.clear();
   chunked_size_ = 0;
@@ -386,6 +388,8 @@ void HttpRequest::refresh() {
 bool HttpRequest::methodIs(Method method) const { return method_ == method; };
 
 const std::string &HttpRequest::getBody() const { return body_; }
+
+const std::string &HttpRequest::getRawData() const { return raw_data_; }
 
 URI *HttpRequest::getRequestTarget() const { return request_target_; }
 const HttpRequest::Method &HttpRequest::getMethod() const { return method_; }

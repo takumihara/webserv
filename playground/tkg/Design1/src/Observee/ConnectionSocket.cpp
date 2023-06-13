@@ -212,7 +212,7 @@ void ConnectionSocket::process() {
 
 void ConnectionSocket::notify(struct kevent ev) {
   DEBUG_PUTS("ConnectionSocket notify");
-  if (ev.filter == EVFILT_READ) {
+  if (ev.filter == EVFILT_READ || pending) {
     DEBUG_PUTS("handle_request() called");
     try {
       HttpRequest::State state = HttpRequest::readRequest(request_, rc_);
@@ -240,10 +240,16 @@ void ConnectionSocket::notify(struct kevent ev) {
     response_.sendResponse();
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
-      request_ = HttpRequest(id_, &conf_);
-      response_ = HttpResponse(id_, port_, &conf_);
+      request_.refresh();   // = HttpRequest(id_, &conf_);
+      response_.refresh();  // = HttpResponse(id_, port_, &conf_);
       em_->disableWriteEvent(id_);
-      em_->registerReadEvent(id_);
+      if (request_.getRawData() == "") {
+        em_->registerReadEvent(id_);
+        pending = false;
+      } else {
+        pending = true;
+        this->notify(ev);
+      }
     }
   }
 }

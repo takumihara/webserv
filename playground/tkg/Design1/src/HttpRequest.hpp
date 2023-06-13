@@ -64,6 +64,7 @@ class HttpRequest {
   void refresh();
   const std::string &getBody() const;
   const Host &getHost() const;
+  const std::string &getRawData() const;
   bool methodIs(Method method) const;
   URI *getRequestTarget() const;
   const Method &getMethod() const;
