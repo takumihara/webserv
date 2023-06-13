@@ -1,4 +1,4 @@
-#include "HttpRequest.hpp"
+#include "HttpRequestReader.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -7,54 +7,54 @@
 #include <sstream>
 
 #include "Config/validation.h"
-#include "EventManager.hpp"
 #include "HttpException.hpp"
 #include "const.hpp"
+#include "debug.hpp"
 #include "helper.hpp"
 
 #define MIN_PORT_NUM 0
 #define MAX_PORT_NUM 65535
 
-// todo(thara): HttpRequestReader class
-HttpRequest::State HttpRequest::readRequest(HttpRequest &req, IReadCloser *rc) {
-  std::string request;
+HttpRequestReader::State HttpRequestReader::readRequest() {
+  std::string buff;
 
-  size_t size = rc->read(request, SOCKET_READ_SIZE);
+  size_t size = rc_->read(buff, SOCKET_READ_SIZE);
 
   if (size == 0) {
-    DEBUG_PRINTF("closed fd = %d\n", req.sock_fd_);
+    DEBUG_PRINTF("closed fd = %d\n", sock_fd_);
     throw std::runtime_error("closed client socket");
   }
-  req.raw_data_ += request;
+  raw_data_ += buff;
 
-  std::cout << "read from socket(fd:" << req.sock_fd_ << ")"
-            << ":'" << escape(req.raw_data_) << "'" << std::endl;
-  if (req.state_ == ReadingStartLine && req.isActionable()) {
-    req.trimToEndingChars();
-    req.parseStartline();
-    req.moveToNextState();
+  std::cout << "read from socket(fd:" << sock_fd_ << ")"
+            << ":'" << escape(raw_data_) << "'" << std::endl;
+  if (state_ == ReadingStartLine && isActionable()) {
+    trimToEndingChars();
+    parseStartline();
+    moveToNextState();
   }
-  if (req.state_ == ReadingHeaders && req.isActionable()) {
-    req.trimToEndingChars();
-    req.parseHeaders();
-    req.moveToNextState();
+  if (state_ == ReadingHeaders && isActionable()) {
+    trimToEndingChars();
+    parseHeaders();
+    moveToNextState();
   }
-  if (req.state_ == ReadingChunkedBody) {
-    req.readChunkedBody();
-  } else if (req.state_ == ReadingBody && req.isActionable()) {
-    req.readBody();
+  if (state_ == ReadingChunkedBody) {
+    readChunkedBody();
+  } else if (state_ == ReadingBody && isActionable()) {
+    readBody();
   }
 
-  return req.state_;
+  return state_;
 }
 
-bool HttpRequest::isReceivingBody() {
-  if ((!isChunked() && headers_.content_length == 0)) {
+bool HttpRequestReader::isReceivingBody() {
+  std::cout << request_.headers_.content_length << std::endl;
+  if ((!request_.isChunked() && request_.headers_.content_length == 0)) {
     return false;
   }
   return true;
 }
-void HttpRequest::parseStartline() {
+void HttpRequestReader::parseStartline() {
   std::stringstream ss = std::stringstream(raw_data_);
   std::string method;
   std::string request_target;
@@ -74,13 +74,13 @@ void HttpRequest::parseStartline() {
                request_target.c_str(), version.c_str());
 }
 
-void HttpRequest::assignAndValidateMethod(const std::string &method) {
+void HttpRequestReader::assignAndValidateMethod(const std::string &method) {
   if (method == "GET") {
-    method_ = GET;
+    request_.method_ = HttpRequest::GET;
   } else if (method == "POST") {
-    method_ = POST;
+    request_.method_ = HttpRequest::POST;
   } else if (method == "DELETE") {
-    method_ = DELETE;
+    request_.method_ = HttpRequest::DELETE;
   } else if (method == "PUT" || method == "PATCH" || method == "HEAD" || method == "OPTIONS") {
     throw MethodNotAllowedException("Http Request: method not allowed");
   } else {
@@ -88,36 +88,37 @@ void HttpRequest::assignAndValidateMethod(const std::string &method) {
   }
 }
 
-void HttpRequest::assignAndValidateRequestTarget(const std::string &request_target) {
+void HttpRequestReader::assignAndValidateRequestTarget(const std::string &request_target) {
   if (request_target[0] == '/') {
-    request_target_ = URI::parseRequestURI(request_target);
+    request_.request_target_ = URI::parseRequestURI(request_target);
   } else {
     throw BadRequestException("Http Request: invalid request target");
   }
 }
 
-void HttpRequest::assignAndValidateVersion(const std::string &version) {
+void HttpRequestReader::assignAndValidateVersion(const std::string &version) {
   if (version == "HTTP/1.1") {
-    version_ = HTTP1_1;
+    request_.version_ = HttpRequest::HTTP1_1;
   } else {
     throw VersionNotSupportedException("Http Request: invalid version");
   }
 }
 
-void HttpRequest::initAnalyzeFuncs(std::map<std::string, void (HttpRequest::*)(const std::string &)> &analyze_funcs) {
-  analyze_funcs["host"] = &HttpRequest::analyzeHost;
-  analyze_funcs["content-length"] = &HttpRequest::analyzeContentLength;
-  analyze_funcs["transfer-encoding"] = &HttpRequest::analyzeTransferEncoding;
-  analyze_funcs["date"] = &HttpRequest::analyzeDate;
+void HttpRequestReader::initAnalyzeFuncs(
+    std::map<std::string, void (HttpRequestReader::*)(const std::string &)> &analyze_funcs) {
+  analyze_funcs["host"] = &HttpRequestReader::analyzeHost;
+  analyze_funcs["content-length"] = &HttpRequestReader::analyzeContentLength;
+  analyze_funcs["transfer-encoding"] = &HttpRequestReader::analyzeTransferEncoding;
+  analyze_funcs["date"] = &HttpRequestReader::analyzeDate;
 }
 
-void HttpRequest::parseHeaders() {
+void HttpRequestReader::parseHeaders() {
   std::stringstream ss(raw_data_);
 
   std::string::size_type start = 0;
   std::string::size_type end = raw_data_.find(CRLF, start);
 
-  std::map<std::string, void (HttpRequest::*)(const std::string &)> analyze_funcs;
+  std::map<std::string, void (HttpRequestReader::*)(const std::string &)> analyze_funcs;
   initAnalyzeFuncs(analyze_funcs);
   while (true) {
     std::string line = raw_data_.substr(start, end - start);
@@ -145,10 +146,10 @@ void HttpRequest::parseHeaders() {
   }
 
   validateHeaders();
-  printHeaders();
+  request_.printHeaders();
 }
 
-void HttpRequest::validateHeaders() {
+void HttpRequestReader::validateHeaders() {
   // https://www.rfc-editor.org/rfc/rfc7230#section-5.4
   // validate required headers
   if (!hasField(HostField)) {
@@ -158,21 +159,23 @@ void HttpRequest::validateHeaders() {
   // https://www.rfc-editor.org/rfc/rfc7230#section-3.3.3
   // check if content-length and transfer-encoding are both present
   // todo: refactor hasField
-  if (hasField(ContentLengthField) && headers_.transfer_encodings.size() != 0) {
+  if (hasField(ContentLengthField) && request_.headers_.transfer_encodings.size() != 0) {
     throw BadRequestException("both content-length and transfer-encoding are present");
   }
 }
 
-bool HttpRequest::hasField(HeaderField field) const { return received_fields_.find(field) != received_fields_.end(); }
+bool HttpRequestReader::hasField(HeaderField field) const {
+  return received_fields_.find(field) != received_fields_.end();
+}
 
-void HttpRequest::insertIfNotDuplicate(HeaderField field, const char *error_msg) {
+void HttpRequestReader::insertIfNotDuplicate(HeaderField field, const char *error_msg) {
   if (received_fields_.find(field) != received_fields_.end()) {
     throw BadRequestException(error_msg);
   }
   received_fields_.insert(field);
 }
 
-void HttpRequest::analyzeHost(const std::string &value) {
+void HttpRequestReader::analyzeHost(const std::string &value) {
   std::string hostHeader = trimUntilCRLF(value);
 
   insertIfNotDuplicate(HostField, "Http Request: duplicated host header");
@@ -182,12 +185,12 @@ void HttpRequest::analyzeHost(const std::string &value) {
   std::size_t colonPos = hostHeader.find(':');
   if (colonPos != std::string::npos) {
     // If there is a colon in the string, split it into hostname and port
-    headers_.host.uri_host = hostHeader.substr(0, colonPos);
+    request_.headers_.host.uri_host = hostHeader.substr(0, colonPos);
     port = hostHeader.substr(colonPos + 1);
   } else {
     // If there is no colon, the whole string is the hostname
-    headers_.host.uri_host = hostHeader;
-    headers_.host.port = DEFAULT_HTTP_PORT;
+    request_.headers_.host.uri_host = hostHeader;
+    request_.headers_.host.port = DEFAULT_HTTP_PORT;
   }
 
   // validate uri-host
@@ -199,14 +202,14 @@ void HttpRequest::analyzeHost(const std::string &value) {
     }
 
     // todo: handle overflow
-    headers_.host.port = std::atoi(port.c_str());
-    if (headers_.host.port < MIN_PORT_NUM || headers_.host.port > MAX_PORT_NUM) {
+    request_.headers_.host.port = std::atoi(port.c_str());
+    if (request_.headers_.host.port < MIN_PORT_NUM || request_.headers_.host.port > MAX_PORT_NUM) {
       throw BadRequestException("Http Request: invalid port");
     }
   }
 }
 
-void HttpRequest::analyzeContentLength(const std::string &value) {
+void HttpRequestReader::analyzeContentLength(const std::string &value) {
   // https://www.rfc-editor.org/rfc/rfc7230#section-3.3.3
   insertIfNotDuplicate(ContentLengthField, "Http Request: duplicated content length");
 
@@ -219,17 +222,17 @@ void HttpRequest::analyzeContentLength(const std::string &value) {
   if (val < 0 || conf_->getMaxBodySize() < val) {
     throw BadRequestException("Http Request: invalid content-length");
   }
-  headers_.content_length = val;
+  request_.headers_.content_length = val;
 }
 
-void HttpRequest::analyzeTransferEncoding(const std::string &value) {
+void HttpRequestReader::analyzeTransferEncoding(const std::string &value) {
   std::stringstream ss(value);
   std::string encoding;
   while (std::getline(ss, encoding, ',')) {
     toLower(encoding);
     encoding = trimOws(encoding);
     if (encoding == "chunked") {
-      headers_.transfer_encodings.push_back(Chunked);
+      request_.headers_.transfer_encodings.push_back(HttpRequest::Chunked);
     } else if (encoding == "gzip" || encoding == "compress" || encoding == "deflate") {
       throw NotImplementedException("Http Request: unsupported transfer-encoding");
     } else {
@@ -238,39 +241,39 @@ void HttpRequest::analyzeTransferEncoding(const std::string &value) {
   }
 }
 
-void HttpRequest::analyzeDate(const std::string &value) {
+void HttpRequestReader::analyzeDate(const std::string &value) {
   std::string dateStr = trimUntilCRLF(value);
   insertIfNotDuplicate(DateField, "Http Request: duplicated date");
 
   std::istringstream ss(dateStr);
 
   // this checks if the format matches
-  ss >> std::get_time(&headers_.date, "%a, %d %b %Y %H:%M:%S");
+  ss >> std::get_time(&request_.headers_.date, "%a, %d %b %Y %H:%M:%S");
   if (ss.fail()) {
     std::cout << "ss.fail()" << std::endl;
     throw BadRequestException("Http Request: invalid date");
   }
 
   // this checks if the date is valid
-  std::time_t t = std::mktime(&headers_.date);
+  std::time_t t = std::mktime(&request_.headers_.date);
   if (t == -1) {
     throw BadRequestException("Http Request: invalid date");
   }
 }
 
-void HttpRequest::validateHeaderName(const std::string &name) {
+void HttpRequestReader::validateHeaderName(const std::string &name) {
   if (!isToken(name)) {
     throw BadRequestException("Http Request: invalid header name");
   }
 }
 
-void HttpRequest::validateHeaderValue(const std::string &value) {
+void HttpRequestReader::validateHeaderValue(const std::string &value) {
   if (!isVchar(value)) {
     throw BadRequestException("Http Request: invalid header value");
   }
 }
 
-void HttpRequest::readChunkedBody() {
+void HttpRequestReader::readChunkedBody() {
   while (true) {
     if (chunked_reading_state_ == ReadingChunkedSize) {
       std::string::size_type end = raw_data_.find(CRLF);
@@ -301,7 +304,7 @@ void HttpRequest::readChunkedBody() {
         throw BadRequestException("Http Request: invalid chunked body");
       }
 
-      body_ += raw_data_.substr(0, chunked_size_);
+      request_.body_ += raw_data_.substr(0, chunked_size_);
       raw_data_ = raw_data_.substr(chunked_size_ + 2);
 
       chunked_reading_state_ = ReadingChunkedSize;
@@ -310,24 +313,24 @@ void HttpRequest::readChunkedBody() {
   return;
 }
 
-void HttpRequest::readBody() {
-  body_ = raw_data_.substr(0, headers_.content_length);
+void HttpRequestReader::readBody() {
+  request_.body_ = raw_data_.substr(0, request_.headers_.content_length);
   moveToNextState();
 }
 
-bool HttpRequest::isActionable() {
+bool HttpRequestReader::isActionable() {
   if (state_ == ReadingStartLine || state_ == ReadingHeaders) {
     return raw_data_.find(getEndingChars()) != std::string::npos;
   } else if (state_ == ReadingBody) {
     // this accepts body that is larger than content-length
-    return raw_data_.size() >= headers_.content_length;
+    return raw_data_.size() >= request_.headers_.content_length;
   } else {
-    throw std::runtime_error("invalid HttpRequest state");
+    throw std::runtime_error("invalid HttpRequestReader state");
   }
 }
 
 // isActionable must be called before calling this function
-void HttpRequest::trimToEndingChars() {
+void HttpRequestReader::trimToEndingChars() {
   const std::string ending_chars = getEndingChars();
   size_t end_pos = raw_data_.find(ending_chars);
 
@@ -335,18 +338,18 @@ void HttpRequest::trimToEndingChars() {
   raw_data_ = raw_data_.substr(0, end_pos + ending_chars.size());
 }
 
-std::string HttpRequest::getEndingChars() const {
+std::string HttpRequestReader::getEndingChars() const {
   switch (state_) {
     case ReadingStartLine:
       return CRLF;
     case ReadingHeaders:
       return std::string(CRLF) + CRLF;
     default:
-      throw std::runtime_error("invalid HttpRequest state");
+      throw std::runtime_error("invalid HttpRequestReader state");
   }
 }
 
-void HttpRequest::moveToNextState() {
+void HttpRequestReader::moveToNextState() {
   raw_data_ = rest_;
   rest_.clear();
   switch (state_) {
@@ -355,7 +358,7 @@ void HttpRequest::moveToNextState() {
       break;
     case ReadingHeaders:
       if (isReceivingBody()) {
-        if (isChunked()) {
+        if (request_.isChunked()) {
           state_ = ReadingChunkedBody;
         } else {
           state_ = ReadingBody;
@@ -369,38 +372,6 @@ void HttpRequest::moveToNextState() {
       state_ = FinishedReading;
       break;
     default:
-      throw std::runtime_error("invalid HttpRequest state");
+      throw std::runtime_error("invalid HttpRequestReader state");
   }
-}
-
-void HttpRequest::refresh() {
-  raw_data_.clear();
-  rest_.clear();
-  state_ = ReadingStartLine;
-  headers_ = Headers();
-  body_.clear();
-  chunked_size_ = 0;
-  chunked_reading_state_ = ReadingChunkedSize;
-}
-
-bool HttpRequest::methodIs(Method method) const { return method_ == method; };
-
-const std::string &HttpRequest::getBody() const { return body_; }
-
-URI *HttpRequest::getRequestTarget() const { return request_target_; }
-const HttpRequest::Method &HttpRequest::getMethod() const { return method_; }
-const HttpRequest::Host &HttpRequest::getHost() const { return headers_.host; }
-bool HttpRequest::isChunked() {
-  std::vector<TransferEncoding> &transferEncodings = headers_.transfer_encodings;
-  return std::find(transferEncodings.begin(), transferEncodings.end(), HttpRequest::Chunked) != transferEncodings.end();
-}
-
-void HttpRequest::printHeaders() {
-  DEBUG_PUTS("HEADER PARSED");
-  DEBUG_PRINTF("host: %s \n", (headers_.host.uri_host + ":" + std::to_string(headers_.host.port)).c_str());
-  DEBUG_PRINTF("content-length: %zu \n", headers_.content_length);
-  DEBUG_PRINTF("transfer-encoding: %s \n", isChunked() ? "chunked" : "none");
-  char buf[30];
-  std::strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S", &headers_.date);
-  DEBUG_PRINTF("date: %s \n", buf);
 }

@@ -6,6 +6,7 @@
 // #include "../Config/Cache.hpp"
 #include "../EventManager.hpp"
 #include "../IO/IReadCloser.hpp"
+#include "HttpRequestReader.hpp"
 #include "Observee.hpp"
 
 class CGI;
@@ -19,9 +20,9 @@ class ConnectionSocket : public Observee {
         port_(port),
         conf_(conf),
         loc_conf_(NULL),
-        request_(HttpRequest(id, &conf)),
-        response_(HttpResponse(id, port, &conf)),
-        rc_(rc) {}
+        rc_(rc),
+        rreader_(id, &conf, request_, rc_),
+        response_(HttpResponse(id, port, &conf)) {}
   ~ConnectionSocket() { delete rc_; }
   void notify(struct kevent ev);
   void shutdown();
@@ -42,8 +43,9 @@ class ConnectionSocket : public Observee {
   Config &conf_;
   LocationConf *loc_conf_;
   HttpRequest request_;
-  HttpResponse response_;
   IReadCloser *rc_;
+  HttpRequestReader rreader_;
+  HttpResponse response_;
   Cache cache_;
   std::string extension_;
 

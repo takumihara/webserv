@@ -3,16 +3,17 @@
 #include "../src/Config/Config.hpp"
 #include "../src/EventManager.hpp"
 #include "../src/HttpException.hpp"
-#include "../src/HttpRequest.hpp"
+#include "HttpRequest.hpp"
 #include "mock/MockReadCloser.hpp"
 
 TEST(Request, Get) {
   IReadCloser *rc = new MockReadCloser("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n");
   Config conf;
-  HttpRequest req(0, &conf);
-  bool finished = HttpRequest::readRequest(req, rc);
+  HttpRequest req;
+  HttpRequestReader rreader(0, &conf, req, rc);
+  HttpRequestReader::State state = rreader.readRequest();
 
-  ASSERT_TRUE(finished);
+  ASSERT_EQ(state, HttpRequestReader::FinishedReading);
   ASSERT_EQ(req.getRequestTarget()->getPath(), "/");
   ASSERT_TRUE(req.methodIs(HttpRequest::GET));
   ASSERT_EQ(req.getHost().uri_host, "localhost");
@@ -23,10 +24,11 @@ TEST(Request, BodyLargerThanContentLength) {
   IReadCloser *rc = new MockReadCloser("POST / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 3\r\n\r\nbody");
   EventManager em = EventManager();
   Config conf;
-  HttpRequest req(0, &conf);
-  bool finished = HttpRequest::readRequest(req, rc);
+  HttpRequest req;
+  HttpRequestReader rreader(0, &conf, req, rc);
+  HttpRequestReader::State state = rreader.readRequest();
 
-  ASSERT_TRUE(finished);
+  ASSERT_EQ(state, HttpRequestReader::FinishedReading);
   ASSERT_EQ(req.getBody(), "bod");
 }
 
@@ -34,9 +36,10 @@ TEST(Request, NoHostFeild) {
   IReadCloser *rc = new MockReadCloser("GET / HTTP/1.1\r\nContent-Length: 3\r\n\r\n");
   EventManager em = EventManager();
   Config conf;
-  HttpRequest req(0, &conf);
+  HttpRequest req;
   try {
-    HttpRequest::readRequest(req, rc);
+    HttpRequestReader rreader(0, &conf, req, rc);
+    HttpRequestReader::State state = rreader.readRequest();
     FAIL();
   } catch (BadRequestException &e) {
     ASSERT_EQ(std::string(e.what()), std::string("missing host header"));
@@ -50,9 +53,10 @@ TEST(Request, BothContentLengthAndTransferEncoding) {
       "POST / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 4\r\nTransfer-Encoding: chunked\r\n\r\nbody");
   EventManager em = EventManager();
   Config conf;
-  HttpRequest req(0, &conf);
+  HttpRequest req;
   try {
-    HttpRequest::readRequest(req, rc);
+    HttpRequestReader rreader(0, &conf, req, rc);
+    HttpRequestReader::State state = rreader.readRequest();
     std::cout << "No Exception" << std::endl;
     FAIL();
   } catch (BadRequestException &e) {
@@ -69,10 +73,11 @@ TEST(Request, TooBigContentLength) {
   IReadCloser *rc = new MockReadCloser(req_str);
   EventManager em = EventManager();
   Config conf;
-  HttpRequest req(0, &conf);
+  HttpRequest req;
 
   try {
-    HttpRequest::readRequest(req, rc);
+    HttpRequestReader rreader(0, &conf, req, rc);
+    HttpRequestReader::State state = rreader.readRequest();
     std::cout << "No Exception" << std::endl;
     FAIL();
   } catch (BadRequestException &e) {
@@ -88,10 +93,11 @@ TEST(Request, NegativeContentLength) {
   IReadCloser *rc = new MockReadCloser(req_str);
   EventManager em = EventManager();
   Config conf;
-  HttpRequest req(0, &conf);
+  HttpRequest req;
 
   try {
-    HttpRequest::readRequest(req, rc);
+    HttpRequestReader rreader(0, &conf, req, rc);
+    HttpRequestReader::State state = rreader.readRequest();
     std::cout << "No Exception" << std::endl;
     FAIL();
   } catch (BadRequestException &e) {
