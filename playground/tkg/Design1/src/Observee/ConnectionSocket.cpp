@@ -18,11 +18,12 @@
 #include <map>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
 #include "../Config/validation.h"
 #include "../HttpException.hpp"
 #include "CGI/CGI.hpp"
-#include "CGIInfo.hpp"
+#include "CGI/CGIInfo.hpp"
 #include "GET.hpp"
 #include "POST.hpp"
 #include "helper.hpp"
@@ -62,7 +63,7 @@ void ConnectionSocket::execCGI(const std::string &path) {
   const bool file_exist = stat(info.script_name_.c_str(), &st) != -1;
   if (!file_exist) throw ResourceNotFoundException("cgi script is not found");
   if ((st.st_mode & S_IFMT) == S_IFDIR || !isExecutable(info.script_name_.c_str()))
-    throw ResourceForbidenException("cgi script name is directory or not excutable");
+    throw ResourceForbiddenException("cgi script name is directory or not excutable");
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1) {
     throw InternalServerErrorException("error socketpair");
   }
