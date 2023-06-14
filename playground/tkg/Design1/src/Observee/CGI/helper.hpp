@@ -1,11 +1,15 @@
 #pragma once
+#include <string>
+#include <vector>
 
-namespace CGI {
-bool isMark(char c);
-bool isUnreserved(char c);
-bool isHex(char c);
-bool isEscaped(char *escape);
-bool isReserved(char c);
-bool isPchar(char *c);
-bool isAbsPath(char *path);
-}
+namespace CGIValidation {
+bool isMark(const char c);
+bool isUnreserved(const char c);
+bool isHex(const char c);
+bool isEscaped(const char *escape);
+bool isReserved(const char c);
+bool isPchar(const char *c);
+bool isAbsPath(const char *path);
+bool isAbsURI(const std::string &raw_uri);
+std::vector<std::string> ExtractLines(const std::string &data);
+}  // namespace CGIValidation

@@ -18,8 +18,9 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "../../helper.hpp"
 #include "../HttpRequest/HttpRequestReader.hpp"
-#include "../helper.hpp"
+#include "helper.hpp"
 
 void CGI::shutdown() {
   DEBUG_PUTS("CGI shutdown");
@@ -30,39 +31,36 @@ void CGI::shutdown() {
   em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
-std::vector<std::string> ExtractLines(const std::string &data) {
-  std::vector<std::string> lines;
-  std::string str;
-  std::stringstream ss(data);
-  while (getline(ss, str)) {
-    lines.push_back(str);
-  }
-  return lines;
-}
-
 bool CGI::isDocRes(std::vector<std::string> &lines) {
   // todo:
   (void)lines;
   return false;
 }
 
-bool CGI::isLocalRedirectRes(std::vector<std::string> &lines) {
-  // todo:
-  if (lines.size() != 1) return false;
-  std::stringstream ss(lines[0]);
+std::pair<std::string, std::string> getHeaderField(std::string &filed) {
+  std::stringstream ss(filed);
   std::string name, value;
   std::getline(ss, name, ':');
   std::getline(ss, value);
   value = trimOws(value);
-  if (name != "Location") return false;
-  // if (isValid)
-  return false;
+  return std::pair<std::string, std::string>(name, value);
+}
+
+bool CGI::isLocalRedirectRes(std::vector<std::string> &lines) {
+  if (lines.size() != 1) return false;
+  t_field filed = getHeaderField(lines[0]);
+  if (filed.first != "Location") return false;
+  if (!CGIValidation::isAbsPath(filed.second.c_str())) return false;
+  return true;
 }
 
 bool CGI::isClientRedirectRes(std::vector<std::string> &lines) {
   // todo:
-  (void)lines;
-  return false;
+  if (lines.size() != 1) return false;
+  t_field filed = getHeaderField(lines[0]);
+  if (filed.first != "Location") return false;
+  if (!CGIValidation::isAbsURI(filed.second)) return false;
+  return true;
 }
 
 bool CGI::isClientRedirectWithDocRes(std::vector<std::string> &lines) {
@@ -75,14 +73,20 @@ CGI::Type CGI::getResponseType(std::vector<std::string> &lines) {
   if (isDocRes(lines)) {
     // todo: document response type
   } else if (isLocalRedirectRes(lines)) {
+    return CGI::LocalRedir;
+  } else if (isClientRedirectRes(lines)) {
+    return CGI::ClientRedir;
+  } else if (isClientRedirectWithDocRes(lines)) {
+    return CGI::ClientRedirWithDoc;
   }
-  return Doc;
+  return CGI::Error;
 }
 
 int CGI::parseCGIResponse() {
   // todo:
-  std::vector<std::string> lines = ExtractLines(recieve_data_);
-  getResponseType(lines);
+  std::vector<std::string> lines = CGIValidation::ExtractLines(recieve_data_);
+  CGI::Type type = getResponseType(lines);
+  (void)type;
   return 1;
 }
 

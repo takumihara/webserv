@@ -6,7 +6,9 @@
 
 class CGI : public Observee {
  public:
-  enum Type { Doc, LocalRedir, ClientRedir, ClientRedirWithDoc };
+  typedef std::pair<std::string, std::string> t_field;
+
+  enum Type { Error, Doc, LocalRedir, ClientRedir, ClientRedirWithDoc };
   CGI(int id, int pid, EventManager *em, Observee *parent, HttpRequest *request, HttpResponse *response)
       : Observee(id, "cgi", em, parent),
         pid_(pid),

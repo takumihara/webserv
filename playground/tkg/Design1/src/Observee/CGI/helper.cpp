@@ -1,10 +1,13 @@
 #include "helper.hpp"
 
 #include <cctype>
+#include <sstream>
 
-namespace CGI {
+#include "../../URI/URI.hpp"
 
-bool isMark(char c) {
+namespace CGIValidation {
+
+bool isMark(const char c) {
   switch (c) {
     case '-':
     case '_':
@@ -21,9 +24,9 @@ bool isMark(char c) {
   }
 }
 
-bool isUnreserved(char c) { return std::isalnum(c) || isMark(c); }
+bool isUnreserved(const char c) { return std::isalnum(c) || isMark(c); }
 
-bool isHex(char c) {
+bool isHex(const char c) {
   if ('0' <= c && c <= '9')
     return true;
   else if ('a' <= c && c <= 'f')
@@ -33,9 +36,9 @@ bool isHex(char c) {
   return false;
 }
 
-bool isEscaped(char *escape) { return escape[0] == '%' && isHex(escape[1]) && isHex(escape[2]); }
+bool isEscaped(const char *escape) { return escape[0] == '%' && isHex(escape[1]) && isHex(escape[2]); }
 
-bool isReserved(char c) {
+bool isReserved(const char c) {
   switch (c) {
     case ';':
     case '/':
@@ -55,25 +58,7 @@ bool isReserved(char c) {
   }
 }
 
-bool isAbsPath(char *path) {
-  if (*path != '/') return false;
-  path++;
-  bool pre_is_slash = true;
-  while (*path != '\0') {
-    if (*path == '/') {
-      if (pre_is_slash == true) return false;
-      pre_is_slash = true;
-    } else if (isPchar(path)) {
-      if (*path == '%') path += 2;
-    } else {
-      return false;
-    }
-    path++;
-  }
-  return true;
-}
-
-bool isPchar(char *c) {
+bool isPchar(const char *c) {
   switch (*c) {
     case ':':
     case '@':
@@ -87,4 +72,40 @@ bool isPchar(char *c) {
   return isUnreserved(*c) || isEscaped(c);
 }
 
-};  // namespace CGI
+std::vector<std::string> ExtractLines(const std::string &data) {
+  std::vector<std::string> lines;
+  std::string str;
+  std::stringstream ss(data);
+  while (getline(ss, str)) {
+    lines.push_back(str);
+  }
+  return lines;
+}
+
+bool isAbsPath(const char *path) {
+  if (*path != '/') return false;
+  path++;
+  while (*path != '\0') {
+    if (*path == '/' || isPchar(path)) {
+      if (*path == '%') path += 2;
+    } else {
+      return false;
+    }
+    path++;
+  }
+  return true;
+}
+
+bool isAbsURI(const std::string &raw_uri) {
+  // todo:
+  try {
+    URI *uri = URI::parse(raw_uri);
+    if (uri->getScheme() == "") return false;
+    delete uri;
+  } catch (std::runtime_error &e) {
+    return false;
+  }
+  return true;
+}
+
+};  // namespace CGIValidation
