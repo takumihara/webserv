@@ -38,6 +38,7 @@ TEST(E2E, Get) {
 
 TEST(E2E, ObsFold) {
   std::string res = sendRequest(ObsFoldRequest());
+  std::cout << res << std::endl;
 
   EXPECT_TRUE(includes(res, "HTTP/1.1 400 Bad Request"));
 }
