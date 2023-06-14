@@ -65,5 +65,5 @@ class URI {
 
   void setFragment(const std::string& fragment);
   void setPath(const std::string& path);
-  void setQuery(std::string raw_query);
+  void parseAndSetQuery(std::string raw_query);
 };

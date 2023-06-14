@@ -60,7 +60,7 @@ URI::URI(std::string raw_uri, bool via_request) : user_info_(NULL), omit_host_(f
     size_t query_pos = raw_uri.find("?");
     if (query_pos != std::string::npos) {
       raw_query_ = raw_uri.substr(query_pos + 1);
-      setQuery(raw_query_);
+      parseAndSetQuery(raw_query_);
       raw_uri = raw_uri.substr(0, query_pos);
     }
   }
@@ -113,7 +113,7 @@ URI::URI(std::string raw_uri, bool via_request) : user_info_(NULL), omit_host_(f
   setPath(raw_uri);
 }
 
-void URI::setQuery(std::string raw_query) {
+void URI::parseAndSetQuery(std::string raw_query) {
   while (raw_query != "") {
     std::string key;
     size_t ampersand_pos = raw_query.find("&");
