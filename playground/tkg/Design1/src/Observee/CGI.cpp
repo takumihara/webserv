@@ -131,9 +131,11 @@ void CGI::notify(struct kevent ev) {
     }
     int res = write(id_, &response[sending_size_], size);
     if (res == -1) {
-      // todo: set response staus 5xx and delete this CGI observee
       perror("sendto");
-      throw std::runtime_error("send error");
+      response_->setStatus(501);
+      em_->registerWriteEvent(parent_->id_);
+      shutdown();
+      return;
     }
     sending_size_ += size;
     if (sending_size_ == request_->getBody().size()) {

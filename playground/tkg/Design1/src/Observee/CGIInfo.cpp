@@ -5,6 +5,8 @@
 
 #include "../Config/validation.h"
 #include "../HttpRequest/HttpRequest.hpp"
+#include "../URI/URI.hpp"
+#include "../URI/encoding.hpp"
 #include "../helper.hpp"
 
 std::string getScriptName(const std::string &path, const std::string &ext) {
@@ -36,10 +38,17 @@ std::string getPathInfo(const std::string &path, const std::string &ext) {
   return "";
 }
 
-CGIInfo parseCGI(const std::string &path, const std::string &ext, HttpRequest &req) {
+std::string setPathTranslated(std::string root, std::string &path_info) {
+  if (root == "/") return path_info;
+  if (root[root.size() - 1] == '/') root.pop_back();
+  return root + path_info;
+}
+
+CGIInfo parseCGI(const std::string &path, const std::string &ext, HttpRequest &req, LocationConf *conf) {
   // todo:
   std::stringstream ss;
   CGIInfo info;
+  info.loc_conf = conf;
   ss << req.headers_.content_length;
   info.content_length_ = ss.str();
   ss.str("");
@@ -47,8 +56,8 @@ CGIInfo parseCGI(const std::string &path, const std::string &ext, HttpRequest &r
   info.content_type_ = "text/plain";
   info.gateway_interface_ = "CGI/1.1";
   info.path_info_ = getPathInfo(path, ext);
-  // todo: path_translated
-  info.query_string_ = req.getRequestTarget()->getQuery();
+  info.path_translated_ = setPathTranslated(conf->common_.root_, info.path_info_);
+  info.query_string_ = Encoding::unescape(req.getRequestTarget()->getRawQuery(), Encoding::QueryComponent);
   // todo: set remote_addr and remote_host by value obtained when accept()
   info.request_method_ = methodToString(req.method_);
   info.script_name_ = getScriptName(path, ext);

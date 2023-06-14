@@ -66,7 +66,7 @@ void ConnectionSocket::execCGI(const std::string &path) {
   int pid = fork();
   if (pid == 0) {
     close(fd[0]);
-    CGIInfo info = parseCGI(path, extension_, request_);
+    CGIInfo info = parseCGI(path, extension_, request_, loc_conf_);
     setCGIInfo(info);
     argv[0] = const_cast<char *>(info.script_name_.c_str());
     if (dup2(fd[1], STDIN_FILENO) == -1) {
