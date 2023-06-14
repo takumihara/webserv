@@ -11,11 +11,10 @@
 using Encoding::Fragment;
 using Encoding::Path;
 
-std::pair<std::string, UserInfo*> parseAuthority(std::string authority);
 bool validUserinfo(const std::string& user_info);
 std::string parseHost(const std::string& host);
 bool validRegNameHost(const std::string& host);
-bool validOptionalPort(std::string port);
+bool validOptionalPort(const std::string& port);
 std::string parseScheme(std::string& raw_url);
 bool stringContainsCTLByte(const std::string& str);
 
@@ -105,9 +104,7 @@ URI::URI(std::string raw_uri, bool via_request) : user_info_(NULL), omit_host_(f
     } else {
       raw_uri = "";
     }
-    std::pair<std::string, UserInfo*> res = parseAuthority(authority);
-    host_ = res.first;
-    user_info_ = res.second;
+    parseAndSetAuthority(authority);
   }
 
   setPath(raw_uri);
@@ -138,37 +135,46 @@ void URI::parseAndSetQuery(std::string raw_query) {
   }
 }
 
-// todo(thara): refactor
-std::pair<std::string, UserInfo*> parseAuthority(std::string authority) {
+void URI::parseAndSetAuthority(std::string authority) {
   std::string host;
   size_t at_pos = authority.find("@");
-  if (at_pos == std::string::npos) {
-    host = parseHost(authority);
-    return std::make_pair(host, (UserInfo*)NULL);
-  }
-  host = parseHost(authority.substr(at_pos + 1));
+  if (at_pos != std::string::npos) {
+    std::string raw_user_info = authority.substr(0, at_pos);
+    if (!validUserinfo(raw_user_info)) {
+      throw std::runtime_error("URI: invalid userinfo");
+    }
 
-  std::string raw_user_info = authority.substr(0, at_pos);
-  if (!validUserinfo(raw_user_info)) {
-    throw std::runtime_error("URI: invalid userinfo");
+    size_t colon_pos = raw_user_info.find(":");
+    if (colon_pos == std::string::npos) {
+      raw_user_info = Encoding::unescape(raw_user_info, Encoding::UserInfo);
+
+      user_info_ = new UserInfo(raw_user_info);
+    } else {
+      std::string username = raw_user_info.substr(0, colon_pos);
+      std::string password = raw_user_info.substr(colon_pos + 1);
+      username = Encoding::unescape(username, Encoding::UserInfo);
+      password = Encoding::unescape(password, Encoding::UserInfo);
+      user_info_ = new UserInfo(username, password);
+    }
+
+    authority = authority.substr(at_pos + 1);
   }
 
-  size_t colon_pos = raw_user_info.find(":");
-  UserInfo* user;
-  if (colon_pos == std::string::npos) {
-    raw_user_info = Encoding::unescape(raw_user_info, Encoding::UserInfo);
-    user = new UserInfo(raw_user_info);
-  } else {
-    std::string username = raw_user_info.substr(0, colon_pos);
-    std::string password = raw_user_info.substr(colon_pos + 1);
-    username = Encoding::unescape(username, Encoding::UserInfo);
-    password = Encoding::unescape(password, Encoding::UserInfo);
-    user = new UserInfo(username, password);
+  size_t colon_pos = authority.find(":");
+  if (colon_pos != std::string::npos) {
+    std::string port = authority.substr(colon_pos + 1);
+    if (!validOptionalPort(port)) {
+      throw std::runtime_error("URI: invalid optional port");
+    }
+    port_ = port;
+    authority = authority.substr(0, colon_pos);
   }
-  return std::make_pair(host, user);
+
+  host_ = parseHost(authority);
+
+  return;
 }
 
-// todo(thara): unescape in the caller
 // validUserinfo reports whether s is a valid userinfo string per RFC 3986
 // userinfo    = *( unreserved / pct-encoded / sub-delims / ":" )
 // unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
@@ -195,15 +201,8 @@ std::string parseHost(const std::string& host) {
     }
     throw std::runtime_error("URI: IP-literal is not supported");
   }
-  size_t colon_pos = host.find(":");
-  if (!validRegNameHost(host.substr(0, colon_pos))) {
+  if (!validRegNameHost(host)) {
     throw std::runtime_error("URI: invalid host");
-  }
-  if (colon_pos != std::string::npos) {
-    std::string port = host.substr(colon_pos);
-    if (!validOptionalPort(port)) {
-      throw std::runtime_error("URI: invalid optional port");
-    }
   }
   return Encoding::unescape(host, Encoding::Host);
 }
@@ -220,14 +219,9 @@ bool validRegNameHost(const std::string& host) {
   return true;
 }
 
-bool validOptionalPort(std::string port) {
-  if (port == "") {
-    return true;
-  }
-  if (port[0] != ':') {
-    return false;
-  }
-  return isAllDigit(port.substr(1));
+bool validOptionalPort(const std::string& port) {
+  if (port == "") return true;
+  return isAllDigit(port);
 }
 
 // parseScheme puts the rest of the raw_url into the raw_url parameter and returns the scheme
@@ -367,6 +361,7 @@ URI* URI::resolveReference(const URI& ref) const {
     return uri;
   }
   uri->host_ = host_;
+  uri->port_ = port_;
   uri->user_info_ = user_info_;
   std::string path = merge(escapedPath(), ref.escapedPath());
   path = removeDotSegments(path);
@@ -393,6 +388,9 @@ std::string URI::recompose() const {
       res += user_info_->getString() + "@";
     }
     res += Encoding::escape(host_, Encoding::Host);
+    if (port_ != "") {
+      res += ":" + port_;
+    }
 
     std::string path = escapedPath();
     if (path != "" && path[0] != '/' && host_ != "") {
@@ -418,6 +416,7 @@ std::string URI::recompose() const {
 
 const std::string& URI::getScheme() const { return scheme_; };
 const std::string& URI::getHost() const { return host_; };
+const std::string& URI::getPort() const { return port_; };
 const std::string& URI::getPath() const { return path_; };
 const std::string& URI::getRawQuery() const { return raw_query_; }
 const std::map<std::string, std::vector<std::string> >& URI::getQuery() const { return query_; }

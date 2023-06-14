@@ -13,6 +13,7 @@ TEST(URIParse, URIGeneral) {
 
   ASSERT_EQ(uri->getScheme(), "http");
   ASSERT_EQ(uri->getHost(), "www.example.com");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/info");
   ASSERT_EQ(uri->getRawQuery(), "key1=val1&key2=val2");
   ASSERT_EQ(uri->getQuery().size(), 2);
@@ -32,6 +33,7 @@ TEST(URIParse, SchemaOnly) {
 
   ASSERT_EQ(uri->getScheme(), "schema");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -47,6 +49,7 @@ TEST(URIParse, EmptyHost) {
 
   ASSERT_EQ(uri->getScheme(), "schema");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -62,6 +65,7 @@ TEST(URIParse, PathSlash) {
 
   ASSERT_EQ(uri->getScheme(), "http");
   ASSERT_EQ(uri->getHost(), "example.com");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "//my/path");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -76,7 +80,8 @@ TEST(URIParse, HostWithPort) {
   URI *uri = URI::parse("https://localhost:8080");
 
   ASSERT_EQ(uri->getScheme(), "https");
-  ASSERT_EQ(uri->getHost(), "localhost:8080");
+  ASSERT_EQ(uri->getHost(), "localhost");
+  ASSERT_EQ(uri->getPort(), "8080");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -92,6 +97,7 @@ TEST(URIParse, HostWithUser) {
 
   ASSERT_EQ(uri->getScheme(), "https");
   ASSERT_EQ(uri->getHost(), "localhost");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -107,6 +113,7 @@ TEST(URIParse, HostWithUserAndPassword) {
 
   ASSERT_EQ(uri->getScheme(), "https");
   ASSERT_EQ(uri->getHost(), "localhost");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -122,6 +129,7 @@ TEST(URIParse, EmptyHostWithUserAndPassword) {
 
   ASSERT_EQ(uri->getScheme(), "https");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -137,6 +145,7 @@ TEST(URIParse, Escaped) {
 
   ASSERT_EQ(uri->getScheme(), "http");
   ASSERT_EQ(uri->getHost(), "localhost");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/@");
   ASSERT_EQ(uri->getRawQuery(), "+%26%3D=+%26%3D");
   ASSERT_EQ(uri->getQuery().size(), 1);
@@ -149,6 +158,22 @@ TEST(URIParse, Escaped) {
   ASSERT_EQ(uri->isOmitHost(), false);
 }
 
+TEST(URIParse, OnlyPort) {
+  URI *uri = URI::parse("http://:80/");
+
+  ASSERT_EQ(uri->getScheme(), "http");
+  ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "80");
+  ASSERT_EQ(uri->getPath(), "/");
+  ASSERT_EQ(uri->getRawQuery(), "");
+  ASSERT_EQ(uri->getQuery().size(), 0);
+  ASSERT_EQ(uri->getFragment(), "");
+  ASSERT_EQ(uri->getUsername(), "");
+  ASSERT_EQ(uri->getPassword(), "");
+  ASSERT_EQ(uri->isForceQuery(), false);
+  ASSERT_EQ(uri->getOpaque(), "");
+  ASSERT_EQ(uri->isOmitHost(), false);
+}
 // URI -> path-absolute
 
 TEST(URIParse, OmitHost) {
@@ -156,6 +181,7 @@ TEST(URIParse, OmitHost) {
 
   ASSERT_EQ(uri->getScheme(), "schema");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -173,6 +199,7 @@ TEST(URIParse, Opaque) {
 
   ASSERT_EQ(uri->getScheme(), "https");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "key1=val1&");
   ASSERT_EQ(uri->getQuery().size(), 1);
@@ -192,6 +219,7 @@ TEST(URIParse, URIPathEmpty) {
 
   ASSERT_EQ(uri->getScheme(), "https");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "query");
   ASSERT_EQ(uri->getFragment(), "fragment");
@@ -208,7 +236,8 @@ TEST(URIParse, RelativeGeneral) {
   URI *uri = URI::parse("//localhost:8080?key1=val1#fragment");
 
   ASSERT_EQ(uri->getScheme(), "");
-  ASSERT_EQ(uri->getHost(), "localhost:8080");
+  ASSERT_EQ(uri->getHost(), "localhost");
+  ASSERT_EQ(uri->getPort(), "8080");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "key1=val1");
   ASSERT_EQ(uri->getQuery().size(), 1);
@@ -228,6 +257,7 @@ TEST(URIParse, RelativeAuthority) {
 
   ASSERT_EQ(uri->getScheme(), "");
   ASSERT_EQ(uri->getHost(), "localhost");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -242,7 +272,8 @@ TEST(URIParse, RelativeAuthorityPathAbs) {
   URI *uri = URI::parse("//localhost:80/path");
 
   ASSERT_EQ(uri->getScheme(), "");
-  ASSERT_EQ(uri->getHost(), "localhost:80");
+  ASSERT_EQ(uri->getHost(), "localhost");
+  ASSERT_EQ(uri->getPort(), "80");
   ASSERT_EQ(uri->getPath(), "/path");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -259,6 +290,7 @@ TEST(URIParse, DoubleSlash) {
 
   ASSERT_EQ(uri->getScheme(), "");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -276,6 +308,7 @@ TEST(URIParse, PathAbsolute) {
 
   ASSERT_EQ(uri->getScheme(), "");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/path");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -292,6 +325,7 @@ TEST(URIParse, PathMultiSlash) {
 
   ASSERT_EQ(uri->getScheme(), "");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "//////a");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -309,6 +343,7 @@ TEST(URIParse, TripleSlash) {
 
   ASSERT_EQ(uri->getScheme(), "");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "///");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -326,6 +361,7 @@ TEST(URIParse, PathNoScheme) {
 
   ASSERT_EQ(uri->getScheme(), "");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "nc-seg/path");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -341,6 +377,7 @@ TEST(URIParse, Asterisk) {
 
   ASSERT_EQ(uri->getScheme(), "");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "*");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -356,6 +393,7 @@ TEST(URIParse, QuestionMark) {
 
   ASSERT_EQ(uri->getScheme(), "");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -373,6 +411,7 @@ TEST(URIParse, PathEmpty) {
 
   ASSERT_EQ(uri->getScheme(), "");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -476,51 +515,19 @@ TEST(URIParse, InvalidPath) {
   }
 }
 
-/*
-
- if defined(R.scheme) then
-    T.path      = remove_dot_segments(R.path);
- else
-    if defined(R.authority) then
-       T.authority = R.authority;
-       T.path      = remove_dot_segments(R.path);
-       T.query     = R.query;
-    else
-       if (R.path == "") then
-          T.path = Base.path;
-          if defined(R.query) then
-             T.query = R.query;
-          else
-             T.query = Base.query;
-          endif;
-       else
-          if (R.path starts-with "/") then
-             T.path = remove_dot_segments(R.path);
-          else
-             T.path = merge(Base.path, R.path);
-             T.path = remove_dot_segments(T.path);
-          endif;
-          T.query = R.query;
-       endif;
-       T.authority = Base.authority;
-    endif;
-    T.scheme = Base.scheme;
- endif;
-
-*/
-
 // ResolveReference
 
 // ref is absolute-URI
 
 TEST(ResolveReference, Absolute) {
-  URI *base = URI::parse("schema://username:password@host/path?key=val#fragment");
-  URI *ref = URI::parse("s://u:pa@h/p?k=v#f");
+  URI *base = URI::parse("schema://username:password@host:1/path?key=val#fragment");
+  URI *ref = URI::parse("s://u:pa@h:80/p?k=v#f");
 
   URI *uri = base->resolveReference(*ref);
 
   ASSERT_EQ(uri->getScheme(), "s");
   ASSERT_EQ(uri->getHost(), "h");
+  ASSERT_EQ(uri->getPort(), "80");
   ASSERT_EQ(uri->getPath(), "/p");
   ASSERT_EQ(uri->getRawQuery(), "k=v");
   ASSERT_EQ(uri->getQuery().size(), 1);
@@ -541,6 +548,7 @@ TEST(ResolveReference, OmitHost) {
 
   ASSERT_EQ(uri->getScheme(), "s");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/");
   ASSERT_EQ(uri->getRawQuery(), "q");
   ASSERT_EQ(uri->getFragment(), "f");
@@ -560,6 +568,7 @@ TEST(ResolveReference, Opaque) {
 
   ASSERT_EQ(uri->getScheme(), "s");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "");
   ASSERT_EQ(uri->getRawQuery(), "q");
   ASSERT_EQ(uri->getFragment(), "f");
@@ -580,6 +589,7 @@ TEST(ResolveReference, EmptyHost) {
 
   ASSERT_EQ(uri->getScheme(), "schema");
   ASSERT_EQ(uri->getHost(), "");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/p");
   ASSERT_EQ(uri->getRawQuery(), "q");
   ASSERT_EQ(uri->getFragment(), "f");
@@ -598,6 +608,7 @@ TEST(ResolveReference, EmptyUserInfo) {
 
   ASSERT_EQ(uri->getScheme(), "schema");
   ASSERT_EQ(uri->getHost(), "h");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/p");
   ASSERT_EQ(uri->getRawQuery(), "q");
   ASSERT_EQ(uri->getFragment(), "f");
@@ -617,6 +628,7 @@ TEST(ResolveReference, EmptyAuthority) {
 
   ASSERT_EQ(uri->getScheme(), "schema");
   ASSERT_EQ(uri->getHost(), "host");
+  ASSERT_EQ(uri->getPort(), "");
   // I really think this should be /p
   ASSERT_EQ(uri->getPath(), "///p");
   ASSERT_EQ(uri->getRawQuery(), "q");
@@ -636,6 +648,7 @@ TEST(ResolveReference, Empty) {
 
   ASSERT_EQ(uri->getScheme(), "schema");
   ASSERT_EQ(uri->getHost(), "host");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/path");
   ASSERT_EQ(uri->getRawQuery(), "query");
   ASSERT_EQ(uri->getFragment(), "");
@@ -654,6 +667,7 @@ TEST(ResolveReference, SlashSlash) {
 
   ASSERT_EQ(uri->getScheme(), "schema");
   ASSERT_EQ(uri->getHost(), "host");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/path");
   ASSERT_EQ(uri->getRawQuery(), "query");
   ASSERT_EQ(uri->getFragment(), "");
@@ -672,6 +686,7 @@ TEST(ResolveReference, Slash) {
 
   ASSERT_EQ(uri->getScheme(), "http");
   ASSERT_EQ(uri->getHost(), "a");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "");
@@ -690,6 +705,7 @@ TEST(ResolveReference, ForceQuery) {
 
   ASSERT_EQ(uri->getScheme(), "schema");
   ASSERT_EQ(uri->getHost(), "host");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/path");
   ASSERT_EQ(uri->getRawQuery(), "");
   ASSERT_EQ(uri->getFragment(), "f");
@@ -708,6 +724,7 @@ TEST(ResolveReference, BaseQuery) {
 
   ASSERT_EQ(uri->getScheme(), "schema");
   ASSERT_EQ(uri->getHost(), "host");
+  ASSERT_EQ(uri->getPort(), "");
   ASSERT_EQ(uri->getPath(), "/path");
   ASSERT_EQ(uri->getRawQuery(), "query");
   ASSERT_EQ(uri->getFragment(), "f");
@@ -939,4 +956,6 @@ TEST(URI, Recompose) {
   ASSERT_EQ(uri->recompose(), "scheme://host");
   uri = URI::parse("scheme://host/");
   ASSERT_EQ(uri->recompose(), "scheme://host/");
+  uri = URI::parse("scheme://host:/path");
+  ASSERT_EQ(uri->recompose(), "scheme://host/path");
 }

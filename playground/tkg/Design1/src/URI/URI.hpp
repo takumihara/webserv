@@ -16,6 +16,7 @@ class URI {
 
   const std::string& getScheme() const;
   const std::string& getHost() const;
+  const std::string& getPort() const;
   const std::string& getPath() const;
   const std::string& getRawQuery() const;
   const std::map<std::string, std::vector<std::string> >& getQuery() const;
@@ -37,6 +38,7 @@ class URI {
 
   std::string scheme_;
   std::string host_;     // (authority) host
+  std::string port_;     // (authority) port
   UserInfo* user_info_;  // (authority) username and password information
   std::string path_;     // path (relative paths may omit leading slash)
   std::string raw_path_;
@@ -66,4 +68,5 @@ class URI {
   void setFragment(const std::string& fragment);
   void setPath(const std::string& path);
   void parseAndSetQuery(std::string raw_query);
+  void parseAndSetAuthority(std::string authority);
 };
