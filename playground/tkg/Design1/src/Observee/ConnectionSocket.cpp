@@ -21,7 +21,7 @@
 
 #include "../Config/validation.h"
 #include "../HttpException.hpp"
-#include "CGI.hpp"
+#include "CGI/CGI.hpp"
 #include "CGIInfo.hpp"
 #include "GET.hpp"
 #include "POST.hpp"

@@ -1,8 +1,8 @@
 #ifndef CGI_HPP_
 #define CGI_HPP_
 
-#include "../EventManager.hpp"
-#include "Observee.hpp"
+#include "../../EventManager.hpp"
+#include "../Observee.hpp"
 
 class CGI : public Observee {
  public:

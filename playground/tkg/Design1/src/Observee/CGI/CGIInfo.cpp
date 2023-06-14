@@ -3,11 +3,11 @@
 #include <cstdlib>
 #include <sstream>
 
-#include "../Config/validation.h"
-#include "../HttpRequest/HttpRequest.hpp"
-#include "../URI/URI.hpp"
-#include "../URI/encoding.hpp"
-#include "../helper.hpp"
+#include "../../helper.hpp"
+#include "Config/validation.h"
+#include "HttpRequest/HttpRequest.hpp"
+#include "URI/URI.hpp"
+#include "URI/encoding.hpp"
 
 std::string getScriptName(const std::string &path, const std::string &ext) {
   std::size_t pos = path.find(ext);
