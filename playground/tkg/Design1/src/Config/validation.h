@@ -23,6 +23,7 @@ bool isURL(const std::string &URL);
 bool is3xxStatus(const std::string &status);
 bool isServernameDuplicate(Config &conf);
 bool isAcceptableMethod(const LocationConf *conf, const HttpRequest::Method &method);
+std::string methodToString(const HttpRequest::Method &method);
 
 template <typename Container, typename T>
 bool contain(const Container &container, const T &value) {
