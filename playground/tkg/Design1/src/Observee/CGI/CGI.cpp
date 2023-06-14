@@ -18,6 +18,8 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "../../Config/validation.h"
+#include "../../HttpException.hpp"
 #include "../../helper.hpp"
 #include "../HttpRequest/HttpRequestReader.hpp"
 #include "helper.hpp"
@@ -31,26 +33,58 @@ void CGI::shutdown() {
   em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
-bool CGI::isDocRes(std::vector<std::string> &lines) {
-  // todo:
-  (void)lines;
-  return false;
-}
-
-std::pair<std::string, std::string> getHeaderField(std::string &filed) {
-  std::stringstream ss(filed);
+std::pair<std::string, std::string> getHeaderField(std::string &field) {
+  std::stringstream ss(field);
   std::string name, value;
+  if (field.find(':') == std::string::npos) throw std::runtime_error("invalid header field");
   std::getline(ss, name, ':');
   std::getline(ss, value);
   value = trimOws(value);
   return std::pair<std::string, std::string>(name, value);
 }
 
+void CGI::parseDocRes(std::vector<std::string> &lines) {
+  std::size_t i = 0;
+  while (i < lines.size() && lines[i] != "") {
+    t_field field = getHeaderField(lines[i]);
+    if (i == 0) {
+      response_->appendHeader("Content-Type", field.second);
+    } else if (i == 1 && field.first == "Status") {
+      response_->setStatus(std::atoi(field.second.c_str()));
+    } else {
+      response_->appendHeader(field.first, field.second);
+    }
+    i++;
+  }
+  // parse body
+  i++;
+  for (; i < lines.size(); i++) {
+    response_->appendBody(lines[i] + "\n");
+  }
+  return;
+}
+
+bool CGI::isDocRes(std::vector<std::string> &lines) {
+  try {
+    std::size_t i = 0;
+    while (i < lines.size() && lines[i] != "") {
+      t_field field = getHeaderField(lines[i]);
+      if (i == 0 && field.first != "Content-Type") return false;
+      if (i == 1 && field.first == "Status" && !isStatusCode(field.second)) return false;
+      i++;
+    }
+  } catch (std::runtime_error &e) {
+    std::cout << e.what() << std::endl;
+    return false;
+  }
+  return true;
+}
+
 bool CGI::isLocalRedirectRes(std::vector<std::string> &lines) {
   if (lines.size() != 1) return false;
-  t_field filed = getHeaderField(lines[0]);
-  if (filed.first != "Location") return false;
-  if (!CGIValidation::isAbsPath(filed.second.c_str())) return false;
+  t_field field = getHeaderField(lines[0]);
+  if (field.first != "Location") return false;
+  if (!CGIValidation::isAbsPath(field.second.c_str())) return false;
   return true;
 }
 
@@ -71,7 +105,7 @@ bool CGI::isClientRedirectWithDocRes(std::vector<std::string> &lines) {
 
 CGI::Type CGI::getResponseType(std::vector<std::string> &lines) {
   if (isDocRes(lines)) {
-    // todo: document response type
+    return CGI::Doc;
   } else if (isLocalRedirectRes(lines)) {
     return CGI::LocalRedir;
   } else if (isClientRedirectRes(lines)) {
@@ -86,7 +120,15 @@ int CGI::parseCGIResponse() {
   // todo:
   std::vector<std::string> lines = CGIValidation::ExtractLines(recieve_data_);
   CGI::Type type = getResponseType(lines);
-  (void)type;
+  if (type == CGI::Doc) {
+    parseDocRes(lines);
+  } else if (type == CGI::LocalRedir) {
+    // todo: parse and localredirect
+  } else if (type == CGI::ClientRedir) {
+    // todo: parse and clientRedir
+  } else if (type == CGI::ClientRedirWithDoc) {
+    // todo: parse and ClientRdir with Doc
+  }
   return 1;
 }
 
@@ -104,19 +146,18 @@ void CGI::notify(struct kevent ev) {
       std::cout << "res = -1" << std::endl;
       return;
     } else if (res == 0) {
-      // todo: analyse CGI response and then
-      // switch document-response | local-redir-response | client-redir-response | client-redirdoc-response process
-      parseCGIResponse();
       close(id_);
       waitpid(pid_, &status, 0);
       if (status == 0) {
         response_->setStatus(200);
+        // todo: analyse CGI response and then
+        // switch document-response | local-redir-response | client-redir-response | client-redirdoc-response process
+        parseCGIResponse();
       } else
         response_->setStatus(500);
       parent_->obliviateChild(this);
       em_->deleteTimerEvent(id_);
       em_->registerWriteEvent(parent_->id_);
-      response_->appendBody(recieve_data_);
       std::cout << "CGI LAST RESULT: '" << recieve_data_ << "'" << std::endl;
       em_->remove(std::pair<t_id, t_type>(id_, FD));
     } else {

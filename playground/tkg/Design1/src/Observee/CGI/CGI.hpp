@@ -25,6 +25,7 @@ class CGI : public Observee {
   bool isLocalRedirectRes(std::vector<std::string> &line);
   bool isClientRedirectRes(std::vector<std::string> &line);
   bool isClientRedirectWithDocRes(std::vector<std::string> &line);
+  void parseDocRes(std::vector<std::string> &lines);
 
  private:
   int pid_;
