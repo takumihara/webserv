@@ -127,7 +127,7 @@ std::string getRequest(const std::string &arg) {
     request += "\r\n";
     request += arg;
   } else {
-    request += "GET /html/cgi_meta_env.cgi/path/info?query%40 HTTP/1.1\r\n";
+    request += "GET /html/DocRes.cgi/path/info?query%40 HTTP/1.1\r\n";
     // request += "POST /index.html HTTP/1.1\r\n";
     request += "Host: localhost\r\n";
     request += "Content-Length: " + std::to_string(arg.size()) + "\r\n";
