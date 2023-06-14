@@ -1,4 +1,4 @@
-#include "CGIInfo.hpp"
+#include "CGI/CGIInfo.hpp"
 
 #include <cstdlib>
 #include <sstream>
