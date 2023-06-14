@@ -90,7 +90,12 @@ void HttpRequestReader::assignAndValidateMethod(const std::string &method) {
 
 void HttpRequestReader::assignAndValidateRequestTarget(const std::string &request_target) {
   if (request_target[0] == '/') {
-    request_.request_target_ = URI::parseRequestURI(request_target);
+    try {
+      request_.request_target_ = URI::parseRequestURI(request_target);
+    } catch (const std::runtime_error &e) {
+      DEBUG_PUTS(e.what());
+      throw BadRequestException("Http Request: invalid request target");
+    }
   } else {
     throw BadRequestException("Http Request: invalid request target");
   }

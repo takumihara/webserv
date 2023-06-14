@@ -1,6 +1,8 @@
 #pragma once
 
+#include <map>
 #include <string>
+#include <vector>
 
 #include "UserInfo.hpp"
 
@@ -15,7 +17,8 @@ class URI {
   const std::string& getScheme() const;
   const std::string& getHost() const;
   const std::string& getPath() const;
-  const std::string& getQuery() const;
+  const std::string& getRawQuery() const;
+  const std::map<std::string, std::vector<std::string> >& getQuery() const;
   const std::string& getFragment() const;
   const UserInfo* getUserInfo() const;
   std::string getUsername() const;
@@ -37,6 +40,7 @@ class URI {
   UserInfo* user_info_;  // (authority) username and password information
   std::string path_;     // path (relative paths may omit leading slash)
   std::string raw_path_;
+  std::map<std::string, std::vector<std::string> > query_;
   std::string raw_query_;     // encoded query values, without '?'
   std::string fragment_;      // fragment for references, without '#'
   std::string raw_fragment_;  // encoded fragment hint (see EscapedFragment method)
@@ -61,4 +65,5 @@ class URI {
 
   void setFragment(const std::string& fragment);
   void setPath(const std::string& path);
+  void parseAndSetQuery(std::string raw_query);
 };

@@ -60,6 +60,7 @@ URI::URI(std::string raw_uri, bool via_request) : user_info_(NULL), omit_host_(f
     size_t query_pos = raw_uri.find("?");
     if (query_pos != std::string::npos) {
       raw_query_ = raw_uri.substr(query_pos + 1);
+      parseAndSetQuery(raw_query_);
       raw_uri = raw_uri.substr(0, query_pos);
     }
   }
@@ -110,6 +111,31 @@ URI::URI(std::string raw_uri, bool via_request) : user_info_(NULL), omit_host_(f
   }
 
   setPath(raw_uri);
+}
+
+void URI::parseAndSetQuery(std::string raw_query) {
+  while (raw_query != "") {
+    std::string key;
+    size_t ampersand_pos = raw_query.find("&");
+    if (ampersand_pos == std::string::npos) {
+      key = raw_query;
+      raw_query = "";
+    } else {
+      key = raw_query.substr(0, ampersand_pos);
+      raw_query = raw_query.substr(ampersand_pos + 1);
+    }
+
+    std::string value;
+    size_t equal_pos = key.find("=");
+    if (equal_pos != std::string::npos) {
+      value = key.substr(equal_pos + 1);
+      key = key.substr(0, equal_pos);
+    }
+    key = Encoding::unescape(key, Encoding::QueryComponent);
+    value = Encoding::unescape(value, Encoding::QueryComponent);
+
+    query_[key].push_back(value);
+  }
 }
 
 // todo(thara): refactor
@@ -347,6 +373,7 @@ URI* URI::resolveReference(const URI& ref) const {
   uri->setPath(path);
   if (ref.path_ == "" && !ref.force_query_ && ref.raw_query_ == "") {
     uri->raw_query_ = raw_query_;
+    uri->query_ = query_;
   }
   return uri;
 }
@@ -392,7 +419,9 @@ std::string URI::recompose() const {
 const std::string& URI::getScheme() const { return scheme_; };
 const std::string& URI::getHost() const { return host_; };
 const std::string& URI::getPath() const { return path_; };
-const std::string& URI::getQuery() const { return raw_query_; }
+const std::string& URI::getRawQuery() const { return raw_query_; }
+const std::map<std::string, std::vector<std::string> >& URI::getQuery() const { return query_; }
+
 const std::string& URI::getFragment() const { return fragment_; }
 const UserInfo* URI::getUserInfo() const { return user_info_; }
 std::string URI::getUsername() const {

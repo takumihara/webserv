@@ -7,7 +7,6 @@
 size_t FDReadCloser::read(std::string &buf, size_t size) {
   char array[size + 1];
   bzero(array, size + 1);
-  std::cout << size << std::endl;
   ssize_t res = ::read(fd_, array, size);
   if (res == -1) {
     throw std::runtime_error("read failed");
