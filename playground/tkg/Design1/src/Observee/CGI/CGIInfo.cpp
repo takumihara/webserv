@@ -17,6 +17,7 @@ std::string getScriptName(const std::string &path, const std::string &ext) {
     else if (path[pos + ext.size()] == '/' || path[pos + ext.size()] == ';') {
       return path.substr(0, pos + ext.size());
     }
+    pos = path.find(ext, pos + 1);
   }
   return "";
 }
