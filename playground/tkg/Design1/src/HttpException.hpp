@@ -42,9 +42,9 @@ class BadRequestException : public HttpException {
   BadRequestException(const std::string &message) : HttpException(400, message) {}
 };
 
-class ResourceForbidenException : public HttpException {
+class ResourceForbiddenException : public HttpException {
  public:
-  ResourceForbidenException(const std::string &message) : HttpException(403, message) {}
+  ResourceForbiddenException(const std::string &message) : HttpException(403, message) {}
 };
 
 class ResourceNotFoundException : public HttpException {

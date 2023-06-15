@@ -45,6 +45,12 @@ POST *ConnectionSocket::makePOST(int fd) {
   return obs;
 }
 
+POST *ConnectionSocket::makeDELETE(int fd) {
+  POST *obs = new DELETE(fd, em_, this, &request_);
+  this->monitorChild(obs);
+  return obs;
+}
+
 CGI *ConnectionSocket::makeCGI(int id, int pid) {
   CGI *obs = new CGI(id, pid, em_, this, &response_);
   this->monitorChild(obs);
@@ -93,15 +99,15 @@ void ConnectionSocket::processPOST() {
   std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
   // check file is already exist or not, and temporarily set statusCode.
   struct stat st;
-  if (!isAllDirectoryWritable(path)) throw ResourceForbidenException("access Write error");  // 403 Forbiden
+  if (!isAllDirectoryWritable(path)) throw ResourceForbiddenException("access Write error");  // 403 Forbiden
   const bool file_exist = stat(path.c_str(), &st) != -1;
   if (file_exist) {
     response_.setStatus(200);
     bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
-    // POST method is not allowedif targetURI is directory
+    // POST method is not allowed if targetURI is directory
     if (is_directory) throw MethodNotAllowedException("POST is not allowed to directory");
     // check writable if file exist
-    if (!isWritable(path.c_str())) throw ResourceForbidenException("acess write error");
+    if (!isWritable(path.c_str())) throw ResourceForbiddenException("access write error");
   }
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
@@ -148,7 +154,7 @@ void ConnectionSocket::processGET() {
   }
   // check directory or file is readable
   if (!isReadable(path.c_str())) {
-    throw ResourceForbidenException("access Read error");  // 403 Forbiden
+    throw ResourceForbiddenException("access Read error");  // 403 Forbiden
   }
   if (is_directory) {
     // see through index files (if no index files and autoindex is on, you should create directory list)
