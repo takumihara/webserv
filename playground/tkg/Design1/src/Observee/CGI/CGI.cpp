@@ -213,6 +213,7 @@ void CGI::notify(struct kevent ev) {
       shutdown();
       return;
     } else if (res == 0) {
+      response_->setStatus(200);
       parseCGIResponse();
     } else {
       std::cout << "res: " << res << std::endl;
