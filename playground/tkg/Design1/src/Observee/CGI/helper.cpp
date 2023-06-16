@@ -72,6 +72,45 @@ bool isPchar(const char *c) {
   return isUnreserved(*c) || isEscaped(c);
 }
 
+bool isToken(const char c) {
+  if (std::isalnum(c)) return true;
+  switch (c) {
+    case '!':
+    case '#':
+    case '$':
+    case '%':
+    case '&':
+    case '\'':
+    case '*':
+    case '+':
+    case '-':
+    case '.':
+    case '^':
+    case '_':
+    case '`':
+    case '|':
+    case '~':
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool isMediaType(std::string &media) {
+  std::size_t pos = media.find("/");
+  if (pos == std::string::npos) return false;
+  std::string type = media.substr(0, pos);
+  std::string subtype = media.substr(pos + 1);
+  if (type == "" || subtype == "") return false;
+  for (std::string::const_iterator c = type.cbegin(); c != type.cend(); c++) {
+    if (!isToken(*c)) return false;
+  }
+  for (std::string::const_iterator c = subtype.cbegin(); c != subtype.cend(); c++) {
+    if (!isToken(*c)) return false;
+  }
+  return true;
+}
+
 std::vector<std::string> extractLines(const std::string &data) {
   std::vector<std::string> lines;
   std::string str;

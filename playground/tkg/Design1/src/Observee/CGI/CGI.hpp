@@ -19,13 +19,16 @@ class CGI : public Observee {
   ~CGI() {}
   void notify(struct kevent ev);
   void shutdown();
-  int parseCGIResponse();
+  void parseCGIResponse();
   Type getResponseType(std::vector<std::string> &lines);
   bool isDocRes(std::vector<std::string> &line);
   bool isLocalRedirectRes(std::vector<std::string> &line);
   bool isClientRedirectRes(std::vector<std::string> &line);
   bool isClientRedirectWithDocRes(std::vector<std::string> &line);
   void parseDocRes(std::vector<std::string> &lines);
+  void parseClientRedirect(std::vector<std::string> &lines);
+  void parseLocalRedirect(std::vector<std::string> &lines);
+  void parseClientRedirectWithDoc(std::vector<std::string> &lines);
 
  private:
   int pid_;

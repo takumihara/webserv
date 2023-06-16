@@ -156,6 +156,7 @@ void ConnectionSocket::processGET() {
     execCGI(path);
     return;
   }
+  std::cout << "koko: " << path << std::endl;
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
     throw ResourceNotFoundException("stat error: file doesn't exist");  // 404 Not Found
@@ -205,6 +206,7 @@ void ConnectionSocket::processErrorPage(const LocationConf *conf) {
 }
 
 void ConnectionSocket::process() {
+  extension_ = "";
   ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
   loc_conf_ = serv_conf->getLocationConf(&request_);
   // loc_conf is redirection block
