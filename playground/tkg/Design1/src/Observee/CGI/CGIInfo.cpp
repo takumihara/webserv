@@ -45,7 +45,7 @@ std::string setPathTranslated(std::string root, std::string &path_info) {
   return root + path_info;
 }
 
-CGIInfo parseCGI(const std::string &path, const std::string &ext, HttpRequest &req, LocationConf *conf) {
+CGIInfo parseCGIInfo(const std::string &path, const std::string &ext, HttpRequest &req, LocationConf *conf) {
   // todo:
   std::stringstream ss;
   CGIInfo info;

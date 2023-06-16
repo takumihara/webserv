@@ -91,9 +91,9 @@ bool CGI::isLocalRedirectRes(std::vector<std::string> &lines) {
 bool CGI::isClientRedirectRes(std::vector<std::string> &lines) {
   // todo:
   if (lines.size() != 1) return false;
-  t_field filed = getHeaderField(lines[0]);
-  if (filed.first != "Location") return false;
-  if (!CGIValidation::isAbsURI(filed.second)) return false;
+  t_field field = getHeaderField(lines[0]);
+  if (field.first != "Location") return false;
+  if (!CGIValidation::isAbsURI(field.second)) return false;
   return true;
 }
 

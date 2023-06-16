@@ -25,9 +25,8 @@ struct CGIInfo {
   std::string extension_var_name_;
 };
 
-std::string strfyMethod(HttpRequest::Method method);
 std::string getPathInfo(const std::string &path, const std::string &ext);
 std::string getScriptName(const std::string &path, const std::string &ext);
 void setCGIInfo(CGIInfo &info);
-CGIInfo parseCGI(const std::string &path, const std::string &ext, HttpRequest &req, LocationConf *conf);
-std::string setPathTranslated(const std::string &root, const std::string &path_info);
+CGIInfo parseCGIInfo(const std::string &path, const std::string &ext, HttpRequest &req, LocationConf *conf);
+std::string setPathTranslated(std::string root, std::string &path_info);

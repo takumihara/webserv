@@ -66,21 +66,22 @@ void ConnectionSocket::execCGI(const std::string &path) {
   int pid = fork();
   if (pid == 0) {
     close(fd[0]);
-    CGIInfo info = parseCGI(path, extension_, request_, loc_conf_);
+    CGIInfo info = parseCGIInfo(path, extension_, request_, loc_conf_);
     setCGIInfo(info);
     argv[0] = const_cast<char *>(info.script_name_.c_str());
     if (dup2(fd[1], STDIN_FILENO) == -1) {
       perror("dup2");
+      close(fd[1]);
       exit(1);
     }
     if (dup2(fd[1], STDOUT_FILENO) == -1) {
       perror("dup2");
+      close(fd[1]);
       exit(1);
     }
     close(fd[1]);
     if (execve(info.script_name_.c_str(), argv, environ) == -1) {
       perror("execve");
-      // close(fd[1]);
       exit(1);
     }
   } else {
@@ -143,11 +144,9 @@ void ConnectionSocket::processGET() {
   std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
-  if (hasCGI) {
-    if (contain(loc_conf_->cgi_exts_, extension_)) {
-      execCGI(path);
-      return;
-    }
+  if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
+    execCGI(path);
+    return;
   }
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {

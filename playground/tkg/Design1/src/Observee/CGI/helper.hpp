@@ -11,5 +11,5 @@ bool isReserved(const char c);
 bool isPchar(const char *c);
 bool isAbsPath(const char *path);
 bool isAbsURI(const std::string &raw_uri);
-std::vector<std::string> ExtractLines(const std::string &data);
+std::vector<std::string> extractLines(const std::string &data);
 }  // namespace CGIValidation

@@ -72,7 +72,7 @@ bool isPchar(const char *c) {
   return isUnreserved(*c) || isEscaped(c);
 }
 
-std::vector<std::string> ExtractLines(const std::string &data) {
+std::vector<std::string> extractLines(const std::string &data) {
   std::vector<std::string> lines;
   std::string str;
   std::stringstream ss(data);
