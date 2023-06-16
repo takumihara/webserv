@@ -36,6 +36,7 @@ class HttpResponse {
   void setStatus(const int status);
   void appendHeader(const std::string &key, const std::string &value);
   void appendBody(const std::string &str);
+  bool hasHeader(const std::string &name);
   const std::string &getBody() const;
   const State &getState() const { return state_; }
 

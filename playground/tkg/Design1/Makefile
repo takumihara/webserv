@@ -74,6 +74,7 @@ $(gtest):
 	tar -xvzf release-1.11.0.tar.gz googletest-release-1.11.0
 	$(RM) -rf release-1.11.0.tar.gz
 	python3 googletest-release-1.11.0/googletest/scripts/fuse_gtest_files.py $(gtestdir)
+	python3 googletest-release-1.11.0/googlemock/scripts/fuse_gmock_files.py $(gtestdir)
 	mv googletest-release-1.11.0 $(gtestdir)
 	(cd $(gtestdir)/googletest-release-1.11.0 && mkdir build-tmp && cd build-tmp && cmake .. && make)
 	mv $(gtestdir)/googletest-release-1.11.0/build-tmp/lib/libgtest.a $(gtestdir)

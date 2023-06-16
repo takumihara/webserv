@@ -21,7 +21,8 @@
 
 #include "../Config/validation.h"
 #include "../HttpException.hpp"
-#include "CGI.hpp"
+#include "CGI/CGI.hpp"
+#include "CGIInfo.hpp"
 #include "GET.hpp"
 #include "POST.hpp"
 #include "helper.hpp"
@@ -46,41 +47,58 @@ POST *ConnectionSocket::makePOST(int fd) {
 }
 
 CGI *ConnectionSocket::makeCGI(int id, int pid) {
-  CGI *obs = new CGI(id, pid, em_, this, &response_);
+  CGI *obs = new CGI(id, pid, em_, this, &request_, &response_);
   this->monitorChild(obs);
   return obs;
 }
 
 void ConnectionSocket::execCGI(const std::string &path) {
-  // todo: .extensionから?#までの間をPATH_INFOとして分離する必要がある
   DEBUG_PUTS("MAKE EXEC");
-  extern char **environ;
   char *argv[2];
-  argv[0] = const_cast<char *>(path.c_str());
   argv[1] = NULL;
   int fd[2];
-  int need_fd;
-
-  pipe(fd);
-  need_fd = fd[0];
+  CGIInfo info = parseCGIInfo(path, extension_, request_, loc_conf_);
+  struct stat st;
+  const bool file_exist = stat(info.script_name_.c_str(), &st) != -1;
+  if (!file_exist) throw ResourceNotFoundException("cgi script is not found");
+  if ((st.st_mode & S_IFMT) == S_IFDIR || !isExecutable(info.script_name_.c_str()))
+    throw ResourceForbidenException("cgi script name is directory or not excutable");
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1) {
+    throw InternalServerErrorException("error socketpair");
+  }
   int pid = fork();
   if (pid == 0) {
     close(fd[0]);
-    dup2(fd[1], STDOUT_FILENO);
-    // todo: close all observee fds
-    if (execve(path.c_str(), argv, environ) == -1) {
-      perror("execve");
+    std::vector<char *> env;
+    info.setEnv(env);
+    argv[0] = const_cast<char *>(info.script_name_.c_str());
+    if (dup2(fd[1], STDIN_FILENO) == -1) {
+      perror("dup2");
       close(fd[1]);
+      deleteEnv(env);
       exit(1);
     }
+    if (dup2(fd[1], STDOUT_FILENO) == -1) {
+      perror("dup2");
+      close(fd[1]);
+      deleteEnv(env);
+      exit(1);
+    }
+    close(fd[1]);
+    if (execve(info.script_name_.c_str(), argv, &env[0]) == -1) {
+      perror("execve");
+      deleteEnv(env);
+      exit(1);
+    }
+    deleteEnv(env);
   } else {
     close(fd[1]);
     std::cout << "pid: " << pid << std::endl;
-    CGI *obs = makeCGI(need_fd, pid);
-    std::cout << "need_fd: " << need_fd << "  pid: " << pid << std::endl;
-    em_->add(std::pair<t_id, t_type>(need_fd, FD), obs);
+    CGI *obs = makeCGI(fd[0], pid);
+    std::cout << "need_fd: " << fd[0] << "  pid: " << pid << std::endl;
+    em_->add(std::pair<t_id, t_type>(fd[0], FD), obs);
     em_->disableReadEvent(id_);
-    em_->registerReadEvent(need_fd);
+    em_->registerWriteEvent(fd[0]);
   }
 }
 
@@ -130,22 +148,18 @@ void ConnectionSocket::processGET() {
     throw BadRequestException("No Suitable Location");
   }
   // todo: . is for temporary implementation
-
   std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
-  // check directory or file exists
+  // if CGI extension exist, try exec CGI
+  const bool hasCGI = extension_ != "";
+  if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
+    execCGI(path);
+    return;
+  }
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
     throw ResourceNotFoundException("stat error: file doesn't exist");  // 404 Not Found
   }
   bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
-  // if CGI extension exist and that is not directory, try exec CGI
-  const bool hasCGI = extension_ != "";
-  if (hasCGI && !is_directory) {
-    if (isExecutable(path.c_str()) && contain(loc_conf_->cgi_exts_, extension_)) {
-      execCGI(path);
-      return;
-    }
-  }
   // check directory or file is readable
   if (!isReadable(path.c_str())) {
     throw ResourceForbiddenException("access Read error");  // 403 Forbiden

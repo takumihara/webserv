@@ -35,6 +35,8 @@ class ConnectionSocket : public Observee {
   CGI *makeCGI(int id, int pid);
   GET *makeGET(int id);
   POST *makePOST(int id);
+  // CGIInfo parseCGI(const std::string &path);
+
   void addChild(Observee *obs);
   void removeChild(Observee *obs);
 

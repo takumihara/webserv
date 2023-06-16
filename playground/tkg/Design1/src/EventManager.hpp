@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "./Config/Config.hpp"
-#include "./Observee/CGI.hpp"
+#include "./Observee/CGI/CGI.hpp"
 #include "./Observee/ConnectionSocket.hpp"
 #include "./Observee/Observee.hpp"
 #include "./Observee/ServerSocket.hpp"

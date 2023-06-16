@@ -8,8 +8,10 @@
 
 #include <sstream>
 
+#include "Config/validation.h"
 #include "EventManager.hpp"
 #include "const.hpp"
+#include "helper.hpp"
 
 int HttpResponse::getStatus() const { return status_; };
 void HttpResponse::setStatus(const int status) { status_ = status; }
@@ -22,13 +24,21 @@ void HttpResponse::appendHeader(const std::string &key, const std::string &value
 
 const std::string &HttpResponse::getBody() const { return body_; }
 
+bool HttpResponse::hasHeader(const std::string &target_name) {
+  for (std::vector<header>::const_iterator itr = headers.cbegin(); itr != headers.cend(); itr++) {
+    if (itr->first == target_name) return true;
+  }
+  return false;
+}
+
 void HttpResponse::createResponse() {
   if (state_ != Free) return;
+  if (!hasHeader("Content-Length")) {
+    std::stringstream ss;
+    ss << body_.size();
+    appendHeader("Content-Length", ss.str());
+  }
   std::stringstream ss;
-  ss << body_.size();
-  appendHeader("Content-Length", ss.str());
-  ss.str("");
-  ss.clear(std::stringstream::goodbit);
   // status-line
   ss << "HTTP/1.1 " << status_ << " " << conf_->cache_.statusMsg_[status_] << CRLF;
   // header-fields
@@ -37,7 +47,7 @@ void HttpResponse::createResponse() {
   }
   ss << CRLF;
   // body
-  ss << body_ << CRLF;
+  ss << body_;
 
   response_ = ss.str();
   std::cout << response_;

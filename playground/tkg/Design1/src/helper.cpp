@@ -57,6 +57,7 @@ std::vector<std::string> splitToSegment(const std::string &path) {
   return segments;
 }
 
+
 // path must not have query
 std::string getExtension(const std::string &path) {
   std::vector<std::string> segments = splitToSegment(path);
