@@ -13,12 +13,9 @@
 #include "helper.hpp"
 
 bool HttpRequest::methodIs(Method method) const { return method_ == method; };
-
-
-
 const std::string &HttpRequest::getBody() const { return body_; }
-
 URI *HttpRequest::getRequestTarget() const { return request_target_; }
+
 const HttpRequest::Method &HttpRequest::getMethod() const { return method_; }
 const HttpRequest::Host &HttpRequest::getHost() const { return headers_.host; }
 bool HttpRequest::isChunked() {

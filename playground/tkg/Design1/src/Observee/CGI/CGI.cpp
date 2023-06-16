@@ -94,8 +94,14 @@ void CGI::parseClientRedirectWithDoc(std::vector<std::string> &lines) {
 
 void CGI::parseLocalRedirect(std::vector<std::string> &lines) {
   t_field field = getHeaderField(lines[0]);
-  URI *uri = URI::parseRequestURI(field.second);
-  request_->setRequestTarget(uri);
+  try {
+    URI *uri = URI::parseRequestURI(field.second);
+    delete request_->request_target_;
+    request_->request_target_ = uri;
+    request_->body_.clear();
+  } catch (std::runtime_error &e) {
+    throw(InternalServerErrorException("CGI response URI is invalid"));
+  }
 }
 
 bool CGI::isDocRes(std::vector<std::string> &lines) {
@@ -185,10 +191,16 @@ void CGI::parseCGIResponse() {
   } else if (type == CGI::Doc) {
     parseDocRes(lines);
   } else if (type == CGI::LocalRedir) {
-    parseLocalRedirect(lines);
     DEBUG_PRINTF("CGI LAST RESULT: '%s'", recieve_data_.c_str());
-    shutdown();
-    dynamic_cast<ConnectionSocket *>(parent_)->process();
+    try {
+      parseLocalRedirect(lines);
+      Observee *parent = parent_;
+      shutdown();
+      dynamic_cast<ConnectionSocket *>(parent)->process();
+    } catch (HttpException &e) {
+      response_->setStatus(e.statusCode());
+      type = CGI::Error;
+    }
   } else if (type == CGI::ClientRedir) {
     parseClientRedirect(lines);
   } else if (type == CGI::ClientRedirWithDoc) {

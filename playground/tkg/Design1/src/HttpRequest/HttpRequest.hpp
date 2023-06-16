@@ -50,10 +50,6 @@ class HttpRequest {
   const Host &getHost() const;
   bool methodIs(Method method) const;
   URI *getRequestTarget() const;
-  void setRequestTarget(URI *uri) {
-    delete request_target_;
-    request_target_ = uri;
-  };
   const Method &getMethod() const;
   bool isChunked();
   void printHeaders();
