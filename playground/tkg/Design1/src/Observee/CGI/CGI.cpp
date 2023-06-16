@@ -115,11 +115,12 @@ bool CGI::isDocRes(std::vector<std::string> &lines) {
 }
 
 bool CGI::isLocalRedirectRes(std::vector<std::string> &lines) {
-  if (lines.size() != 1) return false;
+  if (lines.size() != 2) return false;
   try {
     t_field field = getHeaderField(lines[0]);
     if (field.first != "Location") return false;
     if (!CGIValidation::isAbsPath(field.second.c_str())) return false;
+    if (lines[1] != "") return false;
   } catch (std::runtime_error &e) {
     std::cout << e.what() << std::endl;
     return false;
@@ -128,11 +129,12 @@ bool CGI::isLocalRedirectRes(std::vector<std::string> &lines) {
 }
 
 bool CGI::isClientRedirectRes(std::vector<std::string> &lines) {
-  if (lines.size() != 1) return false;
+  if (lines.size() != 2) return false;
   try {
     t_field filed = getHeaderField(lines[0]);
     if (filed.first != "Location") return false;
     if (!CGIValidation::isAbsURI(filed.second)) return false;
+    if (lines[1] != "") return false;
   } catch (std::runtime_error &e) {
     std::cout << e.what() << std::endl;
     return false;

@@ -7,7 +7,7 @@ int main() {
   std::string input;
   std::cin >> input;
   std::cout << "Location: http://example.com" << std::endl;
-  std::cout << "Status: 30a" << std::endl;
+  std::cout << "Status: 301" << std::endl;
   std::cout << "Content-Type: text/html" << std::endl;
   std::stringstream ss;
   ss << input << std::endl;
