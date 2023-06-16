@@ -50,7 +50,7 @@ TEST(CGI, CGIInfo1) {
   std::string path = loc_conf->common_.root_ + req.getRequestTarget()->getPath();
   std::string extension = getExtension(req.getRequestTarget()->getPath());
 
-  CGIInfo info = parseCGI(path, extension, req, loc_conf);
+  CGIInfo info = parseCGIInfo(path, extension, req, loc_conf);
   EXPECT_EQ(info.auth_type_, "");
   EXPECT_EQ(info.content_length_, "0");
   EXPECT_EQ(info.content_type_, "text/plain");
@@ -83,7 +83,7 @@ TEST(CGI, CGIInfo2) {
   std::string path = loc_conf->common_.root_ + req.getRequestTarget()->getPath();
   std::string extension = getExtension(req.getRequestTarget()->getPath());
 
-  CGIInfo info = parseCGI(path, extension, req, loc_conf);
+  CGIInfo info = parseCGIInfo(path, extension, req, loc_conf);
   EXPECT_EQ(info.auth_type_, "");
   EXPECT_EQ(info.content_length_, "5");
   EXPECT_EQ(info.content_type_, "text/plain");

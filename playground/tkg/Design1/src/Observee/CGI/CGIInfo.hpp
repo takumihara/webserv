@@ -2,6 +2,8 @@
 
 #include "../Config/Config.hpp"
 #include "../HttpRequest/HttpRequest.hpp"
+#include "CGI.hpp"
+
 struct CGIInfo {
   LocationConf *loc_conf;
   std::string auth_type_;
@@ -23,10 +25,12 @@ struct CGIInfo {
   std::string server_software_;
   std::string protocol_var_name_;
   std::string extension_var_name_;
+
+  void setEnv(std::vector<char *> &env);
 };
 
 std::string getPathInfo(const std::string &path, const std::string &ext);
 std::string getScriptName(const std::string &path, const std::string &ext);
-void setCGIInfo(CGIInfo &info);
 CGIInfo parseCGIInfo(const std::string &path, const std::string &ext, HttpRequest &req, LocationConf *conf);
 std::string setPathTranslated(std::string root, std::string &path_info);
+void deleteEnv(std::vector<char *> &env);

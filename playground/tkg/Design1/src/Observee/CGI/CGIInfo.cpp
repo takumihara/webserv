@@ -70,24 +70,31 @@ CGIInfo parseCGIInfo(const std::string &path, const std::string &ext, HttpReques
   return info;
 }
 
-void setCGIInfo(CGIInfo &info) {
-  setenv("AUTH_TYPE", info.auth_type_.c_str(), 1);
-  setenv("CONTENT_LENGTH", info.content_length_.c_str(), 1);
-  setenv("CONTENT_TYPE", info.content_type_.c_str(), 1);
-  setenv("GATEWAT_INTERFACE", info.gateway_interface_.c_str(), 1);
-  setenv("PATH_INFO", info.path_info_.c_str(), 1);
-  setenv("PATH_TRANSLATED", info.path_translated_.c_str(), 1);
-  setenv("QUERY_STRING", info.query_string_.c_str(), 1);
-  setenv("REMOTE_ADDR", info.remote_addr_.c_str(), 1);
-  setenv("REMOTE_HOST", info.remote_host_.c_str(), 1);
-  setenv("REMOET_IDENT", info.remote_ident_.c_str(), 1);
-  setenv("REMOTE_USER", info.remote_user_.c_str(), 1);
-  setenv("REQUEST_METHOD", info.request_method_.c_str(), 1);
-  setenv("SCRIPT_NAME", info.script_name_.c_str(), 1);
-  setenv("SERVER_NAME", info.server_name_.c_str(), 1);
-  setenv("SERVER_PORT", info.server_port_.c_str(), 1);
-  setenv("SERVER_PROTOCOL", info.server_protocol_.c_str(), 1);
-  setenv("SERVER_SOFTWARE", info.server_software_.c_str(), 1);
-  setenv("PROTOCOL_VAR_NAME", info.protocol_var_name_.c_str(), 1);
-  setenv("EXTENSION_VAR_NAME", info.extension_var_name_.c_str(), 1);
+void deleteEnv(std::vector<char *> &env) {
+  for (std::vector<char *>::iterator itr = env.begin(); itr != env.end(); itr++) {
+    delete (*itr);
+  }
+}
+
+void CGIInfo::setEnv(std::vector<char *> &env) {
+  env.push_back(strdup(("AUTH_TYPE=" + auth_type_).c_str()));
+  env.push_back(strdup(("CONTENT_LENGTH=" + content_length_).c_str()));
+  env.push_back(strdup(("CONTENT_TYPE=" + content_type_).c_str()));
+  env.push_back(strdup(("GATEWAT_INTERFACE=" + gateway_interface_).c_str()));
+  env.push_back(strdup(("PATH_INFO=" + path_info_).c_str()));
+  env.push_back(strdup(("PATH_TRANSLATED=" + path_translated_).c_str()));
+  env.push_back(strdup(("QUERY_STRING=" + query_string_).c_str()));
+  env.push_back(strdup(("REMOTE_ADDR=" + remote_addr_).c_str()));
+  env.push_back(strdup(("REMOTE_HOST=" + remote_host_).c_str()));
+  env.push_back(strdup(("REMOET_IDENT=" + remote_ident_).c_str()));
+  env.push_back(strdup(("REMOTE_USER=" + remote_user_).c_str()));
+  env.push_back(strdup(("REQUEST_METHOD=" + request_method_).c_str()));
+  env.push_back(strdup(("SCRIPT_NAME=" + script_name_).c_str()));
+  env.push_back(strdup(("SERVER_NAME=" + server_name_).c_str()));
+  env.push_back(strdup(("SERVER_PORT=" + server_port_).c_str()));
+  env.push_back(strdup(("SERVER_PROTOCOL=" + server_protocol_).c_str()));
+  env.push_back(strdup(("SERVER_SOFTWARE=" + server_software_).c_str()));
+  env.push_back(strdup(("PROTOCOL_VAR_NAME=" + protocol_var_name_).c_str()));
+  env.push_back(strdup(("EXTENSION_VAR_NAME=" + extension_var_name_).c_str()));
+  env.push_back(NULL);
 }

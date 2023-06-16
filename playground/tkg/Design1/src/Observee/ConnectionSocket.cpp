@@ -53,37 +53,44 @@ CGI *ConnectionSocket::makeCGI(int id, int pid) {
 }
 
 void ConnectionSocket::execCGI(const std::string &path) {
-  // todo: .extensionから?#までの間をPATH_INFOとして分離する必要がある
   DEBUG_PUTS("MAKE EXEC");
-  extern char **environ;
   char *argv[2];
   argv[1] = NULL;
   int fd[2];
-
+  CGIInfo info = parseCGIInfo(path, extension_, request_, loc_conf_);
+  struct stat st;
+  const bool file_exist = stat(info.script_name_.c_str(), &st) != -1;
+  if (!file_exist) throw ResourceNotFoundException("cgi script is not found");
+  if ((st.st_mode & S_IFMT) == S_IFDIR || !isExecutable(info.script_name_.c_str()))
+    throw ResourceForbidenException("cgi script name is directory or not excutable");
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1) {
-    throw std::runtime_error("soketpair error");
+    throw InternalServerErrorException("error socketpair");
   }
   int pid = fork();
   if (pid == 0) {
     close(fd[0]);
-    CGIInfo info = parseCGIInfo(path, extension_, request_, loc_conf_);
-    setCGIInfo(info);
+    std::vector<char *> env;
+    info.setEnv(env);
     argv[0] = const_cast<char *>(info.script_name_.c_str());
     if (dup2(fd[1], STDIN_FILENO) == -1) {
       perror("dup2");
       close(fd[1]);
+      deleteEnv(env);
       exit(1);
     }
     if (dup2(fd[1], STDOUT_FILENO) == -1) {
       perror("dup2");
       close(fd[1]);
+      deleteEnv(env);
       exit(1);
     }
     close(fd[1]);
-    if (execve(info.script_name_.c_str(), argv, environ) == -1) {
+    if (execve(info.script_name_.c_str(), argv, &env[0]) == -1) {
       perror("execve");
+      deleteEnv(env);
       exit(1);
     }
+    deleteEnv(env);
   } else {
     close(fd[1]);
     std::cout << "pid: " << pid << std::endl;

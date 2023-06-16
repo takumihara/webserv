@@ -118,7 +118,7 @@ CGI::Type CGI::getResponseType(std::vector<std::string> &lines) {
 
 int CGI::parseCGIResponse() {
   // todo:
-  std::vector<std::string> lines = CGIValidation::ExtractLines(recieve_data_);
+  std::vector<std::string> lines = CGIValidation::extractLines(recieve_data_);
   CGI::Type type = getResponseType(lines);
   if (type == CGI::Doc) {
     parseDocRes(lines);
