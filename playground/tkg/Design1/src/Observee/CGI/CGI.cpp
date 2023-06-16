@@ -206,13 +206,14 @@ void CGI::parseCGIResponse() {
   } else if (type == CGI::Doc) {
     parseDocRes(lines);
   } else if (type == CGI::LocalRedir) {
-    DEBUG_PRINTF("CGI LAST RESULT: '%s'", recieved_data_.c_str());
+    DEBUG_PRINTF("CGI LAST RESULT: '%s'", recieve_data_.c_str());
     try {
       parseLocalRedirect(lines);
+      Observee *parent = parent_;
       shutdown();
-      dynamic_cast<ConnectionSocket *>(parent_)->process();
+      dynamic_cast<ConnectionSocket *>(parent)->process();
     } catch (HttpException &e) {
-      response_->setStatusAndReason(e.statusCode(), "");
+      response_->setStatus(e.statusCode());
       type = CGI::Error;
     }
   } else if (type == CGI::ClientRedir) {
