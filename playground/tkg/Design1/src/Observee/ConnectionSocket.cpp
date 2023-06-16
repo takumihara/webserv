@@ -45,12 +45,6 @@ POST *ConnectionSocket::makePOST(int fd) {
   return obs;
 }
 
-POST *ConnectionSocket::makeDELETE(int fd) {
-  POST *obs = new DELETE(fd, em_, this, &request_);
-  this->monitorChild(obs);
-  return obs;
-}
-
 CGI *ConnectionSocket::makeCGI(int id, int pid) {
   CGI *obs = new CGI(id, pid, em_, this, &response_);
   this->monitorChild(obs);
