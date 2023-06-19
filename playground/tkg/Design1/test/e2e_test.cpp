@@ -16,7 +16,7 @@ TEST(E2E, CGIDoc) {
   std::string host = "localhost";
   std::string port = "80";
   std::string method = "GET";
-  std::string path = "/html/a.cgi?query";
+  std::string path = "/cgi-bin/cgi_DocRes.cgi?query";
   std::string body = "Body\r\n";
   std::string headers = "Host: localhost;Content-Length:6;Date: Wed, 16 Oct 2019 07:28:00 GMT";
   std::string res = sendRequest(host, port, method, path, body, headers);
@@ -29,7 +29,7 @@ TEST(E2E, CGILocalRedirect) {
   std::string host = "localhost";
   std::string port = "80";
   std::string method = "GET";
-  std::string path = "/html/cgi_LR.cgi?query";
+  std::string path = "/cgi-bin/cgi_LocalRedirect.cgi?query";
   std::string body = "Body\r\n";
   std::string headers = "Host: localhost;Content-Length:6;Date: Wed, 16 Oct 2019 07:28:00 GMT";
 
@@ -43,7 +43,7 @@ TEST(E2E, CGIClientRedirect) {
   std::string host = "localhost";
   std::string port = "80";
   std::string method = "GET";
-  std::string path = "/html/cgi_CR.cgi?query";
+  std::string path = "/cgi-bin/cgi_ClientRedirect.cgi?query";
   std::string body = "Body\r\n";
   std::string headers = "Host: localhost;Content-Length:6;Date: Wed, 16 Oct 2019 07:28:00 GMT";
 
@@ -58,7 +58,7 @@ TEST(E2E, CGIClientRedirectWithDoc) {
   std::string host = "localhost";
   std::string port = "80";
   std::string method = "GET";
-  std::string path = "/html/cgi_CRWDoc.cgi?query";
+  std::string path = "/cgi-bin/cgi_ClientRedirWithDoc.cgi?query";
   std::string body = "Body\r\n";
   std::string headers = "Host: localhost;Content-Length:6;Date: Wed, 16 Oct 2019 07:28:00 GMT";
 
@@ -74,7 +74,7 @@ TEST(E2E, CGILocalRedirectToClientRedirect) {
   std::string host = "localhost";
   std::string port = "80";
   std::string method = "GET";
-  std::string path = "/html/local.py?query";
+  std::string path = "/cgi-bin/local.py?query";
   std::string body = "Body\r\n";
   std::string headers = "Host: localhost;Content-Length:6;Date: Wed, 16 Oct 2019 07:28:00 GMT";
 
