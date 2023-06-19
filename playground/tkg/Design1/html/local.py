@@ -4,4 +4,4 @@
 import sys
 
 if __name__ == "__main__":
-    print("Location: /html/cgi_CR.cgi\n")
+    print("Location:/html/cgi_CR.cgi\n")

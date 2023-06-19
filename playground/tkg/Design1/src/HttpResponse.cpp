@@ -15,6 +15,13 @@
 
 int HttpResponse::getStatus() const { return status_; };
 void HttpResponse::setStatus(const int status) { status_ = status; }
+void HttpResponse::setStatusAndReason(const int status, const std::string &reason) {
+  status_ = status;
+  if (reason == "")
+    reason_phrase_ = conf_->cache_.statusMsg_[status_];
+  else
+    reason_phrase_ = reason;
+}
 
 void HttpResponse::appendBody(const std::string &str) { body_ += str; }
 

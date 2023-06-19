@@ -34,7 +34,7 @@ class CGI : public Observee {
   int pid_;
   HttpRequest *request_;
   HttpResponse *response_;
-  std::string recieve_data_;
+  std::string recieved_data_;
   std::size_t sending_size_;
   std::size_t recieved_size_;
 };

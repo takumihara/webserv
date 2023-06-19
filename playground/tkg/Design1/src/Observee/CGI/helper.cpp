@@ -3,6 +3,7 @@
 #include <cctype>
 #include <sstream>
 
+#include "../../Config/validation.h"
 #include "../../URI/URI.hpp"
 
 namespace CGIValidation {
@@ -96,6 +97,11 @@ bool isToken(const char c) {
   }
 }
 
+bool isPrintable(const char c) {
+  if (20 <= c && c <= 126) return true;
+  return false;
+}
+
 bool isMediaType(std::string &media) {
   std::size_t pos = media.find("/");
   if (pos == std::string::npos) return false;
@@ -107,6 +113,19 @@ bool isMediaType(std::string &media) {
   }
   for (std::string::const_iterator c = subtype.cbegin(); c != subtype.cend(); c++) {
     if (!isToken(*c)) return false;
+  }
+  return true;
+}
+
+bool isStatusHeaderValue(std::string &field) {
+  std::istringstream iss(field);
+  std::string status;
+  std::string reason;
+  iss >> status >> std::ws;
+  getline(iss, reason, '\n');
+  if (!isStatusCode(field.substr(0, 3))) return false;
+  for (std::string::iterator c = reason.begin(); c != reason.end(); c++) {
+    if (!isPrintable(*c)) return false;
   }
   return true;
 }

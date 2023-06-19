@@ -4,6 +4,6 @@
 #include <sstream>
 
 int main() {
-  std::cout << "Location: http://example.com" << std::endl;
+  std::cout << "Location:http://example.com" << std::endl;
   std::cout << std::endl;
 }

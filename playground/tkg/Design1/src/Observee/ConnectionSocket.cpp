@@ -35,6 +35,8 @@ void ConnectionSocket::shutdown() {
   em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
+void ConnectionSocket::initExtension() { extension_ = ""; }
+
 GET *ConnectionSocket::makeGET(int fd) {
   GET *obs = new GET(fd, em_, this, &response_);
   this->monitorChild(obs);
@@ -115,7 +117,7 @@ void ConnectionSocket::processPOST() {
   if (!isAllDirectoryWritable(path)) throw ResourceForbiddenException("access Write error");  // 403 Forbiden
   const bool file_exist = stat(path.c_str(), &st) != -1;
   if (file_exist) {
-    response_.setStatus(200);
+    response_.setStatusAndReason(200, "");
     bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
     // POST method is not allowed if targetURI is directory
     if (is_directory) throw MethodNotAllowedException("POST is not allowed to directory");
@@ -132,9 +134,9 @@ void ConnectionSocket::processPOST() {
   }
   // set temporary status code
   if (file_exist)
-    response_.setStatus(200);
+    response_.setStatusAndReason(200, "");
   else
-    response_.setStatus(201);
+    response_.setStatusAndReason(201, "");
   int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC);
   if (fd < 0) throw InternalServerErrorException("open error");
   POST *obs = makePOST(fd);
@@ -176,7 +178,7 @@ void ConnectionSocket::processGET() {
     if (idx_path == "" && loc_conf_->common_.autoindex_) {
       DEBUG_PUTS("autoindex");
       response_.appendBody(GET::listFilesAndDirectories(path));
-      response_.setStatus(200);
+      response_.setStatusAndReason(200, "");
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
       return;  // 200 OK
@@ -206,12 +208,11 @@ void ConnectionSocket::processErrorPage(const LocationConf *conf) {
 }
 
 void ConnectionSocket::process() {
-  extension_ = "";
   ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
   loc_conf_ = serv_conf->getLocationConf(&request_);
   // loc_conf is redirection block
   if (loc_conf_->hasRedirectDirective()) {
-    response_.setStatus(std::atoi(loc_conf_->getRedirectStatus().c_str()));
+    response_.setStatusAndReason(std::atoi(loc_conf_->getRedirectStatus().c_str()), "");
     response_.appendHeader("Location", loc_conf_->getRedirectURI());
     throw RedirectMovedPermanently("redirection");
   }
@@ -219,7 +220,6 @@ void ConnectionSocket::process() {
   if (request_.methodIs(HttpRequest::GET)) {
     processGET();
   } else if (request_.methodIs(HttpRequest::POST)) {
-    // handle POST
     processPOST();
   } else if (request_.methodIs(HttpRequest::DELETE)) {
     // handle DELETE
@@ -240,7 +240,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     } catch (HttpException &e) {
       // all 3xx 4xx 5xx exception(readRequest and process) is catched here
       std::cerr << e.what();
-      response_.setStatus(e.statusCode());
+      response_.setStatusAndReason(e.statusCode(), "");
       if (loc_conf_) {
         // error_page directive is ignored when bad request
         processErrorPage(loc_conf_);
@@ -257,6 +257,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     response_.sendResponse();
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
+      extension_ = "";
       request_ = HttpRequest();
       response_ = HttpResponse(id_, port_, &conf_);
       em_->disableWriteEvent(id_);

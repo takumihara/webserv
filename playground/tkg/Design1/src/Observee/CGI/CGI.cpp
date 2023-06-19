@@ -41,18 +41,23 @@ std::pair<std::string, std::string> getHeaderField(std::string &field) {
   if (field.find(':') == std::string::npos) throw std::runtime_error("invalid header field");
   std::getline(ss, name, ':');
   std::getline(ss, value);
-  value = trimOws(value);
   return std::pair<std::string, std::string>(name, value);
 }
 
 void CGI::parseDocRes(std::vector<std::string> &lines) {
+  DEBUG_PUTS("parseDocRes");
   std::size_t i = 0;
   while (i < lines.size() && lines[i] != "") {
     t_field field = getHeaderField(lines[i]);
     if (i == 0) {
       response_->appendHeader("Content-Type", field.second);
     } else if (i == 1 && field.first == "Status") {
-      response_->setStatus(std::atoi(field.second.c_str()));
+      std::istringstream iss(field.second);
+      std::string status;
+      std::string reason;
+      iss >> status >> std::ws;
+      getline(iss, reason, '\n');
+      response_->setStatusAndReason(std::atoi(status.c_str()), reason);
     } else {
       response_->appendHeader(field.first, field.second);
     }
@@ -67,16 +72,18 @@ void CGI::parseDocRes(std::vector<std::string> &lines) {
 }
 
 void CGI::parseClientRedirect(std::vector<std::string> &lines) {
+  DEBUG_PUTS("parseClientRedirect");
   t_field field = getHeaderField(lines[0]);
   response_->appendHeader("Location", field.second);
-  response_->setStatus(302);
+  response_->setStatusAndReason(302, "");
 }
 
 void CGI::parseClientRedirectWithDoc(std::vector<std::string> &lines) {
+  DEBUG_PUTS("parseClientRedirectWithDoc");
   t_field field = getHeaderField(lines[0]);
   response_->appendHeader("Location", field.second);
   field = getHeaderField(lines[1]);
-  response_->setStatus(std::atoi(field.second.c_str()));
+  response_->setStatusAndReason(std::atoi(field.second.c_str()), field.second.substr(4));
   field = getHeaderField(lines[2]);
   response_->appendHeader("Content-Type", field.second);
   std::size_t i = 3;
@@ -93,12 +100,19 @@ void CGI::parseClientRedirectWithDoc(std::vector<std::string> &lines) {
 }
 
 void CGI::parseLocalRedirect(std::vector<std::string> &lines) {
+  DEBUG_PUTS("parseLocalRedirect");
   t_field field = getHeaderField(lines[0]);
   try {
-    URI *uri = URI::parseRequestURI(field.second);
+    const size_t fragment_pos = field.second.find("#");
+    std::string fragment;
+    if (fragment_pos != std::string::npos) {
+      fragment = field.second.substr(fragment_pos + 1);
+    }
+    URI *uri = URI::parseRequestURI(field.second.substr(0, fragment_pos));
     delete request_->request_target_;
     request_->request_target_ = uri;
     request_->body_.clear();
+    dynamic_cast<ConnectionSocket *>(parent_)->initExtension();
   } catch (std::runtime_error &e) {
     throw(InternalServerErrorException("CGI response URI is invalid"));
   }
@@ -110,7 +124,7 @@ bool CGI::isDocRes(std::vector<std::string> &lines) {
     while (i < lines.size() && lines[i] != "") {
       t_field field = getHeaderField(lines[i]);
       if (i == 0 && field.first != "Content-Type") return false;
-      if (i == 1 && field.first == "Status" && !isStatusCode(field.second)) return false;
+      if (i == 1 && field.first == "Status" && !CGIValidation::isStatusHeaderValue(field.second)) return false;
       i++;
     }
   } catch (std::runtime_error &e) {
@@ -154,7 +168,7 @@ bool CGI::isClientRedirectWithDocRes(std::vector<std::string> &lines) {
     t_field field = getHeaderField(lines[0]);
     if (field.first != "Location" || !CGIValidation::isAbsURI(field.second)) return false;
     field = getHeaderField(lines[1]);
-    if (field.first != "Status" || !isStatusCode(field.second)) return false;
+    if (field.first != "Status" || !CGIValidation::isStatusHeaderValue(field.second)) return false;
     field = getHeaderField(lines[2]);
     if (field.first != "Content-Type" || !CGIValidation::isMediaType(field.second)) return false;
     std::size_t i = 3;
@@ -184,21 +198,20 @@ CGI::Type CGI::getResponseType(std::vector<std::string> &lines) {
 }
 
 void CGI::parseCGIResponse() {
-  std::vector<std::string> lines = CGIValidation::extractLines(recieve_data_);
+  std::vector<std::string> lines = CGIValidation::extractLines(recieved_data_);
   CGI::Type type = getResponseType(lines);
   if (type == CGI::Error) {
-    response_->setStatus(500);
+    response_->setStatusAndReason(500, "");
   } else if (type == CGI::Doc) {
     parseDocRes(lines);
   } else if (type == CGI::LocalRedir) {
-    DEBUG_PRINTF("CGI LAST RESULT: '%s'", recieve_data_.c_str());
+    DEBUG_PRINTF("CGI LAST RESULT: '%s'", recieved_data_.c_str());
     try {
       parseLocalRedirect(lines);
-      Observee *parent = parent_;
       shutdown();
-      dynamic_cast<ConnectionSocket *>(parent)->process();
+      dynamic_cast<ConnectionSocket *>(parent_)->process();
     } catch (HttpException &e) {
-      response_->setStatus(e.statusCode());
+      response_->setStatusAndReason(e.statusCode(), "");
       type = CGI::Error;
     }
   } else if (type == CGI::ClientRedir) {
@@ -207,7 +220,7 @@ void CGI::parseCGIResponse() {
     parseClientRedirectWithDoc(lines);
   }
   if (type != CGI::LocalRedir) {
-    DEBUG_PRINTF("CGI LAST RESULT: '%s'", recieve_data_.c_str());
+    DEBUG_PRINTF("CGI LAST RESULT: '%s'", recieved_data_.c_str());
     em_->registerWriteEvent(parent_->id_);
     shutdown();
   }
@@ -222,19 +235,19 @@ void CGI::notify(struct kevent ev) {
 
     int res = read(id_, &buff[0], FILE_READ_SIZE);
     if (res == -1) {
-      response_->setStatus(501);
+      response_->setStatusAndReason(501, "");
       em_->registerWriteEvent(parent_->id_);
       shutdown();
       return;
     } else if (res == 0) {
-      response_->setStatus(200);
+      response_->setStatusAndReason(200, "");
       parseCGIResponse();
     } else {
       std::cout << "res: " << res << std::endl;
       buff[res] = '\0';
-      recieve_data_ += buff;
+      recieved_data_ += buff;
       em_->updateTimer(this);
-      DEBUG_PRINTF("CGI WIP RESULT: '%s'", recieve_data_.c_str());
+      DEBUG_PRINTF("CGI WIP RESULT: '%s'", recieved_data_.c_str());
     }
   } else if (ev.filter == EVFILT_WRITE) {
     const char *response = request_->getBody().c_str();
@@ -246,7 +259,7 @@ void CGI::notify(struct kevent ev) {
     int res = write(id_, &response[sending_size_], size);
     if (res == -1) {
       perror("sendto");
-      response_->setStatus(501);
+      response_->setStatusAndReason(501, "");
       em_->registerWriteEvent(parent_->id_);
       shutdown();
       return;
