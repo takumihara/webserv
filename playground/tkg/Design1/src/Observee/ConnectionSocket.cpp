@@ -208,7 +208,6 @@ void ConnectionSocket::processErrorPage(const LocationConf *conf) {
 }
 
 void ConnectionSocket::process() {
-  extension_ = "";
   ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
   loc_conf_ = serv_conf->getLocationConf(&request_);
   // loc_conf is redirection block
