@@ -1,11 +1,16 @@
 #include "HttpServer.hpp"
 
+#include <iostream>
 #include <sstream>
 
 #include "./Config/Cache.hpp"
 #include "./Config/Config.hpp"
 #include "./Config/Parser.hpp"
 #include "./Config/validation.h"
+
+sig_atomic_t sig_int = 0;
+
+void sigIntHandler(int sig) { sig_int = sig; }
 
 std::vector<std::string> getIPList(const std::vector<ServerConf *> servs) {
   std::vector<std::string> ip_list;
@@ -81,6 +86,7 @@ void HttpServer::setup() {
   if (!isServernameDuplicate(conf_)) {
     throw std::runtime_error("httpServer::setup: servername is duplicate");
   }
+
 #ifdef DEBUG
   std::cout << "-----------port conf map-------------\n" << std::endl;
   conf_.printPortServConfMap();
@@ -88,12 +94,14 @@ void HttpServer::setup() {
 }
 
 void HttpServer::start() {
-  
-  setup();
+  signal(SIGINT, sigIntHandler);
   try {
+    setup();
     openPorts();
   } catch (std::runtime_error &e) {
     em_.closeAll();
+    std::cerr << "Server Setup failed" << std::endl;
+    exit(1);
   }
   em_.eventLoop();
 }

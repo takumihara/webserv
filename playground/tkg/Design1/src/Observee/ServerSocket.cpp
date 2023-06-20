@@ -16,7 +16,6 @@
 #include <stdexcept>
 
 #include "../IO/FDReadCloser.hpp"
-
 void ServerSocket::shutdown() {
   close(id_);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
@@ -27,10 +26,10 @@ void ServerSocket::notify(struct kevent ev) {
   struct sockaddr_in add;
   int addlen;
   int connection_fd = accept(id_, (struct sockaddr *)&add, (socklen_t *)&addlen);
-  fcntl(connection_fd, F_SETFL, O_NONBLOCK);
   if (connection_fd == -1) {
     throw std::runtime_error("accept error");
   }
+  fcntl(connection_fd, F_SETFL, O_NONBLOCK);
   em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_READ, EV_ADD, 0, 0, 0});
   em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_TIMER, EV_ADD | EV_ENABLE,
                                         NOTE_SECONDS, EventManager::kTimeoutDuration, 0});

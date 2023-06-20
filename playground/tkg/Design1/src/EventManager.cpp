@@ -156,12 +156,18 @@ void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(str
 
 void EventManager::eventLoop() {
   struct kevent evlist[kMaxEventSize];
+  extern sig_atomic_t sig_int;
   DEBUG_PUTS("server setup finished!");
   while (1) {
     DEBUG_PUTS("loop start");
     updateKqueue();
     clearEvlist(evlist);
     int nev = kevent(kq_, NULL, 0, evlist, kMaxEventSize, NULL);
+    if (sig_int) {
+      DEBUG_PUTS("sig INT");
+      closeAll();
+      exit(0);
+    }
     if (nev == 0)
       continue;
     else if (nev == -1)
