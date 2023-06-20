@@ -9,35 +9,118 @@
 #include <string>
 
 bool includes(const std::string &str, const std::string &substr);
-std::string sendRequest(const std::string &request);
-std::string CGIRequest();
-std::string GetRequest();
-std::string ChunkedRequest();
-std::string ObsFoldRequest();
+std::string sendRequest(const std::string &host, const std::string &port, const std::string &method,
+                        const std::string &path, const std::string &body, const std::string &headers);
 
-TEST(E2E, CGI) {
-  std::string res = sendRequest(CGIRequest());
+TEST(E2E, CGIDoc) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/html/a.cgi?query";
+  std::string body = "Body\r\n";
+  std::string headers = "Host: localhost;Content-Length:6;Date: Wed, 16 Oct 2019 07:28:00 GMT";
+  std::string res = sendRequest(host, port, method, path, body, headers);
 
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
   ASSERT_TRUE(includes(res, "CGI Response \n"));
 }
 
+TEST(E2E, CGILocalRedirect) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/html/cgi_LR.cgi?query";
+  std::string body = "Body\r\n";
+  std::string headers = "Host: localhost;Content-Length:6;Date: Wed, 16 Oct 2019 07:28:00 GMT";
+
+  std::string res = sendRequest(host, port, method, path, body, headers);
+
+  std::cerr << res << std::endl;
+  ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
+}
+
+TEST(E2E, CGIClientRedirect) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/html/cgi_CR.cgi?query";
+  std::string body = "Body\r\n";
+  std::string headers = "Host: localhost;Content-Length:6;Date: Wed, 16 Oct 2019 07:28:00 GMT";
+
+  std::string res = sendRequest(host, port, method, path, body, headers);
+
+  std::cerr << res << std::endl;
+  // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
+  ASSERT_TRUE(includes(res, "HTTP/1.1 302 Found\nLocation: http://example.com"));
+}
+
+TEST(E2E, CGIClientRedirectWithDoc) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/html/cgi_CRWDoc.cgi?query";
+  std::string body = "Body\r\n";
+  std::string headers = "Host: localhost;Content-Length:6;Date: Wed, 16 Oct 2019 07:28:00 GMT";
+
+  std::string res = sendRequest(host, port, method, path, body, headers);
+
+  std::cerr << res << std::endl;
+  // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
+  ASSERT_TRUE(includes(res, "Location: http://example.com"));
+  ASSERT_TRUE(includes(res, "Client Redirection With Document CGI Response"));
+}
+
+TEST(E2E, CGILocalRedirectToClientRedirect) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/html/local.py?query";
+  std::string body = "Body\r\n";
+  std::string headers = "Host: localhost;Content-Length:6;Date: Wed, 16 Oct 2019 07:28:00 GMT";
+
+  std::string res = sendRequest(host, port, method, path, body, headers);
+
+  std::cerr << res << std::endl;
+  ASSERT_TRUE(includes(res, "HTTP/1.1 302 Found\nLocation: http://example.com"));
+}
+
 TEST(E2E, Get) {
-  std::string res = sendRequest(GetRequest());
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/html/index.html";
+  std::string body = "hello";
+  std::string headers = "Host: localhost;Content-Length:5";
+  std::string res = sendRequest(host, port, method, path, body, headers);
 
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
   ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
 }
 
-// TEST(E2E, Chunked) {
-//   std::string res = sendRequest(ChunkedRequest());
+TEST(E2E, Chunked) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/html/index.html";
+  std::string body = "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n";
+  std::string headers = "Host: localhost;Transfer-Encoding:chunked, chunked     , chunked  ";
 
-//   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
-//   ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
-// }
+  std::string res = sendRequest(host, port, method, path, body, headers);
+
+  // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
+  ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
+}
 
 TEST(E2E, ObsFold) {
-  std::string res = sendRequest(ObsFoldRequest());
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/html/index.html";
+  std::string body = "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n";
+  std::string headers = "Host: localhost;SomeHeader: SomeValue  \r\n continuous value";
+
+  std::string res = sendRequest(host, port, method, path, body, headers);
+
   std::cout << res << std::endl;
 
   EXPECT_TRUE(includes(res, "HTTP/1.1 400 Bad Request"));
@@ -45,94 +128,70 @@ TEST(E2E, ObsFold) {
 
 bool includes(const std::string &str, const std::string &substr) { return str.find(substr) != std::string::npos; }
 
-std::string sendRequest(const std::string &request) {
-  std::string hostname = "localhost";
-  std::string service = "80";
-
-  struct addrinfo hints, *res;
-  int err;
-  int sock;
-
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_family = AF_INET;
-
-  if ((err = getaddrinfo(hostname.c_str(), service.c_str(), &hints, &res)) != 0) {
-    printf("error %d\n", err);
-    return "";
+std::vector<std::string> extractLines(const std::string &data) {
+  std::vector<std::string> lines;
+  std::string str;
+  std::stringstream ss(data);
+  while (getline(ss, str)) {
+    lines.push_back(str);
   }
-  void *ptr = &((struct sockaddr_in *)res->ai_addr)->sin_addr;
-  char addr_buf[64];
-  inet_ntop(res->ai_family, ptr, addr_buf, sizeof(addr_buf));
-
-  sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-  if (sock == -1) {
-    perror("socket");
-    return "";
-  }
-
-  if (connect(sock, res->ai_addr, res->ai_addrlen) == -1) {
-    perror("connect");
-    return "";
-  }
-
-  int write_res = sendto(sock, request.c_str(), request.size(), 0, NULL, 0);
-  if (write_res == -1) {
-    perror("sendto");
-  }
-
-  char response[1000];
-  memset(response, 0, 1000);
-  if (read(sock, response, 1000) == -1) {
-    perror("read");
-    return "";
-  }
-
-  freeaddrinfo(res);
-  close(sock);
-
-  return std::string(response);
+  return lines;
 }
 
-std::string GetRequest() {
-  std::string request;
-  request += "GET /html/index.html HTTP/1.1\r\n";
-  request += "Host: localhost\r\n";
-  request += "Content-Length:5\r\n";
-  request += "\r\n";
-  request += "hello";
-  return request;
-}
+std::string sendRequest(const std::string &host, const std::string &port, const std::string &method,
+                        const std::string &path, const std::string &body, const std::string &headers) {
+  char *argv[100];
+  argv[0] = const_cast<char *>("test/client.py");
+  argv[1] = const_cast<char *>(host.c_str());
+  argv[2] = const_cast<char *>(port.c_str());
+  argv[3] = const_cast<char *>(method.c_str());
+  argv[4] = const_cast<char *>(path.c_str());
+  argv[5] = const_cast<char *>(body.c_str());
+  std::vector<std::string> lines;
+  std::stringstream ss(headers);
+  std::string str;
+  while (getline(ss, str, ';')) {
+    lines.push_back(str);
+  }
+  int i = 0;
+  for (; i < lines.size(); i++) {
+    argv[6 + i] = const_cast<char *>(lines[i].c_str());
+  }
+  argv[6 + i] = NULL;
+  extern char **environ;
+  int fd[2];
+  std::string response = "";
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1) {
+    throw std::runtime_error("soketpair error");
+  }
+  int pid = fork();
+  if (pid == 0) {
+    close(fd[0]);
+    if (dup2(fd[1], STDIN_FILENO) == -1) {
+      perror("dup2");
+      close(fd[1]);
+      exit(1);
+    }
+    if (dup2(fd[1], STDOUT_FILENO) == -1) {
+      perror("dup2");
+      close(fd[1]);
+      exit(1);
+    }
+    close(fd[1]);
+    if (execve(argv[0], argv, environ) == -1) {
+      perror("execve");
+      exit(1);
+    }
+  } else {
+    close(fd[1]);
+    int res = 0;
+    char buff[10000];
+    while ((res = read(fd[0], buff, 10000)) != 0) {
+      buff[res] = '\0';
+      response += buff;
+    }
+    close(fd[0]);
+  }
 
-std::string CGIRequest() {
-  std::string request;
-  request += "GET /html/a.cgi?query HTTP/1.1\r\n";
-  request += "Host: localhost\r\n";
-  request += "Content-Length:  6 \r\n";
-  request += "Date: Wed, 16 Oct 2019 07:28:00 GMT\r\n";
-  request += "\r\n";
-  request += "Body";
-  request += "\r\n";
-  return request;
-}
-
-std::string ChunkedRequest() {
-  std::string request;
-  request += "POST /html/index.html HTTP/1.1\r\n";
-  request += "Host: localhost\r\n";
-  request += "Transfer-Encoding: chunked, chunked     , chunked  \r\n";
-  request += "\r\n";
-  request += "4\r\nWiki\r\n7\r\npedia i\r\nB\r\nn \r\nchunks.\r\n0\r\n";
-  request += "\r\n";
-  return request;
-}
-
-std::string ObsFoldRequest() {
-  std::string request;
-  request += "GET /html/index.html HTTP/1.1\r\n";
-  request += "Host: localhost\r\n";
-  request += "SomeHeader: SomeValue  \r\n";
-  request += " continuous value\r\n";
-  request += "\r\n";
-  return request;
+  return response;
 }

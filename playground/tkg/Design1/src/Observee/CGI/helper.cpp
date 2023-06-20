@@ -3,6 +3,7 @@
 #include <cctype>
 #include <sstream>
 
+#include "../../Config/validation.h"
 #include "../../URI/URI.hpp"
 
 namespace CGIValidation {
@@ -70,6 +71,67 @@ bool isPchar(const char *c) {
       return true;
   }
   return isUnreserved(*c) || isEscaped(c);
+}
+
+bool isToken(const char c) {
+  if (std::isalnum(c)) return true;
+  switch (c) {
+    case '!':
+    case '#':
+    case '$':
+    case '%':
+    case '&':
+    case '\'':
+    case '*':
+    case '+':
+    case '-':
+    case '.':
+    case '^':
+    case '_':
+    case '`':
+    case '|':
+    case '~':
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool isPrintable(const char c) {
+  if (20 <= c && c <= 126) return true;
+  return false;
+}
+
+bool isMediaType(std::string &media) {
+  std::size_t pos = media.find("/");
+  if (pos == std::string::npos) return false;
+  std::string type = media.substr(0, pos);
+  std::string subtype = media.substr(pos + 1);
+  if (type == "" || subtype == "") return false;
+  for (std::string::const_iterator c = type.cbegin(); c != type.cend(); c++) {
+    if (!isToken(*c)) return false;
+  }
+  for (std::string::const_iterator c = subtype.cbegin(); c != subtype.cend(); c++) {
+    if (!isToken(*c)) return false;
+  }
+  return true;
+}
+
+bool isStatusHeaderValue(std::string &field) {
+  std::istringstream iss(field);
+  std::string status;
+  std::string reason;
+  iss >> status;
+  if (iss.peek() == ' ')
+    iss.ignore();
+  else
+    return false;
+  getline(iss, reason, '\n');
+  if (!isStatusCode(field.substr(0, 3))) return false;
+  for (std::string::iterator c = reason.begin(); c != reason.end(); c++) {
+    if (!isPrintable(*c)) return false;
+  }
+  return true;
 }
 
 std::vector<std::string> extractLines(const std::string &data) {

@@ -2,8 +2,6 @@
 
 #include "../Config/Config.hpp"
 #include "../HttpRequest/HttpRequest.hpp"
-#include "CGI.hpp"
-
 struct CGIInfo {
   LocationConf *loc_conf;
   std::string auth_type_;

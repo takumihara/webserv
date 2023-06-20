@@ -6,7 +6,7 @@
 int main() {
   std::string input;
   std::cin >> input;
-  std::cout << "Content-Type: text/html" << std::endl;
+  std::cout << "Content-Type:text/html" << std::endl;
   // std::cout << "Status: 208" << std::endl;
   std::stringstream ss;
   ss << input << std::endl;

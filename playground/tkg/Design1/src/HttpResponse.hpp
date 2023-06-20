@@ -34,6 +34,7 @@ class HttpResponse {
   void refresh();
   int getStatus() const;
   void setStatus(const int status);
+  void setStatusAndReason(const int status, const std::string &reason);
   void appendHeader(const std::string &key, const std::string &value);
   void appendBody(const std::string &str);
   bool hasHeader(const std::string &name);
@@ -45,6 +46,7 @@ class HttpResponse {
   State state_;
   int port_;
   int status_;
+  std::string reason_phrase_;
   Config *conf_;
   std::string body_;
   std::string response_;
