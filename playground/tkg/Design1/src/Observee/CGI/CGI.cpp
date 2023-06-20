@@ -55,7 +55,8 @@ void CGI::parseDocRes(std::vector<std::string> &lines) {
       std::istringstream iss(field.second);
       std::string status;
       std::string reason;
-      iss >> status >> std::ws;
+      iss >> status;
+      iss.ignore();
       getline(iss, reason, '\n');
       response_->setStatusAndReason(std::atoi(status.c_str()), reason);
     } else {

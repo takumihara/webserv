@@ -121,7 +121,11 @@ bool isStatusHeaderValue(std::string &field) {
   std::istringstream iss(field);
   std::string status;
   std::string reason;
-  iss >> status >> std::ws;
+  iss >> status;
+  if (iss.peek() == ' ')
+    iss.ignore();
+  else
+    return false;
   getline(iss, reason, '\n');
   if (!isStatusCode(field.substr(0, 3))) return false;
   for (std::string::iterator c = reason.begin(); c != reason.end(); c++) {
