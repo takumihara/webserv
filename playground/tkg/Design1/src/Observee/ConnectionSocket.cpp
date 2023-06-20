@@ -177,7 +177,7 @@ void ConnectionSocket::processGET() {
     }
     if (idx_path == "" && loc_conf_->common_.autoindex_) {
       DEBUG_PUTS("autoindex");
-      response_.appendBody(GET::listFilesAndDirectories(path));
+      response_.appendBody(GET::listFilesAndDirectories(path, request_));
       response_.setStatusAndReason(200, "");
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
