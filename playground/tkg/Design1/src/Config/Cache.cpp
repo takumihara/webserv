@@ -12,7 +12,7 @@
 static std::string readFile(const char *filename) {
   std::ifstream ifs(filename);
   if (ifs.fail()) {
-    throw std::runtime_error("conf file open() failed");
+    throw std::runtime_error("file open() failed");
   }
   return std::string((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 }

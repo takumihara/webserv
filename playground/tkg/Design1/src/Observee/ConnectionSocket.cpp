@@ -158,7 +158,6 @@ void ConnectionSocket::processGET() {
     execCGI(path);
     return;
   }
-  std::cout << "koko: " << path << std::endl;
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
     throw ResourceNotFoundException("stat error: file doesn't exist");  // 404 Not Found
