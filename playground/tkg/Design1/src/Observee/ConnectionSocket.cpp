@@ -254,7 +254,11 @@ void ConnectionSocket::notify(struct kevent ev) {
   if (ev.filter == EVFILT_WRITE) {
     DEBUG_PUTS("handle_response() called");
     response_.createResponse();
-    response_.sendResponse();
+    try {
+      response_.sendResponse();
+    } catch (std::runtime_error &e) {
+      shutdown();
+    }
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
       extension_ = "";

@@ -46,7 +46,11 @@ std::string GET::listFilesAndDirectories(std::string &directory_path, const Http
   ret += "<h1>Index of</h1>";
   while ((entry = readdir(dir)) != NULL) {
     std::string file_path;
-    file_path = directory_path + "/" + entry->d_name;
+    if (directory_path.back() != '/')
+      file_path = directory_path + "/" + entry->d_name;
+    else
+      file_path = directory_path + entry->d_name;
+    std::cout << "file_path: " << file_path << std::endl;
 
     if (stat(file_path.c_str(), &file_stat) == -1) {
       perror("listFilesAndDirectories: stat error");
@@ -54,11 +58,10 @@ std::string GET::listFilesAndDirectories(std::string &directory_path, const Http
     }
     std::string name = entry->d_name;
     std::stringstream ss;
+    // this if statment and rmed_dot are temporary
     std::string rmed_dot;
-    if (directory_path.back() == '/') directory_path.pop_back();
-    // this if statment is temporary
-    if (directory_path[0] == '.') rmed_dot = directory_path.substr(1);
-    ss << "http://" << req.getHost().uri_host << ":" << req.getHost().port << rmed_dot << "/" << name;
+    if (file_path[0] == '.') rmed_dot = file_path.substr(1);
+    ss << "http://" << req.getHost().uri_host << ":" << req.getHost().port << rmed_dot;
     if (S_ISREG(file_stat.st_mode)) {
       ret += HTML::aTag(HTML::sanitize(ss.str()), HTML::sanitize(name));
     } else if (S_ISDIR(file_stat.st_mode)) {
