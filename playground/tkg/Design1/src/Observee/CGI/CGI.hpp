@@ -19,6 +19,7 @@ class CGI : public Observee {
   ~CGI() {}
   void notify(struct kevent ev);
   void shutdown();
+  pid_t getPid() { return pid_; }
   void parseCGIResponse();
   Type getResponseType(std::vector<std::string> &lines);
   bool isDocRes(std::vector<std::string> &line);
@@ -31,7 +32,7 @@ class CGI : public Observee {
   void parseClientRedirectWithDoc(std::vector<std::string> &lines);
 
  private:
-  int pid_;
+  pid_t pid_;
   HttpRequest *request_;
   HttpResponse *response_;
   std::string recieved_data_;

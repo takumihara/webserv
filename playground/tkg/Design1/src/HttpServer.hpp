@@ -10,7 +10,7 @@ class HttpServer {
   HttpServer() : filename_("Config/con.conf"){};
   HttpServer(char *filename) : filename_(filename){};
   ~HttpServer(){};
-  int openPort();
+  void openPorts();
   void setup();
   void start();
 
@@ -18,6 +18,7 @@ class HttpServer {
   EventManager em_;
   const char *filename_;
   Config conf_;
+  static const int kBackLog = 10;
 };
 
 #endif

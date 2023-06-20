@@ -27,6 +27,7 @@ void ServerSocket::notify(struct kevent ev) {
   struct sockaddr_in add;
   int addlen;
   int connection_fd = accept(id_, (struct sockaddr *)&add, (socklen_t *)&addlen);
+  fcntl(connection_fd, F_SETFL, O_NONBLOCK);
   if (connection_fd == -1) {
     throw std::runtime_error("accept error");
   }

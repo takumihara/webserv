@@ -1,5 +1,7 @@
 #include "EventManager.hpp"
 
+#include <csignal>
+
 #include "./Config/Config.hpp"
 #include "Observee/Observee.hpp"
 #include "debug.hpp"
@@ -18,6 +20,22 @@ void EventManager::addChangedEvents(struct kevent kevent) {
   else {
     changed_events_[key].flags |= kevent.flags;
   }
+}
+void EventManager::closeAll() {
+  for (std::map<std::pair<t_id, t_type>, Observee *>::iterator itr = observees_.begin(); itr != observees_.end();
+       itr++) {
+    if (itr->second->type_ != "cgi") {
+      close(itr->first.first);
+      delete itr->second;
+    } else {
+      close(itr->first.first);
+      pid_t pid = dynamic_cast<CGI *>(itr->second)->getPid();
+      kill(pid, SIGTERM);
+      waitpid(pid, NULL, 0);
+      delete itr->second;
+    }
+  }
+  observees_.clear();
 }
 
 void EventManager::add(const std::pair<t_id, t_type> &key, Observee *obs) { observees_[key] = obs; }

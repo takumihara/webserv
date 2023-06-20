@@ -29,7 +29,7 @@ void CGI::shutdown() {
   int status = 0;
   close(id_);
   em_->deleteTimerEvent(id_);
-  kill(pid_, SIGINT);
+  kill(pid_, SIGTERM);
   waitpid(pid_, &status, 0);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
   if (status != 0) throw InternalServerErrorException("waitpid is failed");
@@ -209,8 +209,9 @@ void CGI::parseCGIResponse() {
     DEBUG_PRINTF("CGI LAST RESULT: '%s'", recieved_data_.c_str());
     try {
       parseLocalRedirect(lines);
+      ConnectionSocket *parent = dynamic_cast<ConnectionSocket *>(parent_);
       shutdown();
-      dynamic_cast<ConnectionSocket *>(parent_)->process();
+      parent->process();
     } catch (HttpException &e) {
       response_->setStatusAndReason(e.statusCode(), "");
       type = CGI::Error;

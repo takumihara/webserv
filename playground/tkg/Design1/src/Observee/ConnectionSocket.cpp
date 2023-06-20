@@ -69,6 +69,8 @@ void ConnectionSocket::execCGI(const std::string &path) {
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1) {
     throw InternalServerErrorException("error socketpair");
   }
+  fcntl(fd[0], F_SETFL, O_NONBLOCK);
+  fcntl(fd[1], F_SETFL, O_NONBLOCK);
   int pid = fork();
   if (pid == 0) {
     close(fd[0]);
@@ -138,6 +140,7 @@ void ConnectionSocket::processPOST() {
   else
     response_.setStatusAndReason(201, "");
   int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC);
+  fcntl(fd, F_SETFL, O_NONBLOCK);
   if (fd < 0) throw InternalServerErrorException("open error");
   POST *obs = makePOST(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
@@ -188,6 +191,7 @@ void ConnectionSocket::processGET() {
   }
   // URI file or index file
   int fd = open(path.c_str(), O_RDONLY);
+  fcntl(fd, F_SETFL, O_NONBLOCK);
   GET *obs = makeGET(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
   em_->disableReadEvent(id_);

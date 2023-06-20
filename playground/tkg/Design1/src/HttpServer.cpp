@@ -15,6 +15,7 @@ std::vector<std::string> getIPList(const std::vector<ServerConf *> servs) {
       ip_list.push_back("0.0.0.0");
       return ip_list;
     }
+    // not push back when current ip is already pushed back
     if (!contain(ip_list, ((*serv)->host_))) {
       ip_list.push_back((*serv)->host_);
       printf("ip: %s\n", (*serv)->host_.c_str());
@@ -43,7 +44,7 @@ uint32_t getIPv4ToByte(const std::string &ip) {
   return byte;
 }
 
-int HttpServer::openPort() {
+void HttpServer::openPorts() {
   int sock_fd;
   struct sockaddr_in add;
   for (std::map<int, std::vector<ServerConf *> >::iterator itr = conf_.port_servConf_map_.begin();
@@ -55,6 +56,7 @@ int HttpServer::openPort() {
       }
       int reuse = 1;
       setsockopt(sock_fd, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse));
+      fcntl(sock_fd, F_SETFL, O_NONBLOCK);
       add.sin_family = AF_INET;
       add.sin_addr.s_addr = htonl(getIPv4ToByte(*ip));
       add.sin_port = htons(itr->first);
@@ -62,13 +64,13 @@ int HttpServer::openPort() {
       if (bind(sock_fd, (struct sockaddr *)&add, sizeof(add)) == -1) {
         throw std::runtime_error("bind error");
       }
-      if (listen(sock_fd, 0) < 0) {
+      if (listen(sock_fd, kBackLog) < 0) {
         throw std::runtime_error("listen error");
       }
       em_.registerServerEvent(sock_fd, itr->first, conf_);
     }
   }
-  return sock_fd;
+  return;
 }
 
 void HttpServer::setup() {
@@ -86,8 +88,12 @@ void HttpServer::setup() {
 }
 
 void HttpServer::start() {
+  
   setup();
-  int port_fd = openPort();
-  (void)port_fd;
+  try {
+    openPorts();
+  } catch (std::runtime_error &e) {
+    em_.closeAll();
+  }
   em_.eventLoop();
 }
