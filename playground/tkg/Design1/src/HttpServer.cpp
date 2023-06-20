@@ -29,7 +29,7 @@ std::vector<std::string> getIPList(const std::vector<ServerConf *> servs) {
   return ip_list;
 }
 
-uint32_t getIPv4ToByte(const std::string &ip) {
+uint32_t ipv4ToByte(const std::string &ip) {
   uint32_t byte = 0;
   std::vector<std::string> octets;
   std::stringstream ss(ip);
@@ -59,11 +59,10 @@ void HttpServer::openPorts() {
       if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         throw std::runtime_error("socket error");
       }
-      int reuse = 1;
-      setsockopt(sock_fd, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse));
+      setsockopt(sock_fd, SOL_SOCKET, SO_REUSEPORT, NULL, 0);
       fcntl(sock_fd, F_SETFL, O_NONBLOCK);
       add.sin_family = AF_INET;
-      add.sin_addr.s_addr = htonl(getIPv4ToByte(*ip));
+      add.sin_addr.s_addr = htonl(ipv4ToByte(*ip));
       add.sin_port = htons(itr->first);
 
       if (bind(sock_fd, (struct sockaddr *)&add, sizeof(add)) == -1) {
