@@ -44,7 +44,7 @@ TEST(CGI, CGIInfo1) {
   }
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
-  rreader.readRequest();
+  rreader.read();
   ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   std::string path = loc_conf->common_.root_ + req.getRequestTarget()->getPath();
@@ -77,7 +77,7 @@ TEST(CGI, CGIInfo2) {
   }
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
-  rreader.readRequest();
+  rreader.read();
   ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   std::string path = loc_conf->common_.root_ + req.getRequestTarget()->getPath();

@@ -42,7 +42,7 @@ class HttpRequestReader {
     }
     return *this;
   }
-  State readRequest();
+  State read();
 
  private:
   std::set<HeaderField> received_fields_;

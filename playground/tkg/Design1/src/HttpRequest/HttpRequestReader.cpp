@@ -15,7 +15,7 @@
 #define MIN_PORT_NUM 0
 #define MAX_PORT_NUM 65535
 
-HttpRequestReader::State HttpRequestReader::readRequest() {
+HttpRequestReader::State HttpRequestReader::read() {
   std::string buff;
 
   size_t size = rc_->read(buff, SOCKET_READ_SIZE);
