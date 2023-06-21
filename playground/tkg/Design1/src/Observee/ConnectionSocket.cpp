@@ -238,8 +238,8 @@ void ConnectionSocket::notify(struct kevent ev) {
         this->process();
       }
     } catch (HttpException &e) {
-      // all 3xx 4xx 5xx exception(readRequest and process) is catched here
-      std::cerr << e.what();
+      // all 3xx 4xx 5xx exception(readRequest and process) is caught here
+      std::cerr << e.what() << std::endl;
       response_.setStatusAndReason(e.statusCode(), "");
       if (loc_conf_) {
         // error_page directive is ignored when bad request
@@ -259,6 +259,7 @@ void ConnectionSocket::notify(struct kevent ev) {
       loc_conf_ = NULL;
       extension_ = "";
       request_ = HttpRequest();
+      rreader_ = HttpRequestReader(rreader_, request_);
 
       response_ = HttpResponse(id_, port_, &conf_);
       em_->disableWriteEvent(id_);
