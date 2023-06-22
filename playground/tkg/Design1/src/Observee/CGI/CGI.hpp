@@ -20,7 +20,6 @@ class CGI : public Observee {
   void notify(struct kevent ev);
   void shutdown();
   void terminate();
-  pid_t getPid() { return pid_; }
   void parseCGIResponse();
   Type getResponseType(std::vector<std::string> &lines);
   bool isDocRes(std::vector<std::string> &line);
