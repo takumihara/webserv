@@ -78,10 +78,10 @@ void HttpResponse::sendResponse() {
   }
   std::string res_str = std::string(response);
   std::cout << "response sent: "
-            << "'" << res_str.substr(sending_response_size_, size) << "'"
+            << "'" << escape(res_str.substr(sending_response_size_, size)) << "'"
             << " (size:" << res << ")" << std::endl;
   sending_response_size_ += size;
-  std::cout << "response size: " << response_size_ << "(" << sending_response_size_ << std::endl;
+  std::cout << "response size: " << response_size_ << "(" << sending_response_size_ << ")" << std::endl;
   if (sending_response_size_ == response_size_) state_ = End;
 }
 

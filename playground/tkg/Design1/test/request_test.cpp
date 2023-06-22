@@ -11,7 +11,7 @@ TEST(Request, Get) {
   Config conf;
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
-  HttpRequestReader::State state = rreader.readRequest();
+  HttpRequestReader::State state = rreader.read();
 
   ASSERT_EQ(state, HttpRequestReader::FinishedReading);
   ASSERT_EQ(req.getRequestTarget()->getPath(), "/");
@@ -26,7 +26,7 @@ TEST(Request, BodyLargerThanContentLength) {
   Config conf;
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
-  HttpRequestReader::State state = rreader.readRequest();
+  HttpRequestReader::State state = rreader.read();
 
   ASSERT_EQ(state, HttpRequestReader::FinishedReading);
   ASSERT_EQ(req.getBody(), "bod");
@@ -39,7 +39,7 @@ TEST(Request, NoHostFeild) {
   HttpRequest req;
   try {
     HttpRequestReader rreader(0, &conf, req, rc);
-    HttpRequestReader::State state = rreader.readRequest();
+    HttpRequestReader::State state = rreader.read();
     FAIL();
   } catch (BadRequestException &e) {
     ASSERT_EQ(std::string(e.what()), std::string("missing host header"));
@@ -56,7 +56,7 @@ TEST(Request, BothContentLengthAndTransferEncoding) {
   HttpRequest req;
   try {
     HttpRequestReader rreader(0, &conf, req, rc);
-    HttpRequestReader::State state = rreader.readRequest();
+    HttpRequestReader::State state = rreader.read();
     std::cout << "No Exception" << std::endl;
     FAIL();
   } catch (BadRequestException &e) {
@@ -77,7 +77,7 @@ TEST(Request, TooBigContentLength) {
 
   try {
     HttpRequestReader rreader(0, &conf, req, rc);
-    HttpRequestReader::State state = rreader.readRequest();
+    HttpRequestReader::State state = rreader.read();
     std::cout << "No Exception" << std::endl;
     FAIL();
   } catch (BadRequestException &e) {
@@ -97,7 +97,7 @@ TEST(Request, NegativeContentLength) {
 
   try {
     HttpRequestReader rreader(0, &conf, req, rc);
-    HttpRequestReader::State state = rreader.readRequest();
+    HttpRequestReader::State state = rreader.read();
     std::cout << "No Exception" << std::endl;
     FAIL();
   } catch (BadRequestException &e) {

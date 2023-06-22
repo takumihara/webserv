@@ -29,9 +29,22 @@ class HttpRequestReader {
         chunked_size_(0),
         chunked_reading_state_(ReadingChunkedSize),
         conf_(conf) {}
+  // this constructor is to read subsequent requests from the same socket
+  HttpRequestReader(const HttpRequestReader &other, HttpRequest &request)
+      : request_(request),
+        rc_(other.rc_),
+        sock_fd_(other.sock_fd_),
+        raw_data_(other.raw_data_),
+        state_(ReadingStartLine),
+        chunked_size_(0),
+        chunked_reading_state_(ReadingChunkedSize),
+        conf_(other.conf_) {}
   ~HttpRequestReader(){};
   HttpRequestReader &operator=(const HttpRequestReader &other) {
     if (this != &other) {
+      this->received_fields_ = other.received_fields_;
+      this->request_ = other.request_;
+      this->rc_ = other.rc_;
       this->sock_fd_ = other.sock_fd_;
       this->raw_data_ = other.raw_data_;
       this->rest_ = other.rest_;
@@ -42,7 +55,7 @@ class HttpRequestReader {
     }
     return *this;
   }
-  State readRequest();
+  State read();
 
  private:
   std::set<HeaderField> received_fields_;
