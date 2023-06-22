@@ -33,6 +33,7 @@ class Observee {
   virtual ~Observee() {}
   virtual void notify(struct kevent ev) = 0;
   virtual void shutdown() = 0;
+  virtual void terminate() = 0;
   virtual void obliviateChild(Observee *child) {
     if (parent_) parent_->children_.erase(child);
   };

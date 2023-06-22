@@ -35,6 +35,8 @@ void ConnectionSocket::shutdown() {
   em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
+void ConnectionSocket::terminate() { close(id_); }
+
 void ConnectionSocket::initExtension() { extension_ = ""; }
 
 GET *ConnectionSocket::makeGET(int fd) {
@@ -69,9 +71,11 @@ void ConnectionSocket::execCGI(const std::string &path) {
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1) {
     throw InternalServerErrorException("error socketpair");
   }
+  fcntl(fd[0], F_SETFL, O_NONBLOCK);
   int pid = fork();
   if (pid == 0) {
     close(fd[0]);
+    em_->terminateAll();
     std::vector<char *> env;
     info.setEnv(env);
     argv[0] = const_cast<char *>(info.script_name_.c_str());
@@ -139,6 +143,7 @@ void ConnectionSocket::processPOST() {
     response_.setStatusAndReason(201, "");
   int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC);
   if (fd < 0) throw InternalServerErrorException("open error");
+  fcntl(fd, F_SETFL, O_NONBLOCK);
   POST *obs = makePOST(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
   em_->disableReadEvent(id_);
@@ -158,7 +163,6 @@ void ConnectionSocket::processGET() {
     execCGI(path);
     return;
   }
-  std::cout << "koko: " << path << std::endl;
   struct stat st;
   if (stat(path.c_str(), &st) == -1) {
     throw ResourceNotFoundException("stat error: file doesn't exist");  // 404 Not Found
@@ -189,6 +193,7 @@ void ConnectionSocket::processGET() {
   }
   // URI file or index file
   int fd = open(path.c_str(), O_RDONLY);
+  if (fd < 0) throw InternalServerErrorException("open error");
   GET *obs = makeGET(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
   em_->disableReadEvent(id_);

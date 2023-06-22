@@ -11,6 +11,7 @@ class POST : public Observee {
   ~POST() {}
   void notify(struct kevent ev);
   void shutdown();
+  void terminate();
 
  private:
   HttpRequest *request_;

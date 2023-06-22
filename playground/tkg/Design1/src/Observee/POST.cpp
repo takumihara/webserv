@@ -31,6 +31,8 @@ void POST::shutdown() {
   em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
+void POST::terminate() { close(id_); }
+
 void POST::notify(struct kevent ev) {
   DEBUG_PUTS("handle POST");
   (void)ev;

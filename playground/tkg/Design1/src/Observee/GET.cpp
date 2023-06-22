@@ -33,6 +33,8 @@ void GET::shutdown() {
   em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
+void GET::terminate() { close(id_); }
+
 std::string GET::listFilesAndDirectories(std::string &directory_path, const HttpRequest &req) {
   DIR *dir;
   struct dirent *entry;

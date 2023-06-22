@@ -1,5 +1,7 @@
 #include "EventManager.hpp"
 
+#include <csignal>
+
 #include "./Config/Config.hpp"
 #include "Observee/Observee.hpp"
 #include "debug.hpp"
@@ -18,6 +20,15 @@ void EventManager::addChangedEvents(struct kevent kevent) {
   else {
     changed_events_[key].flags |= kevent.flags;
   }
+}
+void EventManager::terminateAll() {
+  for (std::map<std::pair<t_id, t_type>, Observee *>::iterator itr = observees_.begin(); itr != observees_.end();
+       itr++) {
+    (itr->second)->terminate();
+    delete itr->second;
+  }
+  observees_.clear();
+  close(kq_);
 }
 
 void EventManager::add(const std::pair<t_id, t_type> &key, Observee *obs) { observees_[key] = obs; }
@@ -138,12 +149,18 @@ void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(str
 
 void EventManager::eventLoop() {
   struct kevent evlist[kMaxEventSize];
+  extern sig_atomic_t sig_int;
   DEBUG_PUTS("server setup finished!");
   while (1) {
     DEBUG_PUTS("loop start");
     updateKqueue();
     clearEvlist(evlist);
     int nev = kevent(kq_, NULL, 0, evlist, kMaxEventSize, NULL);
+    if (sig_int) {
+      DEBUG_PUTS("sig INT");
+      terminateAll();
+      exit(0);
+    }
     if (nev == 0)
       continue;
     else if (nev == -1)
