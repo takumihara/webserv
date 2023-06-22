@@ -35,6 +35,8 @@ void ConnectionSocket::shutdown() {
   em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
+void ConnectionSocket::terminate() { close(id_); }
+
 void ConnectionSocket::initExtension() { extension_ = ""; }
 
 GET *ConnectionSocket::makeGET(int fd) {
@@ -73,7 +75,7 @@ void ConnectionSocket::execCGI(const std::string &path) {
   int pid = fork();
   if (pid == 0) {
     close(fd[0]);
-    em_->closeAll();
+    em_->terminateAll();
     std::vector<char *> env;
     info.setEnv(env);
     argv[0] = const_cast<char *>(info.script_name_.c_str());
@@ -192,7 +194,6 @@ void ConnectionSocket::processGET() {
   // URI file or index file
   int fd = open(path.c_str(), O_RDONLY);
   if (fd < 0) throw InternalServerErrorException("open error");
-  fcntl(fd, F_SETFL, O_NONBLOCK);
   GET *obs = makeGET(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
   em_->disableReadEvent(id_);

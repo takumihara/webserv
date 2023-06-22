@@ -21,6 +21,8 @@ void ServerSocket::shutdown() {
   em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
+void ServerSocket::terminate() { close(id_); }
+
 void ServerSocket::notify(struct kevent ev) {
   (void)ev;
   struct sockaddr_in add;

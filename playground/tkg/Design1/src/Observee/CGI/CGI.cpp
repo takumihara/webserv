@@ -32,7 +32,13 @@ void CGI::shutdown() {
   kill(pid_, SIGTERM);
   waitpid(pid_, &status, 0);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
-  if (status != 0) throw InternalServerErrorException("waitpid is failed");
+  if (status != 0) response_->setStatusAndReason(500, "");
+}
+
+void CGI::terminate() {
+  close(id_);
+  kill(pid_, SIGTERM);
+  waitpid(pid_, NULL, 0);
 }
 
 std::pair<std::string, std::string> getHeaderField(std::string &field) {

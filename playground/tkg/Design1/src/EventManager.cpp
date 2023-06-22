@@ -21,21 +21,14 @@ void EventManager::addChangedEvents(struct kevent kevent) {
     changed_events_[key].flags |= kevent.flags;
   }
 }
-void EventManager::closeAll() {
+void EventManager::terminateAll() {
   for (std::map<std::pair<t_id, t_type>, Observee *>::iterator itr = observees_.begin(); itr != observees_.end();
        itr++) {
-    if (itr->second->type_ != "cgi") {
-      close(itr->first.first);
-      delete itr->second;
-    } else {
-      close(itr->first.first);
-      pid_t pid = dynamic_cast<CGI *>(itr->second)->getPid();
-      kill(pid, SIGTERM);
-      waitpid(pid, NULL, 0);
-      delete itr->second;
-    }
+    (itr->second)->terminate();
+    delete itr->second;
   }
   observees_.clear();
+  close(kq_);
 }
 
 void EventManager::add(const std::pair<t_id, t_type> &key, Observee *obs) { observees_[key] = obs; }
@@ -165,7 +158,7 @@ void EventManager::eventLoop() {
     int nev = kevent(kq_, NULL, 0, evlist, kMaxEventSize, NULL);
     if (sig_int) {
       DEBUG_PUTS("sig INT");
-      closeAll();
+      terminateAll();
       exit(0);
     }
     if (nev == 0)

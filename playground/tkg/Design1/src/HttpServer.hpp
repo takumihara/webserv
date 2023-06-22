@@ -18,7 +18,7 @@ class HttpServer {
   EventManager em_;
   const char *filename_;
   Config conf_;
-  static const int kBackLog = 10;
+  static const int kMaxBackLog = 10;
 };
 
 #endif

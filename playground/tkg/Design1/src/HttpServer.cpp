@@ -68,7 +68,7 @@ void HttpServer::openPorts() {
       if (bind(sock_fd, (struct sockaddr *)&add, sizeof(add)) == -1) {
         throw std::runtime_error("bind error");
       }
-      if (listen(sock_fd, kBackLog) < 0) {
+      if (listen(sock_fd, kMaxBackLog) < 0) {
         throw std::runtime_error("listen error");
       }
       em_.registerServerEvent(sock_fd, itr->first, conf_);
@@ -98,7 +98,7 @@ void HttpServer::start() {
     setup();
     openPorts();
   } catch (std::runtime_error &e) {
-    em_.closeAll();
+    em_.terminateAll();
     std::cerr << "Server Setup failed" << std::endl;
     exit(1);
   }

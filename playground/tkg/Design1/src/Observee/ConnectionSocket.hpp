@@ -26,6 +26,7 @@ class ConnectionSocket : public Observee {
   ~ConnectionSocket() { delete rc_; }
   void notify(struct kevent ev);
   void shutdown();
+  void terminate();
   void process();
   void processGET();
   void processPOST();

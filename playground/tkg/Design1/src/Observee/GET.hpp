@@ -11,6 +11,7 @@ class GET : public Observee {
   ~GET() {}
   void notify(struct kevent ev);
   void shutdown();
+  void terminate();
   static std::string listFilesAndDirectories(const std::string &directory_path);
 
  private:
