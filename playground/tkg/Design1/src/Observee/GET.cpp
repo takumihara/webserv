@@ -58,7 +58,7 @@ std::string GET::listFilesAndDirectories(std::string &directory_path, const Http
     }
     std::string name = entry->d_name;
     std::stringstream ss;
-    // this if statment and rmed_dot are temporary
+    // todo: this if statment and rmed_dot are temporary
     std::string rmed_dot;
     if (file_path[0] == '.') rmed_dot = file_path.substr(1);
     ss << "http://" << req.getHost().uri_host << ":" << req.getHost().port << rmed_dot;
