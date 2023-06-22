@@ -177,7 +177,7 @@ void ConnectionSocket::processGET() {
     }
     if (idx_path == "" && loc_conf_->common_.autoindex_) {
       DEBUG_PUTS("autoindex");
-      response_.appendBody(GET::listFilesAndDirectories(path));
+      response_.appendBody(GET::listFilesAndDirectories(path, request_));
       response_.setStatusAndReason(200, "");
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
@@ -254,7 +254,11 @@ void ConnectionSocket::notify(struct kevent ev) {
   if (ev.filter == EVFILT_WRITE) {
     DEBUG_PUTS("handle_response() called");
     response_.createResponse();
-    response_.sendResponse();
+    try {
+      response_.sendResponse();
+    } catch (std::runtime_error &e) {
+      shutdown();
+    }
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
       extension_ = "";
@@ -262,7 +266,6 @@ void ConnectionSocket::notify(struct kevent ev) {
       delete request_.request_target_;
       request_ = HttpRequest();
       rreader_ = HttpRequestReader(rreader_, request_);
-
       response_ = HttpResponse(id_, port_, &conf_);
       em_->disableWriteEvent(id_);
       em_->registerReadEvent(id_);
