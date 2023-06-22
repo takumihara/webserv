@@ -32,6 +32,7 @@ class ConnectionSocket : public Observee {
   void processPOST();
   void processDELETE();
   void processErrorPage(const LocationConf *conf);
+  void processRedirect();
   void execCGI(const std::string &path);
   CGI *makeCGI(int id, int pid);
   GET *makeGET(int id);
