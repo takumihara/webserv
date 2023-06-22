@@ -7,6 +7,7 @@
 #include <sys/types.h>
 
 #include <sstream>
+#include <string>
 
 #include "Config/validation.h"
 #include "EventManager.hpp"
@@ -23,13 +24,15 @@ void HttpResponse::setStatusAndReason(const int status, const std::string &reaso
     reason_phrase_ = reason;
 }
 
-void HttpResponse::appendBody(const std::string &str) { body_ += str; }
+void HttpResponse::appendBody(const char *str, size_t size) { body_.insert(body_.end(), str, str + size); }
+
+void HttpResponse::appendBody(const std::string &str) { body_.insert(body_.end(), str.begin(), str.end()); }
 
 void HttpResponse::appendHeader(const std::string &key, const std::string &value) {
   headers.push_back(header(key, value));
 }
 
-const std::string &HttpResponse::getBody() const { return body_; }
+const std::vector<char> &HttpResponse::getBody() const { return body_; }
 
 bool HttpResponse::hasHeader(const std::string &target_name) {
   for (std::vector<header>::const_iterator itr = headers.cbegin(); itr != headers.cend(); itr++) {
@@ -53,11 +56,10 @@ void HttpResponse::createResponse() {
     ss << itr->first << ": " << itr->second << CRLF;
   }
   ss << CRLF;
-  // body
-  ss << body_;
-
-  response_ = ss.str();
-  std::cout << "full response: '" << escape(response_) << "'" << std::endl;
+  std::string head = ss.str();
+  response_.insert(response_.end(), head.begin(), head.end());
+  response_.insert(response_.end(), body_.begin(), body_.end());
+  std::cout << "full response: '" << escape(std::string(&response_[0], response_.size())) << "'" << std::endl;
   response_size_ = response_.size();
   sending_response_size_ = 0;
   state_ = Sending;
@@ -66,7 +68,7 @@ void HttpResponse::createResponse() {
 void HttpResponse::sendResponse() {
   DEBUG_PUTS("sending response");
   if (state_ != Sending) return;
-  const char *response = response_.c_str();
+  const char *response = &response_[0];
   int size = response_size_ - sending_response_size_;
   if (size > SOCKET_WRITE_SIZE) {
     size = SOCKET_WRITE_SIZE;
@@ -76,7 +78,7 @@ void HttpResponse::sendResponse() {
     perror("sendto");
     throw std::runtime_error("send error");
   }
-  std::string res_str = std::string(response);
+  std::string res_str = std::string(response, response_.size());
   std::cout << "response sent: "
             << "'" << escape(res_str.substr(sending_response_size_, size)) << "'"
             << " (size:" << res << ")" << std::endl;

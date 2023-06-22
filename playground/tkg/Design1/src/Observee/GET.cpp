@@ -80,24 +80,25 @@ void GET::notify(struct kevent ev) {
   std::cout << "handle GET" << std::endl;
   (void)ev;
   char buff[FILE_READ_SIZE + 1];
-  int res = read(id_, &buff[0], FILE_READ_SIZE);
+  int res = read(id_, buff, FILE_READ_SIZE);
   std::cout << "res: " << res << std::endl;
   if (res == -1) {
     return;
   } else {
-    buff[res] = '\0';
-    response_->appendBody(std::string(buff));
+    response_->appendBody(buff, res);
     if (res == 0 || res == ev.data) {
       close(id_);
       response_->setStatusAndReason(200, "");
       parent_->obliviateChild(this);
       em_->deleteTimerEvent(id_);
       em_->registerWriteEvent(parent_->id_);
-      std::cout << "GET LAST RESULT: '" << response_->getBody() << "'" << std::endl;
+      std::cout << "GET LAST RESULT: '" << std::string(&(response_->getBody()[0]), response_->getBody().size()) << "'"
+                << std::endl;
       em_->remove(std::pair<t_id, t_type>(id_, FD));
       return;
     }
     em_->updateTimer(this);
-    std::cout << "GET wip result: '" << response_->getBody() << "'" << std::endl;
+    std::cout << "GET wip result: '" << std::string(&(response_->getBody()[0]), response_->getBody().size()) << "'"
+              << std::endl;
   }
 }

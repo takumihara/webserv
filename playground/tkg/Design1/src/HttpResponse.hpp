@@ -24,8 +24,6 @@ class HttpResponse {
         port_(port),
         status_(0),
         conf_(conf),
-        body_(""),
-        response_(""),
         response_size_(0),
         sending_response_size_(0) {}
   ~HttpResponse(){};
@@ -36,9 +34,10 @@ class HttpResponse {
   void setStatus(const int status);
   void setStatusAndReason(const int status, const std::string &reason);
   void appendHeader(const std::string &key, const std::string &value);
+  void appendBody(const char *str, size_t size);
   void appendBody(const std::string &str);
   bool hasHeader(const std::string &name);
-  const std::string &getBody() const;
+  const std::vector<char> &getBody() const;
   const State &getState() const { return state_; }
 
  private:
@@ -48,8 +47,8 @@ class HttpResponse {
   int status_;
   std::string reason_phrase_;
   Config *conf_;
-  std::string body_;
-  std::string response_;
+  std::vector<char> body_;
+  std::vector<char> response_;
   std::vector<header> headers;
   int response_size_;
   int sending_response_size_;

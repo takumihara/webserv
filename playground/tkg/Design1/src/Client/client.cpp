@@ -67,9 +67,9 @@ int main(int argc, char **argv) {
                 << " (size:" << write_res << ")" << std::endl;
     }
     sleep(1);
-    char response[1000];
-    memset(response, 0, 1000);
-    ssize_t res = read(sock, response, 1000);
+    char response[10000];
+    memset(response, 0, 10000);
+    ssize_t res = read(sock, response, 10000);
     if (res == -1) {
       perror("read");
       exit(1);

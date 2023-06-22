@@ -261,6 +261,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     try {
       response_.sendResponse();
     } catch (std::runtime_error &e) {
+      std::cout << "client close socket\n";
       shutdown();
     }
     if (response_.getState() == HttpResponse::End) {
