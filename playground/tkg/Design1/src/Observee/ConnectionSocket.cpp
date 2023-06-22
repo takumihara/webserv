@@ -266,7 +266,6 @@ void ConnectionSocket::notify(struct kevent ev) {
       delete request_.request_target_;
       request_ = HttpRequest();
       rreader_ = HttpRequestReader(rreader_, request_);
-
       response_ = HttpResponse(id_, port_, &conf_);
       em_->disableWriteEvent(id_);
       em_->registerReadEvent(id_);

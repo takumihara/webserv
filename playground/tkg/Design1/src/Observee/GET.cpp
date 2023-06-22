@@ -50,8 +50,6 @@ std::string GET::listFilesAndDirectories(std::string &directory_path, const Http
       file_path = directory_path + "/" + entry->d_name;
     else
       file_path = directory_path + entry->d_name;
-    std::cout << "file_path: " << file_path << std::endl;
-
     if (stat(file_path.c_str(), &file_stat) == -1) {
       perror("listFilesAndDirectories: stat error");
       continue;
