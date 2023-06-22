@@ -8,3 +8,4 @@ tester
 gtest
 test.log
 !Client/
+*.cgi
