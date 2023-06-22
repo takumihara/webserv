@@ -258,6 +258,8 @@ void ConnectionSocket::notify(struct kevent ev) {
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
       extension_ = "";
+      // todo(thara): find a better way to destruct request instance
+      delete request_.request_target_;
       request_ = HttpRequest();
       rreader_ = HttpRequestReader(rreader_, request_);
 
