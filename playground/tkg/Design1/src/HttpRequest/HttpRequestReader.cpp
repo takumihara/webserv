@@ -15,7 +15,7 @@
 #define MIN_PORT_NUM 0
 #define MAX_PORT_NUM 65535
 
-HttpRequestReader::State HttpRequestReader::readRequest() {
+HttpRequestReader::State HttpRequestReader::read() {
   std::string buff;
 
   size_t size = rc_->read(buff, SOCKET_READ_SIZE);
@@ -84,7 +84,7 @@ void HttpRequestReader::assignAndValidateMethod(const std::string &method) {
   } else if (method == "PUT" || method == "PATCH" || method == "HEAD" || method == "OPTIONS") {
     throw MethodNotAllowedException("Http Request: method not allowed");
   } else {
-    throw NotImplementedException("Http Request: invalid method");
+    throw NotImplementedException("Http Request: invalid method: '" + method + "'");
   }
 }
 

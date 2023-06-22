@@ -12,7 +12,7 @@ class GET : public Observee {
   void notify(struct kevent ev);
   void shutdown();
   void terminate();
-  static std::string listFilesAndDirectories(const std::string &directory_path);
+  static std::string listFilesAndDirectories(std::string &directory_path, const HttpRequest &req);
 
  private:
   HttpResponse *response_;

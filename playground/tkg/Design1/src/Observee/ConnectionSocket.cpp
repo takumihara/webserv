@@ -181,7 +181,7 @@ void ConnectionSocket::processGET() {
     }
     if (idx_path == "" && loc_conf_->common_.autoindex_) {
       DEBUG_PUTS("autoindex");
-      response_.appendBody(GET::listFilesAndDirectories(path));
+      response_.appendBody(GET::listFilesAndDirectories(path, request_));
       response_.setStatusAndReason(200, "");
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
@@ -237,14 +237,14 @@ void ConnectionSocket::notify(struct kevent ev) {
   if (ev.filter == EVFILT_READ) {
     DEBUG_PUTS("handle_request() called");
     try {
-      HttpRequestReader::State state = rreader_.readRequest();
+      HttpRequestReader::State state = rreader_.read();
       if (state == HttpRequestReader::FinishedReading) {
         DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.getBody()).c_str());
         this->process();
       }
     } catch (HttpException &e) {
-      // all 3xx 4xx 5xx exception(readRequest and process) is catched here
-      std::cerr << e.what();
+      // all 3xx 4xx 5xx exception(readRequest and process) is caught here
+      std::cerr << e.what() << std::endl;
       response_.setStatusAndReason(e.statusCode(), "");
       if (loc_conf_) {
         // error_page directive is ignored when bad request
@@ -259,11 +259,18 @@ void ConnectionSocket::notify(struct kevent ev) {
   if (ev.filter == EVFILT_WRITE) {
     DEBUG_PUTS("handle_response() called");
     response_.createResponse();
-    response_.sendResponse();
+    try {
+      response_.sendResponse();
+    } catch (std::runtime_error &e) {
+      shutdown();
+    }
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
       extension_ = "";
+      // todo(thara): find a better way to destruct request instance
+      delete request_.request_target_;
       request_ = HttpRequest();
+      rreader_ = HttpRequestReader(rreader_, request_);
       response_ = HttpResponse(id_, port_, &conf_);
       em_->disableWriteEvent(id_);
       em_->registerReadEvent(id_);

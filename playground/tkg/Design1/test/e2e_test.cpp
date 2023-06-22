@@ -97,6 +97,33 @@ TEST(E2E, Get) {
   ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
 }
 
+TEST(E2E, Autoindex) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/Config/";
+  std::string body = "hello";
+  std::string headers = "Host: localhost";
+  std::string res = sendRequest(host, port, method, path, body, headers);
+
+  // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
+  ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
+  ASSERT_TRUE(includes(res, "<p><a href=\"http://localhost:80/Config/con.conf\">con.conf </a><br></p>"));
+}
+
+TEST(E2E, Non_Autoindex) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/cgi-bin/";
+  std::string body = "hello";
+  std::string headers = "Host: localhost";
+  std::string res = sendRequest(host, port, method, path, body, headers);
+
+  // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
+  ASSERT_TRUE(includes(res, "HTTP/1.1 404 Not Found"));
+}
+
 TEST(E2E, Chunked) {
   std::string host = "localhost";
   std::string port = "80";
