@@ -7,7 +7,7 @@
 class POST : public Observee {
  public:
   POST(int id, EventManager *em, Observee *parent, HttpRequest *request)
-      : Observee(id, "POST", em, parent), request_(request), body_size_(request->getBody().size()), write_size_(0) {}
+      : Observee(id, "POST", em, parent), request_(request), body_size_(request->body_.size()), write_size_(0) {}
   ~POST() {}
   void notify(struct kevent ev);
   void shutdown();

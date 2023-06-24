@@ -114,7 +114,7 @@ void ConnectionSocket::processDELETE() {
     throw MethodNotAllowedException("DELETE is not allowed in this Location scope");
   }
   // todo: . is for temporary implementation
-  std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
+  std::string path = "." + loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
   if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
@@ -130,7 +130,7 @@ void ConnectionSocket::processPOST() {
     throw MethodNotAllowedException("POST is not allowed in this Location scope");
   }
   // todo: . is for temporary implementation
-  std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
+  std::string path = "." + loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
   if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
@@ -145,7 +145,7 @@ void ConnectionSocket::processGET() {
     throw MethodNotAllowedException("No Suitable Location");
   }
   // todo: . is for temporary implementation
-  std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
+  std::string path = "." + loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
   if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
@@ -190,7 +190,7 @@ void ConnectionSocket::processGET() {
 }
 
 void ConnectionSocket::processRedirect() {
-  if (!isAcceptableMethod(loc_conf_, request_.getMethod())) {
+  if (!isAcceptableMethod(loc_conf_, request_.method_)) {
     throw MethodNotAllowedException("No Suitable Location");
   }
   response_.setStatusAndReason(std::atoi(loc_conf_->getRedirectStatus().c_str()), "");
@@ -212,14 +212,14 @@ void ConnectionSocket::processErrorPage(const LocationConf *conf) {
 }
 
 void ConnectionSocket::process() {
-  ServerConf *serv_conf = conf_.getServerConf(port_, request_.getHost().uri_host);
+  ServerConf *serv_conf = conf_.getServerConf(port_, request_.headers_.host.uri_host);
   loc_conf_ = serv_conf->getLocationConf(&request_);
   // loc_conf is redirection block
   if (loc_conf_->hasRedirectDirective()) {
     processRedirect();
     return;
   }
-  extension_ = getExtension(request_.getRequestTarget()->getPath());
+  extension_ = getExtension(request_.request_target_->getPath());
   if (request_.methodIs(HttpRequest::GET)) {
     processGET();
   } else if (request_.methodIs(HttpRequest::POST)) {
@@ -237,7 +237,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     try {
       HttpRequestReader::State state = rreader_.read();
       if (state == HttpRequestReader::FinishedReading) {
-        DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.getBody()).c_str());
+        DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.body_).c_str());
         this->process();
       }
     } catch (HttpException &e) {

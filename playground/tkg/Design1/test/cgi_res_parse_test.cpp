@@ -45,10 +45,10 @@ TEST(CGI, CGIInfo1) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
-  std::string path = loc_conf->common_.root_ + req.getRequestTarget()->getPath();
-  std::string extension = getExtension(req.getRequestTarget()->getPath());
+  std::string path = loc_conf->common_.root_ + req.request_target_->getPath();
+  std::string extension = getExtension(req.request_target_->getPath());
 
   CGIInfo info = parseCGIInfo(path, extension, req, loc_conf);
   EXPECT_EQ(info.auth_type_, "");
@@ -78,10 +78,10 @@ TEST(CGI, CGIInfo2) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
-  std::string path = loc_conf->common_.root_ + req.getRequestTarget()->getPath();
-  std::string extension = getExtension(req.getRequestTarget()->getPath());
+  std::string path = loc_conf->common_.root_ + req.request_target_->getPath();
+  std::string extension = getExtension(req.request_target_->getPath());
 
   CGIInfo info = parseCGIInfo(path, extension, req, loc_conf);
   EXPECT_EQ(info.auth_type_, "");

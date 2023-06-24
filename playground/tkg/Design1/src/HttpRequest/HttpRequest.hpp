@@ -45,12 +45,7 @@ class HttpRequest {
     }
     return *this;
   }
-  // todo(thara): remove getter
-  const std::string &getBody() const;
-  const Host &getHost() const;
   bool methodIs(Method method) const;
-  URI *getRequestTarget() const;
-  const Method &getMethod() const;
   bool isChunked();
   void printHeaders();
 
