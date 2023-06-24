@@ -99,7 +99,7 @@ void HttpServer::start() {
     openPorts();
   } catch (std::runtime_error &e) {
     em_.terminateAll();
-    std::cerr << "Server Setup failed" << std::endl;
+    std::cerr << "Server Setup failed: " << e.what() << std::endl;
     exit(1);
   }
   em_.eventLoop();

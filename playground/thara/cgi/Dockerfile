@@ -2,18 +2,16 @@ FROM python:3.9-slim-buster
 
 WORKDIR /app
 
-ADD . /app
-
 RUN apt-get update && apt-get install -y \
   sqlite3 \
   && rm -rf /var/lib/apt/lists/*
 
-RUN sqlite3 /app/test.db < /app/db.sql && \
-  rm /app/db.sql && \
-  chmod 777 /app/test.db && \
-  chmod 777 /app
+# RUN sqlite3 /app/test.db < /app/db.sql && \
+#   rm /app/db.sql && \
+#   chmod 777 /app/test.db && \
+#   chmod 777 /app
 
-RUN chmod +x /app/cgi-bin/*
+# RUN chmod +x /app/cgi-bin/*
 
 EXPOSE 8000
 
