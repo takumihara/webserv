@@ -109,51 +109,40 @@ void ConnectionSocket::execCGI(const std::string &path) {
   }
 }
 
-void ConnectionSocket::processPOST() {
-  // todo:
-  if (!isAcceptableMethod(loc_conf_, HttpRequest::POST)) {
-    throw BadRequestException("No Suitable Location");
+void ConnectionSocket::processDELETE() {
+  if (!isAcceptableMethod(loc_conf_, HttpRequest::DELETE)) {
+    throw MethodNotAllowedException("DELETE is not allowed in this Location scope");
   }
   // todo: . is for temporary implementation
   std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
-  // check file is already exist or not, and temporarily set statusCode.
-  struct stat st;
-  if (!isAllDirectoryWritable(path)) throw ResourceForbiddenException("access Write error");  // 403 Forbiden
-  const bool file_exist = stat(path.c_str(), &st) != -1;
-  if (file_exist) {
-    response_.setStatusAndReason(200, "");
-    bool is_directory = (st.st_mode & S_IFMT) == S_IFDIR;
-    // POST method is not allowed if targetURI is directory
-    if (is_directory) throw MethodNotAllowedException("POST is not allowed to directory");
-    // check writable if file exist
-    if (!isWritable(path.c_str())) throw ResourceForbiddenException("access write error");
-  }
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
-  if (hasCGI) {
-    if (isExecutable(path.c_str()) && contain(loc_conf_->cgi_exts_, extension_)) {
-      execCGI(path);
-      return;
-    }
+  if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
+    execCGI(path);
+    return;
   }
-  // set temporary status code
-  if (file_exist)
-    response_.setStatusAndReason(200, "");
-  else
-    response_.setStatusAndReason(201, "");
-  int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC);
-  if (fd < 0) throw InternalServerErrorException("open error");
-  fcntl(fd, F_SETFL, O_NONBLOCK);
-  POST *obs = makePOST(fd);
-  em_->add(std::pair<t_id, t_type>(fd, FD), obs);
-  em_->disableReadEvent(id_);
-  em_->registerWriteEvent(fd);
-  return;
+  throw ResourceForbiddenException("DELETE must be processed by cgi only");
+}
+
+void ConnectionSocket::processPOST() {
+  // todo:
+  if (!isAcceptableMethod(loc_conf_, HttpRequest::POST)) {
+    throw MethodNotAllowedException("POST is not allowed in this Location scope");
+  }
+  // todo: . is for temporary implementation
+  std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
+  // if CGI extension exist, try exec CGI
+  const bool hasCGI = extension_ != "";
+  if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
+    execCGI(path);
+    return;
+  }
+  throw ResourceForbiddenException("POST must be processed by cgi only");
 }
 
 void ConnectionSocket::processGET() {
   if (!isAcceptableMethod(loc_conf_, HttpRequest::GET)) {
-    throw BadRequestException("No Suitable Location");
+    throw MethodNotAllowedException("No Suitable Location");
   }
   // todo: . is for temporary implementation
   std::string path = "." + loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
@@ -200,6 +189,16 @@ void ConnectionSocket::processGET() {
   em_->registerReadEvent(fd);
 }
 
+void ConnectionSocket::processRedirect() {
+  if (!isAcceptableMethod(loc_conf_, request_.getMethod())) {
+    throw MethodNotAllowedException("No Suitable Location");
+  }
+  response_.setStatusAndReason(std::atoi(loc_conf_->getRedirectStatus().c_str()), "");
+  response_.appendHeader("Location", loc_conf_->getRedirectURI());
+  em_->disableReadEvent(id_);
+  em_->registerWriteEvent(id_);
+}
+
 void ConnectionSocket::processErrorPage(const LocationConf *conf) {
   std::stringstream ss;
   ss << response_.getStatus();
@@ -217,9 +216,8 @@ void ConnectionSocket::process() {
   loc_conf_ = serv_conf->getLocationConf(&request_);
   // loc_conf is redirection block
   if (loc_conf_->hasRedirectDirective()) {
-    response_.setStatusAndReason(std::atoi(loc_conf_->getRedirectStatus().c_str()), "");
-    response_.appendHeader("Location", loc_conf_->getRedirectURI());
-    throw RedirectMovedPermanently("redirection");
+    processRedirect();
+    return;
   }
   extension_ = getExtension(request_.getRequestTarget()->getPath());
   if (request_.methodIs(HttpRequest::GET)) {
@@ -227,7 +225,7 @@ void ConnectionSocket::process() {
   } else if (request_.methodIs(HttpRequest::POST)) {
     processPOST();
   } else if (request_.methodIs(HttpRequest::DELETE)) {
-    // handle DELETE
+    processDELETE();
   }
   DEBUG_PUTS("PROCESSING FINISHED");
 }
@@ -243,16 +241,17 @@ void ConnectionSocket::notify(struct kevent ev) {
         this->process();
       }
     } catch (HttpException &e) {
-      // all 3xx 4xx 5xx exception(readRequest and process) is caught here
+      // all 4xx 5xx exception(readRequest and process) is caught here
       std::cerr << e.what() << std::endl;
       response_.setStatusAndReason(e.statusCode(), "");
       if (loc_conf_) {
-        // error_page directive is ignored when bad request
+        // error_page directive is ignored when error ocuured reading Request
         processErrorPage(loc_conf_);
       }
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
     } catch (std::runtime_error &e) {
+      // when client close socket
       shutdown();
     }
   }
