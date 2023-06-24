@@ -8,8 +8,6 @@
 
 class URI {
  public:
-  // todo: want it private
-  URI() : user_info_(NULL), omit_host_(false), force_query_(false){};
   ~URI() { delete user_info_; }
   static URI* parse(const std::string& uri);
   static URI* parseRequestURI(const std::string& uri);
@@ -34,6 +32,7 @@ class URI {
   URI* resolveReference(const URI& ref) const;
 
  private:
+  URI() : user_info_(NULL), omit_host_(false), force_query_(false){};
   URI(std::string raw_uri, bool via_request);
 
   std::string scheme_;
