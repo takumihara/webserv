@@ -26,7 +26,7 @@ ifdef DEBUG
 	CXXFLAGS += -D DEBUG
 endif
 
-all: server client
+all: server client cgi
 
 server: $(SERVER_OBJS)
 	clang++ $(SERVER_OBJS) -o server
@@ -39,6 +39,8 @@ $(OBJ_DIR)/%.o: %.cpp
 client:
 	clang++ $(CXXFLAGS) $(INCLUDE) src/client/client.cpp src/helper.cpp -o client
 
+cgi:
+	make -C cgi-bin
 
 clean:
 	$(RM) $(SERVER_OBJS) $(TEST_OBJS) $(DEPENDS)
@@ -53,7 +55,7 @@ re: fclean all
 debug:
 	make DEBUG=1
 
-.PHONY: clean fclean re server client
+.PHONY: clean fclean re server client cgi
 
 TEST_SRC_DIRS := $(testdir) $(testdir)/mock
 TEST_SRCS := $(foreach dir, $(TEST_SRC_DIRS), $(wildcard $(dir)/*.cpp)) $(SERVER_SRCS_WO_MAIN)
@@ -84,7 +86,7 @@ tester: $(gtest) $(TEST_OBJS)
 	clang++ $(GTESTFLAGS) -o $@ $(TEST_OBJS) $(GTESTLIB)
 
 .PHONY: test
-test: server tester
+test: server tester cgi
 	cp server server_binary
 	./server_binary > test/test.log 2>&1 &
 	@sleep 1
