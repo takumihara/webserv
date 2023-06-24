@@ -113,7 +113,7 @@ void ConnectionSocket::processDELETE() {
   if (!isAcceptableMethod(loc_conf_, HttpRequest::DELETE)) {
     throw MethodNotAllowedException("DELETE is not allowed in this Location scope");
   }
-  // todo: . is for temporary implementation
+  // todo(katakagi): . is for temporary implementation
   std::string path = "." + loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
@@ -125,11 +125,11 @@ void ConnectionSocket::processDELETE() {
 }
 
 void ConnectionSocket::processPOST() {
-  // todo:
+  // todo(katakagi):
   if (!isAcceptableMethod(loc_conf_, HttpRequest::POST)) {
     throw MethodNotAllowedException("POST is not allowed in this Location scope");
   }
-  // todo: . is for temporary implementation
+  // todo(katakagi): . is for temporary implementation
   std::string path = "." + loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
@@ -144,7 +144,7 @@ void ConnectionSocket::processGET() {
   if (!isAcceptableMethod(loc_conf_, HttpRequest::GET)) {
     throw MethodNotAllowedException("No Suitable Location");
   }
-  // todo: . is for temporary implementation
+  // todo(katakagi): . is for temporary implementation
   std::string path = "." + loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
@@ -266,8 +266,6 @@ void ConnectionSocket::notify(struct kevent ev) {
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
       extension_ = "";
-      // todo(thara): find a better way to destruct request instance
-      delete request_.request_target_;
       request_ = HttpRequest();
       rreader_ = HttpRequestReader(rreader_, request_);
       response_ = HttpResponse(id_, port_, &conf_);

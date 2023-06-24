@@ -164,7 +164,7 @@ void HttpRequestReader::validateHeaders() {
 
   // https://www.rfc-editor.org/rfc/rfc7230#section-3.3.3
   // check if content-length and transfer-encoding are both present
-  // todo: refactor hasField
+  // todo(thara): refactor hasField
   if (hasField(ContentLengthField) && request_.headers_.transfer_encodings.size() != 0) {
     throw BadRequestException("both content-length and transfer-encoding are present");
   }
@@ -207,7 +207,7 @@ void HttpRequestReader::analyzeHost(const std::string &value) {
       throw BadRequestException("Http Request: invalid port");
     }
 
-    // todo: handle overflow
+    // todo(thara): handle overflow
     request_.headers_.host.port = std::atoi(port.c_str());
     if (request_.headers_.host.port < MIN_PORT_NUM || request_.headers_.host.port > MAX_PORT_NUM) {
       throw BadRequestException("Http Request: invalid port");
@@ -223,7 +223,7 @@ void HttpRequestReader::analyzeContentLength(const std::string &value) {
     throw BadRequestException("Http Request: invalid content-length");
   }
 
-  // todo: handle overflow
+  // todo(thara): handle overflow
   const int val = std::atoi(value.c_str());
   if (val < 0 || conf_->getMaxBodySize() < val) {
     throw BadRequestException("Http Request: invalid content-length");
