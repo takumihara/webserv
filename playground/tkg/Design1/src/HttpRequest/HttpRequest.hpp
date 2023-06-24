@@ -34,15 +34,28 @@ class HttpRequest {
   };
 
   HttpRequest() : request_target_(NULL) {}
-  ~HttpRequest() { delete request_target_; };
-  HttpRequest &operator=(const HttpRequest &other) {
-    if (this != &other) {
-      this->method_ = other.method_;
-      this->version_ = other.version_;
-      this->request_target_ = other.request_target_;
-      this->headers_ = other.headers_;
-      this->body_ = other.body_;
+  HttpRequest(const HttpRequest &other)
+      : method_(other.method_), version_(other.version_), headers_(other.headers_), body_(other.body_) {
+    if (other.request_target_ != NULL) {
+      this->request_target_ = new URI(*other.request_target_);
+    } else {
+      this->request_target_ = NULL;
     }
+  }
+  ~HttpRequest() { delete request_target_; };
+
+  void swap(HttpRequest &lhs, HttpRequest &rhs) {
+    using std::swap;
+    swap(lhs.method_, rhs.method_);
+    swap(lhs.version_, rhs.version_);
+    swap(lhs.request_target_, rhs.request_target_);
+    swap(lhs.headers_, rhs.headers_);
+    swap(lhs.body_, rhs.body_);
+  }
+
+  // this will invoke the copy constructor, and then destructor for the old data
+  HttpRequest &operator=(HttpRequest other) {
+    swap(*this, other);
     return *this;
   }
   bool methodIs(Method method) const;
