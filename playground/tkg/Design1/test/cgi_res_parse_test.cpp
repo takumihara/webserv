@@ -48,7 +48,7 @@ TEST(CGI, CGIInfo1) {
   ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   std::string path = loc_conf->common_.root_ + req.request_target_->getPath();
-  std::string extension = getExtension(req.request_target_->getPath());
+  std::string extension = getCGIExtension(req.request_target_->getPath());
 
   CGIInfo info = parseCGIInfo(path, extension, req, loc_conf);
   EXPECT_EQ(info.auth_type_, "");
@@ -81,7 +81,7 @@ TEST(CGI, CGIInfo2) {
   ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   std::string path = loc_conf->common_.root_ + req.request_target_->getPath();
-  std::string extension = getExtension(req.request_target_->getPath());
+  std::string extension = getCGIExtension(req.request_target_->getPath());
 
   CGIInfo info = parseCGIInfo(path, extension, req, loc_conf);
   EXPECT_EQ(info.auth_type_, "");

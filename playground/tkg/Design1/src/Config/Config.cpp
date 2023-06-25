@@ -149,7 +149,7 @@ void LocationConf::printLocationConf() const {
 
 LocationConf *ServerConf::getLocationConf(const HttpRequest *req) const {
   const std::string &path = req->request_target_->getPath();
-  const std::string &extension = getExtension(path);
+  const std::string &extension = getCGIExtension(path);
   const bool hasCGI = extension != "";
 
   std::vector<LocationConf>::const_iterator ret = location_confs_.cbegin();

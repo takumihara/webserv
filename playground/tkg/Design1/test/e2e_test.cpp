@@ -51,7 +51,7 @@ TEST(E2E, CGIClientRedirect) {
 
   std::cerr << res << std::endl;
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
-  ASSERT_TRUE(includes(res, "HTTP/1.1 302 Found\nLocation: http://example.com"));
+  ASSERT_TRUE(includes(res, "HTTP/1.1 302 Found\nlocation: http://example.com"));
 }
 
 TEST(E2E, CGIClientRedirectWithDoc) {
@@ -66,7 +66,7 @@ TEST(E2E, CGIClientRedirectWithDoc) {
 
   std::cerr << res << std::endl;
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
-  ASSERT_TRUE(includes(res, "Location: http://example.com"));
+  ASSERT_TRUE(includes(res, "location: http://example.com"));
   ASSERT_TRUE(includes(res, "Client Redirection With Document CGI Response"));
 }
 
@@ -81,7 +81,7 @@ TEST(E2E, CGILocalRedirectToClientRedirect) {
   std::string res = sendRequest(host, port, method, path, body, headers);
 
   std::cerr << res << std::endl;
-  ASSERT_TRUE(includes(res, "HTTP/1.1 302 Found\nLocation: http://example.com"));
+  ASSERT_TRUE(includes(res, "HTTP/1.1 302 Found\nlocation: http://example.com"));
 }
 
 TEST(E2E, Get) {
