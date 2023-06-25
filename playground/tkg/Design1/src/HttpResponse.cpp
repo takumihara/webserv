@@ -57,7 +57,7 @@ void HttpResponse::createResponse() {
   ss << body_;
 
   response_ = ss.str();
-  std::cout << response_;
+  std::cout << "full response: '" << escape(response_) << "'" << std::endl;
   response_size_ = response_.size();
   sending_response_size_ = 0;
   state_ = Sending;

@@ -212,7 +212,7 @@ void CGI::parseCGIResponse() {
   } else if (type == CGI::Doc) {
     parseDocRes(lines);
   } else if (type == CGI::LocalRedir) {
-    DEBUG_PRINTF("CGI LAST RESULT: '%s'", recieved_data_.c_str());
+    DEBUG_PRINTF("CGI LAST RESULT: '%s'\n", escape(recieved_data_).c_str());
     try {
       parseLocalRedirect(lines);
       ConnectionSocket *parent = dynamic_cast<ConnectionSocket *>(parent_);
@@ -228,7 +228,7 @@ void CGI::parseCGIResponse() {
     parseClientRedirectWithDoc(lines);
   }
   if (type != CGI::LocalRedir) {
-    DEBUG_PRINTF("CGI LAST RESULT: '%s'", recieved_data_.c_str());
+    DEBUG_PRINTF("CGI LAST RESULT: '%s'\n", escape(recieved_data_).c_str());
     em_->registerWriteEvent(parent_->id_);
     shutdown();
   }
@@ -251,16 +251,17 @@ void CGI::notify(struct kevent ev) {
       response_->setStatusAndReason(200, "");
       parseCGIResponse();
     } else {
-      std::cout << "res: " << res << std::endl;
+      std::cout << "CGI read res: " << res << std::endl;
       buff[res] = '\0';
       recieved_data_ += buff;
       em_->updateTimer(this);
-      DEBUG_PRINTF("CGI WIP RESULT: '%s'", recieved_data_.c_str());
+      DEBUG_PRINTF("CGI WIP RESULT: '%s'\n", escape(recieved_data_).c_str());
     }
   } else if (ev.filter == EVFILT_WRITE) {
     const char *response = request_->body_.c_str();
-    std::cout << "response: " << response << std::endl;
+    std::cout << "response: " << escape(response) << std::endl;
     std::size_t size = request_->body_.size() - sending_size_;
+
     if (size > SOCKET_WRITE_SIZE) {
       size = SOCKET_WRITE_SIZE;
     }

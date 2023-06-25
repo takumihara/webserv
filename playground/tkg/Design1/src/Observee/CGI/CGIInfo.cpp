@@ -54,7 +54,7 @@ CGIInfo parseCGIInfo(const std::string &path, const std::string &ext, HttpReques
   info.content_length_ = ss.str();
   ss.str("");
   ss.clear(std::stringstream::goodbit);
-  info.content_type_ = "text/plain";
+  info.content_type_ = req.headers_.content_type;
   info.gateway_interface_ = "CGI/1.1";
   info.path_info_ = getPathInfo(path, ext);
   info.path_translated_ = setPathTranslated(conf->common_.root_, info.path_info_);

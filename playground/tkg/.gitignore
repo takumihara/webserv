@@ -9,3 +9,4 @@ gtest
 test.log
 !Client/
 *.cgi
+tmp

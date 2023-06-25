@@ -18,7 +18,6 @@ class HttpRequest {
  public:
   enum Method { GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH };
   enum Version { HTTP1_1 };
-  enum HeaderField { HostField, ContentLengthField, TransferEncodingField, DateField };
   enum TransferEncoding { Chunked, Compress, Deflate, Gzip };
   struct Host {
     std::string uri_host;
@@ -29,6 +28,7 @@ class HttpRequest {
     Headers() : content_length(0) {}
     Host host;
     size_t content_length;
+    std::string content_type;
     std::vector<TransferEncoding> transfer_encodings;
     std::tm date;
   };
