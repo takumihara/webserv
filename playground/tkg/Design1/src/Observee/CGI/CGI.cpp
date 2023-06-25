@@ -47,6 +47,7 @@ std::pair<std::string, std::string> getHeaderField(std::string &field) {
   if (field.find(':') == std::string::npos) throw std::runtime_error("invalid header field");
   std::getline(ss, name, ':');
   std::getline(ss, value);
+  trimOws(value);
   return std::pair<std::string, std::string>(name, value);
 }
 

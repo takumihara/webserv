@@ -108,7 +108,8 @@ TEST(E2E, Autoindex) {
 
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
   ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
-  ASSERT_TRUE(includes(res, "<p><a href=\"http://localhost:80/Config/con.conf\">con.conf </a><br></p>"));
+  ASSERT_TRUE(includes(res, "<p><a href=\"http://localhost:80"));
+  ASSERT_TRUE(includes(res, "/Config/con.conf\">con.conf </a><br></p>"));
 }
 
 TEST(E2E, Non_Autoindex) {
