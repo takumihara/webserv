@@ -258,9 +258,9 @@ void CGI::notify(struct kevent ev) {
       DEBUG_PRINTF("CGI WIP RESULT: '%s'", recieved_data_.c_str());
     }
   } else if (ev.filter == EVFILT_WRITE) {
-    const char *response = request_->getBody().c_str();
+    const char *response = request_->body_.c_str();
     std::cout << "response: " << response << std::endl;
-    std::size_t size = request_->getBody().size() - sending_size_;
+    std::size_t size = request_->body_.size() - sending_size_;
     if (size > SOCKET_WRITE_SIZE) {
       size = SOCKET_WRITE_SIZE;
     }
@@ -273,7 +273,7 @@ void CGI::notify(struct kevent ev) {
       return;
     }
     sending_size_ += size;
-    if (sending_size_ == request_->getBody().size()) {
+    if (sending_size_ == request_->body_.size()) {
       ::shutdown(id_, SHUT_WR);
       em_->disableWriteEvent(id_);
       em_->registerReadEvent(id_);

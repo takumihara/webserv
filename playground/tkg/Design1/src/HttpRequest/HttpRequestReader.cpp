@@ -290,7 +290,6 @@ void HttpRequestReader::readChunkedBody() {
       std::stringstream ss(hex);
       ss >> std::hex >> chunked_size_;
 
-      // todo(thara):there is unread data in socket
       if (chunked_size_ == 0) {
         rest_ = raw_data_.substr(end + 2);
         moveToNextState();

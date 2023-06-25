@@ -61,7 +61,7 @@ std::string GET::listFilesAndDirectories(std::string &directory_path, const Http
     // todo: this if statment and rmed_dot are temporary
     std::string rmed_dot;
     if (file_path[0] == '.') rmed_dot = file_path.substr(1);
-    ss << "http://" << req.getHost().uri_host << ":" << req.getHost().port << rmed_dot;
+    ss << "http://" << req.headers_.host.uri_host << ":" << req.headers_.host.port << rmed_dot;
     if (S_ISREG(file_stat.st_mode)) {
       ret += HTML::aTag(HTML::sanitize(ss.str()), HTML::sanitize(name));
     } else if (S_ISDIR(file_stat.st_mode)) {

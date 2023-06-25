@@ -19,7 +19,7 @@ TEST(Routing, basic) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -35,7 +35,7 @@ TEST(Routing, basic_no_such_server) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -51,7 +51,7 @@ TEST(Routing, multi_loc_first) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -67,7 +67,7 @@ TEST(Routing, multi_loc_second) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -83,7 +83,7 @@ TEST(Routing, multi_loc_third) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[2]);
 }
@@ -99,7 +99,7 @@ TEST(Routing, multi_loc_no_match) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -115,7 +115,7 @@ TEST(Routing, multi_serv_first) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -131,7 +131,7 @@ TEST(Routing, multi_serv_second) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[1].location_confs_[0]);
 }
@@ -147,7 +147,7 @@ TEST(Routing, multi_serv_no_such_server) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -163,7 +163,7 @@ TEST(Routing, multi_serv_loc_1S_1L) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -179,7 +179,7 @@ TEST(Routing, multi_serv_loc_1S_2L) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -195,7 +195,7 @@ TEST(Routing, multi_serv_loc_1S_noL) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -211,7 +211,7 @@ TEST(Routing, multi_serv_loc_2S_1L) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[1].location_confs_[0]);
 }
@@ -227,7 +227,7 @@ TEST(Routing, multi_serv_loc_2S_3L) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[1].location_confs_[2]);
 }
@@ -243,7 +243,7 @@ TEST(Routing, multi_serv_loc_2S_noL) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[1].location_confs_[0]);
 }
@@ -259,7 +259,7 @@ TEST(Routing, multi_serv_loc_noS_2L) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -275,7 +275,7 @@ TEST(Routing, multi_serv_loc_noS_noL) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -291,7 +291,7 @@ TEST(Routing, limit_method_get) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -307,7 +307,7 @@ TEST(Routing, limit_method_post) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -323,7 +323,7 @@ TEST(Routing, limit_method_noM) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -339,7 +339,7 @@ TEST(Routing, allowed_ext_cgi) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -355,7 +355,7 @@ TEST(Routing, allowed_ext_py) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -371,7 +371,7 @@ TEST(Routing, allowed_ext_noExt) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -387,7 +387,7 @@ TEST(Routing, allowed_ext_pathLen) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -403,7 +403,7 @@ TEST(Routing, allowed_ext_pathLen_api) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[2]);
 }
@@ -419,7 +419,7 @@ TEST(Routing, allowed_ext_pathLen_noPath) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -435,7 +435,7 @@ TEST(Routing, limit_method_pathLen) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[2]);
 }
@@ -451,7 +451,7 @@ TEST(Routing, limit_method_pathLen_path1) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[1]);
 }
@@ -467,7 +467,7 @@ TEST(Routing, limit_method_pathLen_noPath) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }
@@ -483,7 +483,7 @@ TEST(Routing, limit_method_pathLen_noM) {
   HttpRequest req;
   HttpRequestReader rreader(0, &conf, req, rc);
   rreader.read();
-  ServerConf *serv_conf = conf.getServerConf(req.getHost().port, req.getHost().uri_host);
+  ServerConf *serv_conf = conf.getServerConf(req.headers_.host.port, req.headers_.host.uri_host);
   LocationConf *loc_conf = serv_conf->getLocationConf(&req);
   EXPECT_TRUE(*loc_conf == conf.server_confs_[0].location_confs_[0]);
 }

@@ -58,12 +58,12 @@ CGIInfo parseCGIInfo(const std::string &path, const std::string &ext, HttpReques
   info.gateway_interface_ = "CGI/1.1";
   info.path_info_ = getPathInfo(path, ext);
   info.path_translated_ = setPathTranslated(conf->common_.root_, info.path_info_);
-  info.query_string_ = Encoding::unescape(req.getRequestTarget()->getRawQuery(), Encoding::QueryComponent);
+  info.query_string_ = Encoding::unescape(req.request_target_->getRawQuery(), Encoding::QueryComponent);
   // todo: set remote_addr and remote_host by value obtained when accept()
   info.request_method_ = methodToString(req.method_);
   info.script_name_ = getScriptName(path, ext);
-  info.server_name_ = req.getHost().uri_host;
-  ss << req.getHost().port;
+  info.server_name_ = req.headers_.host.uri_host;
+  ss << req.headers_.host.port;
   info.server_port_ = ss.str();
   info.server_protocol_ = "HTTP/1.1";
   info.server_software_ = "Webserv/1.1";

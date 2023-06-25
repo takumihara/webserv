@@ -38,12 +38,12 @@ void POST::notify(struct kevent ev) {
   (void)ev;
   std::size_t size = body_size_ - write_size_;
   if (size > FILE_WRITE_SIZE) size = FILE_WRITE_SIZE;
-  int res = write(id_, &(request_->getBody()[write_size_]), size);
+  int res = write(id_, &(request_->body_[write_size_]), size);
   if (res == -1) {
     return;
   } else {
     write_size_ += res;
-    if (write_size_ >= request_->getBody().size()) {
+    if (write_size_ >= request_->body_.size()) {
       close(id_);
       parent_->obliviateChild(this);
       em_->deleteTimerEvent(id_);
