@@ -5,6 +5,7 @@
 
 #include "../../Config/validation.h"
 #include "../../URI/URI.hpp"
+#include "../../helper.hpp"
 
 namespace CGIValidation {
 
@@ -102,7 +103,10 @@ bool isPrintable(const char c) {
   return false;
 }
 
-bool isMediaType(std::string &media) {
+bool isMediaType(std::string &raw_media) {
+  std::string media = raw_media.substr(0, raw_media.find(";"));
+  trimOws(media);
+  toLower(media);
   std::size_t pos = media.find("/");
   if (pos == std::string::npos) return false;
   std::string type = media.substr(0, pos);
@@ -159,7 +163,6 @@ bool isAbsPath(const char *path) {
 }
 
 bool isAbsURI(const std::string &raw_uri) {
-  // todo:
   try {
     URI *uri = URI::parse(raw_uri);
     if (uri->getScheme() == "") return false;

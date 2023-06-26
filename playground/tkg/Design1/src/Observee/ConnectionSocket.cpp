@@ -113,8 +113,7 @@ void ConnectionSocket::processDELETE() {
   if (!isAcceptableMethod(loc_conf_, HttpRequest::DELETE)) {
     throw MethodNotAllowedException("DELETE is not allowed in this Location scope");
   }
-  // todo: . is for temporary implementation
-  std::string path = "." + loc_conf_->getTargetPath(request_.request_target_->getPath());
+  std::string path = loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
   if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
@@ -125,12 +124,10 @@ void ConnectionSocket::processDELETE() {
 }
 
 void ConnectionSocket::processPOST() {
-  // todo:
   if (!isAcceptableMethod(loc_conf_, HttpRequest::POST)) {
     throw MethodNotAllowedException("POST is not allowed in this Location scope");
   }
-  // todo: . is for temporary implementation
-  std::string path = "." + loc_conf_->getTargetPath(request_.request_target_->getPath());
+  std::string path = loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
   if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
@@ -144,8 +141,7 @@ void ConnectionSocket::processGET() {
   if (!isAcceptableMethod(loc_conf_, HttpRequest::GET)) {
     throw MethodNotAllowedException("No Suitable Location");
   }
-  // todo: . is for temporary implementation
-  std::string path = "." + loc_conf_->getTargetPath(request_.request_target_->getPath());
+  std::string path = loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
   if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
@@ -261,6 +257,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     try {
       response_.sendResponse();
     } catch (std::runtime_error &e) {
+      std::cout << "client close socket\n";
       shutdown();
     }
     if (response_.getState() == HttpResponse::End) {

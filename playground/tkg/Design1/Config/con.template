@@ -2,14 +2,13 @@ server {
   server_name localhost;
   index index.html;
   listen 0.0.0.0:80;
+  root pwd;
   location / {
-    root /;
     autoindex on;
     index index.html;
     autoindex on;
   }
   location /cgi-bin {
-    root /;
     cgi_extension .cgi .py; 
   }
 }

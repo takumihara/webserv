@@ -87,6 +87,7 @@ tester: $(gtest) $(TEST_OBJS)
 
 .PHONY: test
 test: server tester cgi
+	./configTranslater.sh
 	cp server server_binary
 	./server_binary > test/test.log 2>&1 &
 	@sleep 1
