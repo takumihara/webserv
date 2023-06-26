@@ -10,3 +10,4 @@ test.log
 !Client/
 *.cgi
 tmp
+log.txt
