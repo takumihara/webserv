@@ -21,3 +21,4 @@ std::string digit();
 std::string tchar();
 std::string vchar();
 std::string fieldContent();
+const std::vector<char> &CRLFVec();

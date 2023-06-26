@@ -124,3 +124,12 @@ char unhex(char c) {
   }
   return 0;
 }
+
+const std::vector<char> &CRLFVec() {
+  static std::vector<char> res;
+  if (res.empty()) {
+    res.push_back('\r');
+    res.push_back('\n');
+  }
+  return res;
+}
