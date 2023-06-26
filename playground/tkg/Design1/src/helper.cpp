@@ -81,9 +81,9 @@ std::string getExtension(const std::string &path) {
   std::size_t slash_pos = path.rfind("/");
   std::string filename = path;
   if (slash_pos != std::string::npos) filename = path.substr(slash_pos + 1);
-  std::size_t dot_pos = path.rfind(".");
-  if (dot_pos == std::string::npos) return filename.substr(dot_pos + 1);
-  return "";
+  std::size_t dot_pos = filename.rfind(".");
+  if (dot_pos == 0 || dot_pos == filename.size() - 1 || dot_pos == std::string::npos) return "";
+  return filename.substr(dot_pos);
 }
 
 bool isExecutable(const char *path) { return access(path, X_OK) == 0; }

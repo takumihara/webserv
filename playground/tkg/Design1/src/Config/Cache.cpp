@@ -20,6 +20,7 @@ static std::string readFile(const char *filename) {
 void Cache::initCache(const Config *conf) {
   initStatusMsg();
   initStatusErrorPageMap(conf);
+  initContentType();
 }
 
 void Cache::cacheErrorPages(const CommonConf *conf) {
