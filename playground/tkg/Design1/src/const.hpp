@@ -3,11 +3,11 @@
 #include <map>
 #include <string>
 
-#define SOCKET_READ_SIZE 10000
-#define FILE_READ_SIZE 10000
-#define FILE_WRITE_SIZE 10000
+#define SOCKET_READ_SIZE 100
+#define FILE_READ_SIZE 100
+#define FILE_WRITE_SIZE 100
 
-#define SOCKET_WRITE_SIZE 10000
+#define SOCKET_WRITE_SIZE 100
 
 #define DEFAULT_HTTP_PORT 80
 #define DEFAULT_HTTPS_PORT 443

@@ -113,7 +113,7 @@ void ConnectionSocket::processDELETE() {
   if (!isAcceptableMethod(loc_conf_, HttpRequest::DELETE)) {
     throw MethodNotAllowedException("DELETE is not allowed in this Location scope");
   }
-  std::string path = loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
+  std::string path = loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
   if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
@@ -127,7 +127,7 @@ void ConnectionSocket::processPOST() {
   if (!isAcceptableMethod(loc_conf_, HttpRequest::POST)) {
     throw MethodNotAllowedException("POST is not allowed in this Location scope");
   }
-  std::string path = loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
+  std::string path = loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
   if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
@@ -141,7 +141,7 @@ void ConnectionSocket::processGET() {
   if (!isAcceptableMethod(loc_conf_, HttpRequest::GET)) {
     throw MethodNotAllowedException("No Suitable Location");
   }
-  std::string path = loc_conf_->getTargetPath(request_.getRequestTarget()->getPath());
+  std::string path = loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
   if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {

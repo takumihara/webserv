@@ -58,7 +58,7 @@ std::string GET::listFilesAndDirectories(std::string &directory_path, const Http
     }
     std::string name = entry->d_name;
     std::stringstream ss;
-    ss << "http://" << req.getHost().uri_host << ":" << req.getHost().port << file_path;
+    ss << "http://" << req.headers_.host.uri_host << ":" << req.headers_.host.port << file_path;
     if (S_ISREG(file_stat.st_mode)) {
       ret += HTML::aTag(HTML::sanitize(ss.str()), HTML::sanitize(name));
     } else if (S_ISDIR(file_stat.st_mode)) {
