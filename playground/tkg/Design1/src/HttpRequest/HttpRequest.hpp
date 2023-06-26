@@ -66,7 +66,7 @@ class HttpRequest {
   Version version_;
   URI *request_target_;
   Headers headers_;
-  std::string body_;
+  std::vector<char> body_;
 
  private:
 };

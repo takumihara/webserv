@@ -237,7 +237,8 @@ void ConnectionSocket::notify(struct kevent ev) {
     try {
       HttpRequestReader::State state = rreader_.read();
       if (state == HttpRequestReader::FinishedReading) {
-        DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.body_).c_str());
+        DEBUG_PRINTF("FINISHED READING: %s \n",
+                     escape(std::string(request_.body_.begin(), request_.body_.end())).c_str());
         this->process();
       }
     } catch (HttpException &e) {
