@@ -53,7 +53,7 @@ TEST(CGI, CGIInfo1) {
   CGIInfo info = parseCGIInfo(path, extension, req, loc_conf);
   EXPECT_EQ(info.auth_type_, "");
   EXPECT_EQ(info.content_length_, "0");
-  EXPECT_EQ(info.content_type_, "text/plain");
+  EXPECT_EQ(info.content_type_, "");
   EXPECT_EQ(info.gateway_interface_, "CGI/1.1");
   EXPECT_EQ(info.path_info_, "/hello/world");
   EXPECT_EQ(info.path_translated_, "/www/server1/hello/world");
@@ -86,7 +86,7 @@ TEST(CGI, CGIInfo2) {
   CGIInfo info = parseCGIInfo(path, extension, req, loc_conf);
   EXPECT_EQ(info.auth_type_, "");
   EXPECT_EQ(info.content_length_, "5");
-  EXPECT_EQ(info.content_type_, "text/plain");
+  EXPECT_EQ(info.content_type_, "");
   EXPECT_EQ(info.gateway_interface_, "CGI/1.1");
   EXPECT_EQ(info.path_info_, "/hello/world");
   EXPECT_EQ(info.path_translated_, "/www/server1/hello/world");

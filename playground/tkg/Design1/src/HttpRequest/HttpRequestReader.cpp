@@ -115,6 +115,7 @@ void HttpRequestReader::initAnalyzeFuncs(
   analyze_funcs["content-length"] = &HttpRequestReader::analyzeContentLength;
   analyze_funcs["transfer-encoding"] = &HttpRequestReader::analyzeTransferEncoding;
   analyze_funcs["date"] = &HttpRequestReader::analyzeDate;
+  analyze_funcs["content-type"] = &HttpRequestReader::analyzeContentType;
 }
 
 void HttpRequestReader::parseHeaders() {
@@ -264,6 +265,12 @@ void HttpRequestReader::analyzeDate(const std::string &value) {
   if (t == -1) {
     throw BadRequestException("Http Request: invalid date");
   }
+}
+
+void HttpRequestReader::analyzeContentType(const std::string &value) {
+  insertIfNotDuplicate(ContentTypeField, "Http Request: duplicated content type");
+
+  request_.headers_.content_type = value;
 }
 
 void HttpRequestReader::validateHeaderName(const std::string &name) {
