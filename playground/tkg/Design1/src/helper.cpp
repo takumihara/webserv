@@ -57,7 +57,6 @@ std::vector<std::string> splitToSegment(const std::string &path) {
   return segments;
 }
 
-
 // path must not have query
 std::string getExtension(const std::string &path) {
   std::vector<std::string> segments = splitToSegment(path);
@@ -93,4 +92,23 @@ bool isAllDirectoryWritable(std::string &path) {
     if (!isWritable(partial_path.c_str())) return false;
   }
   return true;
+}
+
+bool ishex(const std::string &str) {
+  for (std::size_t i = 0; i < str.size(); i++) {
+    if (!ishex(str[i])) return false;
+  }
+  return true;
+}
+bool ishex(char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
+
+char unhex(char c) {
+  if (c >= '0' && c <= '9') {
+    return c - '0';
+  } else if (c >= 'a' && c <= 'f') {
+    return c - 'a' + 10;
+  } else if (c >= 'A' && c <= 'F') {
+    return c - 'A' + 10;
+  }
+  return 0;
 }

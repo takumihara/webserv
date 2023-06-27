@@ -294,6 +294,9 @@ void HttpRequestReader::readChunkedBody() {
       }
 
       std::string hex = raw_data_.substr(0, end);
+      if (!ishex(hex)) {
+        throw BadRequestException("Http Request: invalid chunked body");
+      }
       std::stringstream ss(hex);
       ss >> std::hex >> chunked_size_;
 
