@@ -24,9 +24,18 @@ void HttpResponse::setStatusAndReason(const int status, const std::string &reaso
     reason_phrase_ = reason;
 }
 
+
+void HttpResponse::setContentType(const std::string &path) {
+  std::string ext = getExtension(path);
+  if (ext == "") return;
+  if (hasHeader("content-type")) return;
+  appendHeader("content-type", conf_->cache_.ext_contentType_map_[ext]);
+}
+
 void HttpResponse::appendBody(const char *str, size_t size) { body_.insert(body_.end(), str, str + size); }
 
 void HttpResponse::appendBody(const std::string &str) { body_.insert(body_.end(), str.begin(), str.end()); }
+
 
 void HttpResponse::appendHeader(const std::string &key, const std::string &value) {
   headers.push_back(header(key, value));
@@ -43,10 +52,10 @@ bool HttpResponse::hasHeader(const std::string &target_name) {
 
 void HttpResponse::createResponse() {
   if (state_ != Free) return;
-  if (!hasHeader("Content-Length")) {
+  if (!hasHeader("content-length")) {
     std::stringstream ss;
     ss << body_.size();
-    appendHeader("Content-Length", ss.str());
+    appendHeader("content-length", ss.str());
   }
   std::stringstream ss;
   // status-line

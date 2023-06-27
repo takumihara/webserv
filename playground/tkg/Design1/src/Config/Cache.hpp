@@ -18,9 +18,11 @@ class Cache {
 
   t_map error_page_paths_;
   std::map<int, std::string> statusMsg_;
+  std::map<std::string, std::string> ext_contentType_map_;
 
  private:
   void cacheErrorPages(const CommonConf *conf);
   void initStatusErrorPageMap(const Config *conf);
   void initStatusMsg();
+  void initContentType();
 };

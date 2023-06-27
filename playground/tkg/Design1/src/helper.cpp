@@ -14,7 +14,10 @@ char asciitolower(char in) {
   return in;
 }
 
-void toLower(std::string &str) { std::transform(str.begin(), str.end(), str.begin(), asciitolower); }
+std::string &toLower(std::string &str) {
+  std::transform(str.begin(), str.end(), str.begin(), asciitolower);
+  return str;
+}
 
 std::string escape(const std::string &str) {
   std::string res;
@@ -57,9 +60,8 @@ std::vector<std::string> splitToSegment(const std::string &path) {
   return segments;
 }
 
-
 // path must not have query
-std::string getExtension(const std::string &path) {
+std::string getCGIExtension(const std::string &path) {
   std::vector<std::string> segments = splitToSegment(path);
   for (std::size_t i = 0; i < segments.size(); i++) {
     // remove param
@@ -73,6 +75,15 @@ std::string getExtension(const std::string &path) {
     if (ext_pos != std::string::npos && ext_pos + 3 == trimed_seg.size()) return ".py";
   }
   return "";
+}
+
+std::string getExtension(const std::string &path) {
+  std::size_t slash_pos = path.rfind("/");
+  std::string filename = path;
+  if (slash_pos != std::string::npos) filename = path.substr(slash_pos + 1);
+  std::size_t dot_pos = filename.rfind(".");
+  if (dot_pos == 0 || dot_pos == filename.size() - 1 || dot_pos == std::string::npos) return "";
+  return filename.substr(dot_pos);
 }
 
 bool isExecutable(const char *path) { return access(path, X_OK) == 0; }

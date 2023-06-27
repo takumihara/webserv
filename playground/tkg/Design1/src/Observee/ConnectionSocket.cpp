@@ -190,7 +190,7 @@ void ConnectionSocket::processRedirect() {
     throw MethodNotAllowedException("No Suitable Location");
   }
   response_.setStatusAndReason(std::atoi(loc_conf_->getRedirectStatus().c_str()), "");
-  response_.appendHeader("Location", loc_conf_->getRedirectURI());
+  response_.appendHeader("location", loc_conf_->getRedirectURI());
   em_->disableReadEvent(id_);
   em_->registerWriteEvent(id_);
 }
@@ -215,7 +215,7 @@ void ConnectionSocket::process() {
     processRedirect();
     return;
   }
-  extension_ = getExtension(request_.request_target_->getPath());
+  extension_ = getCGIExtension(request_.request_target_->getPath());
   if (request_.methodIs(HttpRequest::GET)) {
     processGET();
   } else if (request_.methodIs(HttpRequest::POST)) {

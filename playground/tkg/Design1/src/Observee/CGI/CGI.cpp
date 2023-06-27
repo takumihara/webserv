@@ -57,7 +57,7 @@ void CGI::parseDocRes(std::vector<std::string> &lines) {
   while (i < lines.size() && lines[i] != "") {
     t_field field = getHeaderField(lines[i]);
     if (i == 0) {
-      response_->appendHeader("Content-Type", field.second);
+      response_->appendHeader("content-type", field.second);
     } else if (i == 1 && field.first == "Status") {
       std::istringstream iss(field.second);
       std::string status;
@@ -67,7 +67,7 @@ void CGI::parseDocRes(std::vector<std::string> &lines) {
       getline(iss, reason, '\n');
       response_->setStatusAndReason(std::atoi(status.c_str()), reason);
     } else {
-      response_->appendHeader(field.first, field.second);
+      response_->appendHeader(toLower(field.first), field.second);
     }
     i++;
   }
@@ -82,22 +82,22 @@ void CGI::parseDocRes(std::vector<std::string> &lines) {
 void CGI::parseClientRedirect(std::vector<std::string> &lines) {
   DEBUG_PUTS("parseClientRedirect");
   t_field field = getHeaderField(lines[0]);
-  response_->appendHeader("Location", field.second);
+  response_->appendHeader("location", field.second);
   response_->setStatusAndReason(302, "");
 }
 
 void CGI::parseClientRedirectWithDoc(std::vector<std::string> &lines) {
   DEBUG_PUTS("parseClientRedirectWithDoc");
   t_field field = getHeaderField(lines[0]);
-  response_->appendHeader("Location", field.second);
+  response_->appendHeader("location", field.second);
   field = getHeaderField(lines[1]);
   response_->setStatusAndReason(std::atoi(field.second.c_str()), field.second.substr(4));
   field = getHeaderField(lines[2]);
-  response_->appendHeader("Content-Type", field.second);
+  response_->appendHeader("content-type", field.second);
   std::size_t i = 3;
   while (i < lines.size() && lines[i] != "") {
     field = getHeaderField(lines[i]);
-    response_->appendHeader(field.first, field.second);
+    response_->appendHeader(toLower(field.first), field.second);
     i++;
   }
   if (lines[i] == "") i++;
