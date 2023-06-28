@@ -11,3 +11,6 @@ bool isExecutable(const char *path);
 bool isReadable(const char *path);
 bool isWritable(const char *path);
 bool isAllDirectoryWritable(std::string &path);
+bool ishex(const std::string &str);
+bool ishex(char c);
+char unhex(char c);

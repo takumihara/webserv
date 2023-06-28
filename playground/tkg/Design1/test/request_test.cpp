@@ -107,3 +107,24 @@ TEST(Request, NegativeContentLength) {
     FAIL();
   }
 }
+
+TEST(Request, InvalidChunkedSize) {
+  const std::string req_str =
+      "POST / HTTP/1.1\r\nHost: localhost;\r\nTransfer-Encoding:chunked\r\n\r\n4\r\nWiki\r\nZ\r\na\r\n0\r\n";
+  IReadCloser *rc = new MockReadCloser(req_str);
+  EventManager em = EventManager();
+  Config conf;
+  HttpRequest req;
+
+  try {
+    HttpRequestReader rreader(0, &conf, req, rc);
+    HttpRequestReader::State state = rreader.read();
+    std::cout << "No Exception" << std::endl;
+    FAIL();
+  } catch (BadRequestException &e) {
+    ASSERT_EQ(std::string(e.what()), std::string("Http Request: invalid chunked body"));
+  } catch (...) {
+    std::cout << "Wrong Exception" << std::endl;
+    FAIL();
+  }
+}
