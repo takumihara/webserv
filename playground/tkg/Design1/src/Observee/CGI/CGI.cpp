@@ -72,14 +72,11 @@ void CGI::processDocRes(std::string &body) {
   shutdown();
 }
 
-void CGI::processClientRedirect() {
-  DEBUG_PUTS("processClientRedirect");
-  for (HttpResponse::t_headers::const_iterator itr = headers_.cbegin(); itr != headers_.cend(); itr++) {
-    response_->appendHeader(itr->first, itr->second);
-  }
-  response_->setStatusAndReason(302);
-  em_->registerWriteEvent(parent_->id_);
-  shutdown();
+void CGI::parseClientRedirect(std::vector<std::string> &lines) {
+  DEBUG_PUTS("parseClientRedirect");
+  t_field field = getHeaderField(lines[0]);
+  response_->appendHeader("location", field.second);
+  response_->setStatusAndReason(302, "");
 }
 
 void CGI::processClientRedirectWithDoc(std::string &body) {
@@ -193,7 +190,7 @@ void CGI::handleCGIResponse() {
   parseHeaders(headers);
   CGI::Type type = getResponseType();
   if (type == CGI::Error) {
-    throw InternalServerErrorException("CGI response is invalid");
+    response_->setStatusAndReason(500, "");
   } else if (type == CGI::Doc) {
     processDocRes(body);
   } else if (type == CGI::LocalRedir) {
@@ -214,20 +211,13 @@ void CGI::notify(struct kevent ev) {
 
     int res = read(id_, &buff[0], FILE_READ_SIZE);
     if (res == -1) {
-      response_->setStatusAndReason(500);
+      response_->setStatusAndReason(501, "");
       em_->registerWriteEvent(parent_->id_);
       shutdown();
       return;
     } else if (res == 0) {
-      response_->setStatusAndReason(200);
-      try {
-        handleCGIResponse();
-      } catch (HttpException &e) {
-        DEBUG_PUTS(e.what());
-        response_->setStatusAndReason(e.statusCode());
-        em_->registerWriteEvent(parent_->id_);
-        shutdown();
-      }
+      response_->setStatusAndReason(200, "");
+      parseCGIResponse();
     } else {
       std::cout << "CGI read res: " << res << std::endl;
       buff[res] = '\0';
@@ -246,7 +236,7 @@ void CGI::notify(struct kevent ev) {
     int res = write(id_, response + sending_size_, size);
     if (res == -1) {
       perror("sendto");
-      response_->setStatusAndReason(500);
+      response_->setStatusAndReason(501, "");
       em_->registerWriteEvent(parent_->id_);
       shutdown();
       return;
