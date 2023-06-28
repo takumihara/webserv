@@ -28,8 +28,10 @@ void ServerSocket::notify(struct kevent ev) {
   struct sockaddr_in add;
   int addlen;
   int connection_fd = accept(id_, (struct sockaddr *)&add, (socklen_t *)&addlen);
+  DEBUG_PRINTF("serverSocket create fd: %d\n", connection_fd);
   if (connection_fd == -1) {
-    throw std::runtime_error("accept error");
+    perror("accept");
+    return;
   }
   fcntl(connection_fd, F_SETFL, O_NONBLOCK);
   em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_READ, EV_ADD, 0, 0, 0});

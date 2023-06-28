@@ -54,14 +54,16 @@ void EventManager::registerServerEvent(int fd, int port, Config &conf) {
 
 void EventManager::registerWriteEvent(uintptr_t fd) {
   addChangedEvents((struct kevent){fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-  addChangedEvents(
-      (struct kevent){fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+  struct kevent chlist[1];
+  chlist[0] = (struct kevent){fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0};
+  kevent(kq_, chlist, 1, NULL, 0, NULL);
 }
 
 void EventManager::registerReadEvent(uintptr_t fd) {
   addChangedEvents((struct kevent){fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0});
-  addChangedEvents(
-      (struct kevent){fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+  struct kevent chlist[1];
+  chlist[0] = (struct kevent){fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0};
+  kevent(kq_, chlist, 1, NULL, 0, NULL);
 }
 
 void EventManager::disableReadEvent(uintptr_t fd) {
@@ -73,14 +75,18 @@ void EventManager::disableWriteEvent(uintptr_t fd) {
 }
 
 void EventManager::deleteTimerEvent(uintptr_t fd) {
-  addChangedEvents((struct kevent){fd, EVFILT_TIMER, EV_DELETE, 0, 0, 0});
+  struct kevent chlist[1];
+  chlist[0] = (struct kevent){fd, EVFILT_TIMER, EV_DELETE, 0, 0, 0};
+  kevent(kq_, chlist, 1, NULL, 0, NULL);
 }
 
 void EventManager::updateTimer(Observee *obs) {
   if (obs->parent_) {
     updateTimer(obs->parent_);
   }
-  addChangedEvents((struct kevent){obs->id_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+  struct kevent chlist[1];
+  chlist[0] = (struct kevent){obs->id_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0};
+  kevent(kq_, chlist, 1, NULL, 0, NULL);
 }
 
 std::string getEventFilter(int flag) {
@@ -109,6 +115,11 @@ std::string getEventFlags(int state) {
 
 void EventManager::updateKqueue() {
   DEBUG_PUTS("UPDATE KQUEUE");
+  DEBUG_PUTS("---------Observees---------");
+  for (std::map<t_key, Observee *>::iterator itr = observees_.begin(); itr != observees_.end(); itr++) {
+    DEBUG_PRINTF("fd: %lu type: %hd\n", itr->first.first, itr->first.second);
+  }
+  DEBUG_PUTS("---------------------------");
   int size = changed_events_.size();
   struct kevent chlist[size];
   bzero(chlist, sizeof(struct kevent) * size);
@@ -166,7 +177,8 @@ void EventManager::eventLoop() {
     else if (nev == -1)
       perror("kevent");
     for (int i = 0; i < nev; i++) {
-      std::cout << "evlist fd: " << evlist[i].ident << std::endl;
+      DEBUG_PRINTF("evlist fd: %lu(%s:%s), ", evlist[i].ident, getEventFilter(evlist[i].filter).c_str(),
+                   getEventFlags(evlist[i].flags).c_str());
       handleEvent(evlist[i]);
     }
     DEBUG_PUTS("----------------------");

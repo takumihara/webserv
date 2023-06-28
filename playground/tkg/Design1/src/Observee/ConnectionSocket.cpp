@@ -40,25 +40,28 @@ void ConnectionSocket::terminate() { close(id_); }
 void ConnectionSocket::initExtension() { extension_ = ""; }
 
 GET *ConnectionSocket::makeGET(int fd) {
+  DEBUG_PRINTF("MAKE GET fd: %d\n", fd);
   GET *obs = new GET(fd, em_, this, &response_);
   this->monitorChild(obs);
   return obs;
 }
 
 POST *ConnectionSocket::makePOST(int fd) {
+  DEBUG_PUTS("MAKE POST");
   POST *obs = new POST(fd, em_, this, &request_);
   this->monitorChild(obs);
   return obs;
 }
 
 CGI *ConnectionSocket::makeCGI(int id, int pid) {
+  DEBUG_PRINTF("MAKE CGI fd: %d\n", id);
   CGI *obs = new CGI(id, pid, em_, this, &request_, &response_);
   this->monitorChild(obs);
   return obs;
 }
 
 void ConnectionSocket::execCGI(const std::string &path) {
-  DEBUG_PUTS("MAKE EXEC");
+  DEBUG_PUTS("EXEC CGI");
   char *argv[2];
   argv[1] = NULL;
   int fd[2];
@@ -244,7 +247,7 @@ void ConnectionSocket::notify(struct kevent ev) {
       }
     } catch (HttpException &e) {
       // all 4xx 5xx exception(readRequest and process) is caught here
-      std::cerr << e.what() << std::endl;
+      DEBUG_PUTS(e.what());
       response_.setStatusAndReason(e.statusCode());
       if (loc_conf_) {
         // error_page directive is ignored when error ocuured reading Request
@@ -253,7 +256,7 @@ void ConnectionSocket::notify(struct kevent ev) {
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
     } catch (std::runtime_error &e) {
-      // when client close socket
+      DEBUG_PUTS("client close socket");
       shutdown();
     }
   }
@@ -263,8 +266,9 @@ void ConnectionSocket::notify(struct kevent ev) {
     try {
       response_.sendResponse();
     } catch (std::runtime_error &e) {
-      std::cout << "client close socket\n";
+      DEBUG_PUTS("client close socket");
       shutdown();
+      return;
     }
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;

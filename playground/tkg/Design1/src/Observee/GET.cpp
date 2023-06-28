@@ -84,18 +84,18 @@ void GET::notify(struct kevent ev) {
   int res = read(id_, buff, FILE_READ_SIZE);
   std::cout << "res: " << res << std::endl;
   if (res == -1) {
+    response_->setStatusAndReason(500, "");
+    em_->registerWriteEvent(parent_->id_);
+    shutdown();
     return;
   } else {
     response_->appendBody(buff, res);
     if (res == 0 || res == ev.data) {
-      close(id_);
-      response_->setStatusAndReason(200);
-      parent_->obliviateChild(this);
-      em_->deleteTimerEvent(id_);
-      em_->registerWriteEvent(parent_->id_);
       std::cout << "GET LAST RESULT: '" << std::string(&(response_->getBody()[0]), response_->getBody().size()) << "'"
                 << std::endl;
-      em_->remove(std::pair<t_id, t_type>(id_, FD));
+      response_->setStatusAndReason(200);
+      em_->registerWriteEvent(parent_->id_);
+      shutdown();
       return;
     }
     em_->updateTimer(this);
