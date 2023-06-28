@@ -31,8 +31,8 @@ void CGI::shutdown() {
   em_->deleteTimerEvent(id_);
   kill(pid_, SIGTERM);
   waitpid(pid_, &status, 0);
-  em_->remove(std::pair<t_id, t_type>(id_, FD));
   if (status != 0) response_->setStatusAndReason(500, "");
+  em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
 void CGI::terminate() {
@@ -48,7 +48,7 @@ std::pair<std::string, std::string> getHeaderField(std::string &field) {
   std::getline(ss, name, ':');
   toLower(name);
   std::getline(ss, value);
-  trimOws(value);
+  value = trimOws(value);
   return std::pair<std::string, std::string>(name, value);
 }
 
@@ -193,7 +193,7 @@ void CGI::handleCGIResponse() {
   parseHeaders(headers);
   CGI::Type type = getResponseType();
   if (type == CGI::Error) {
-    throw InternalServerErrorException("CGI response is invalid(no end NL of headers)");
+    throw InternalServerErrorException("CGI response is invalid");
   } else if (type == CGI::Doc) {
     processDocRes(body);
   } else if (type == CGI::LocalRedir) {
@@ -223,6 +223,7 @@ void CGI::notify(struct kevent ev) {
       try {
         handleCGIResponse();
       } catch (HttpException &e) {
+        DEBUG_PUTS(e.what());
         response_->setStatusAndReason(e.statusCode(), "");
         em_->registerWriteEvent(parent_->id_);
         shutdown();

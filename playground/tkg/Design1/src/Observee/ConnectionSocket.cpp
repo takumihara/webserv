@@ -78,6 +78,13 @@ void ConnectionSocket::execCGI(const std::string &path) {
     em_->terminateAll();
     std::vector<char *> env;
     info.setEnv(env);
+    std::string cwd = info.getCGIWorkingDirectory();
+    if (chdir(cwd.c_str()) == -1) {
+      perror("chdir");
+      close(fd[1]);
+      deleteEnv(env);
+      exit(1);
+    }
     argv[0] = const_cast<char *>(info.script_name_.c_str());
     if (dup2(fd[1], STDIN_FILENO) == -1) {
       perror("dup2");
