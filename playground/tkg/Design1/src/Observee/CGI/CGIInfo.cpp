@@ -46,7 +46,7 @@ std::string setPathTranslated(std::string root, std::string &path_info) {
 }
 
 CGIInfo parseCGIInfo(const std::string &path, const std::string &ext, HttpRequest &req, LocationConf *conf) {
-  // todo:
+  // todo(katakagi):
   std::stringstream ss;
   CGIInfo info;
   info.loc_conf = conf;
@@ -59,7 +59,7 @@ CGIInfo parseCGIInfo(const std::string &path, const std::string &ext, HttpReques
   info.path_info_ = getPathInfo(path, ext);
   info.path_translated_ = setPathTranslated(conf->common_.root_, info.path_info_);
   info.query_string_ = Encoding::unescape(req.request_target_->getRawQuery(), Encoding::QueryComponent);
-  // todo: set remote_addr and remote_host by value obtained when accept()
+  // todo(katakagi): set remote_addr and remote_host by value obtained when accept()
   info.request_method_ = methodToString(req.method_);
   info.script_name_ = getScriptName(path, ext);
   info.server_name_ = req.headers_.host.uri_host;

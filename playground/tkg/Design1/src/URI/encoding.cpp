@@ -87,7 +87,6 @@ std::string Encoding::escape(const std::string& str, Type mode) {
   return escaped;
 }
 
-// todo
 std::string Encoding::unescape(const std::string& str, Encoding::Type mode) {
   size_t pct_count = 0;
   bool has_plus = false;

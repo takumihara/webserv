@@ -9,6 +9,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "./Config/Config.hpp"
 #include "./IO/IReadCloser.hpp"
@@ -20,7 +21,8 @@ class HttpRequestReader {
   enum ReadingChunkedState { ReadingChunkedSize, ReadingChunkedData };
   enum HeaderField { HostField, ContentLengthField, TransferEncodingField, DateField, ContentTypeField };
 
-  HttpRequestReader(int fd, Config *conf, HttpRequest &request, IReadCloser *rc, const std::string &remaining_data = "")
+  HttpRequestReader(int fd, Config *conf, HttpRequest &request, IReadCloser *rc,
+                    const std::vector<char> &remaining_data = std::vector<char>())
       : request_(request),
         rc_(rc),
         sock_fd_(fd),
@@ -64,15 +66,15 @@ class HttpRequestReader {
   IReadCloser *rc_;
 
   int sock_fd_;
-  std::string raw_data_;
-  std::string rest_;
+  std::vector<char> raw_data_;
+  std::vector<char> rest_;
   State state_;
   size_t chunked_size_;
   ReadingChunkedState chunked_reading_state_;
   Config *conf_;
   const static char *kSupportedTransferEncodings[];
 
-  std::string getEndingChars() const;
+  const std::vector<char> &getEndingChars() const;
   void trimToEndingChars();
   void moveToNextState();
 

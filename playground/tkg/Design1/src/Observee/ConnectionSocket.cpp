@@ -114,6 +114,7 @@ void ConnectionSocket::processDELETE() {
     throw MethodNotAllowedException("DELETE is not allowed in this Location scope");
   }
   std::string path = loc_conf_->getTargetPath(request_.request_target_->getPath());
+
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
   if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
@@ -142,6 +143,7 @@ void ConnectionSocket::processGET() {
     throw MethodNotAllowedException("No Suitable Location");
   }
   std::string path = loc_conf_->getTargetPath(request_.request_target_->getPath());
+
   // if CGI extension exist, try exec CGI
   const bool hasCGI = extension_ != "";
   if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
@@ -233,7 +235,8 @@ void ConnectionSocket::notify(struct kevent ev) {
     try {
       HttpRequestReader::State state = rreader_.read();
       if (state == HttpRequestReader::FinishedReading) {
-        DEBUG_PRINTF("FINISHED READING: %s \n", escape(request_.body_).c_str());
+        DEBUG_PRINTF("FINISHED READING: %s \n",
+                     escape(std::string(request_.body_.begin(), request_.body_.end())).c_str());
         this->process();
       }
     } catch (HttpException &e) {
@@ -263,8 +266,6 @@ void ConnectionSocket::notify(struct kevent ev) {
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
       extension_ = "";
-      // todo(thara): find a better way to destruct request instance
-      delete request_.request_target_;
       request_ = HttpRequest();
       rreader_ = HttpRequestReader(rreader_, request_);
       response_ = HttpResponse(id_, port_, &conf_);

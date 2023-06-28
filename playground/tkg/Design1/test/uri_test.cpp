@@ -619,7 +619,6 @@ TEST(ResolveReference, EmptyUserInfo) {
   ASSERT_EQ(uri->isOmitHost(), false);
 }
 
-// todo
 TEST(ResolveReference, EmptyAuthority) {
   URI *base = URI::parse("schema://username:password@host/path?query#fragment");
   URI *ref = URI::parse("///p?q#f");
@@ -629,7 +628,6 @@ TEST(ResolveReference, EmptyAuthority) {
   ASSERT_EQ(uri->getScheme(), "schema");
   ASSERT_EQ(uri->getHost(), "host");
   ASSERT_EQ(uri->getPort(), "");
-  // I really think this should be /p
   ASSERT_EQ(uri->getPath(), "///p");
   ASSERT_EQ(uri->getRawQuery(), "q");
   ASSERT_EQ(uri->getFragment(), "f");
