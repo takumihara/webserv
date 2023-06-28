@@ -48,12 +48,12 @@ bool is3xxStatus(const std::string &status) {
 }
 
 bool isPath(const std::string &path) {
-  // todo: verify valid path
+  // todo(katakagi): verify valid path
   return path.size() != 0;
 }
 
 bool isURL(const std::string &URL) {
-  // todo: verify valid URL
+  // todo(katakagi): verify valid URL
   return URL.size() != 0;
 }
 

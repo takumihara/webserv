@@ -5,6 +5,7 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <vector>
 
 #include "Config/validation.h"
 #include "HttpException.hpp"
@@ -24,10 +25,10 @@ HttpRequestReader::State HttpRequestReader::read() {
     DEBUG_PRINTF("closed fd = %d\n", sock_fd_);
     throw std::runtime_error("closed client socket");
   }
-  raw_data_ += buff;
+  raw_data_.insert(raw_data_.end(), buff.begin(), buff.end());
 
   std::cout << "read from socket(fd:" << sock_fd_ << ")"
-            << ":'" << escape(raw_data_) << "'" << std::endl;
+            << ":'" << escape(std::string(raw_data_.begin(), raw_data_.end())) << "'" << std::endl;
   if (state_ == ReadingStartLine && isActionable()) {
     trimToEndingChars();
     parseStartline();
@@ -43,7 +44,6 @@ HttpRequestReader::State HttpRequestReader::read() {
   } else if (state_ == ReadingBody && isActionable()) {
     readBody();
   }
-
   return state_;
 }
 
@@ -55,7 +55,7 @@ bool HttpRequestReader::isReceivingBody() {
   return true;
 }
 void HttpRequestReader::parseStartline() {
-  std::stringstream ss = std::stringstream(raw_data_);
+  std::stringstream ss = std::stringstream(std::string(raw_data_.begin(), raw_data_.end()));
   std::string method;
   std::string request_target;
   std::string version;
@@ -119,21 +119,21 @@ void HttpRequestReader::initAnalyzeFuncs(
 }
 
 void HttpRequestReader::parseHeaders() {
-  std::stringstream ss(raw_data_);
+  std::stringstream ss(std::string(raw_data_.begin(), raw_data_.end()));
 
-  std::string::size_type start = 0;
-  std::string::size_type end = raw_data_.find(CRLF, start);
+  std::vector<char>::iterator start = raw_data_.begin();
+  std::vector<char>::iterator end = std::search(raw_data_.begin(), raw_data_.end(), CRLFVec().begin(), CRLFVec().end());
 
   std::map<std::string, void (HttpRequestReader::*)(const std::string &)> analyze_funcs;
   initAnalyzeFuncs(analyze_funcs);
   while (true) {
-    std::string line = raw_data_.substr(start, end - start);
+    std::vector<char> line(start, end);
     // this is the end of headers
     if (line.empty()) {
       break;
     }
 
-    std::stringstream lineStream(line);
+    std::stringstream lineStream(std::string(line.begin(), line.end()));
     std::string name, value;
 
     std::getline(lineStream, name, ':');
@@ -148,7 +148,7 @@ void HttpRequestReader::parseHeaders() {
     }
 
     start = end + 2;
-    end = raw_data_.find(CRLF, start);
+    end = std::search(start, raw_data_.end(), CRLFVec().begin(), CRLFVec().end());
   }
 
   validateHeaders();
@@ -164,7 +164,7 @@ void HttpRequestReader::validateHeaders() {
 
   // https://www.rfc-editor.org/rfc/rfc7230#section-3.3.3
   // check if content-length and transfer-encoding are both present
-  // todo: refactor hasField
+  // todo(thara): refactor hasField
   if (hasField(ContentLengthField) && request_.headers_.transfer_encodings.size() != 0) {
     throw BadRequestException("both content-length and transfer-encoding are present");
   }
@@ -207,7 +207,7 @@ void HttpRequestReader::analyzeHost(const std::string &value) {
       throw BadRequestException("Http Request: invalid port");
     }
 
-    // todo: handle overflow
+    // todo(thara): handle overflow
     request_.headers_.host.port = std::atoi(port.c_str());
     if (request_.headers_.host.port < MIN_PORT_NUM || request_.headers_.host.port > MAX_PORT_NUM) {
       throw BadRequestException("Http Request: invalid port");
@@ -223,7 +223,7 @@ void HttpRequestReader::analyzeContentLength(const std::string &value) {
     throw BadRequestException("Http Request: invalid content-length");
   }
 
-  // todo: handle overflow
+  // todo(thara): handle overflow
   const int val = std::atoi(value.c_str());
   if (val < 0 || conf_->getMaxBodySize() < val) {
     throw BadRequestException("Http Request: invalid content-length");
@@ -288,22 +288,23 @@ void HttpRequestReader::validateHeaderValue(const std::string &value) {
 void HttpRequestReader::readChunkedBody() {
   while (true) {
     if (chunked_reading_state_ == ReadingChunkedSize) {
-      std::string::size_type end = raw_data_.find(CRLF);
-      if (end == std::string::npos) {
+      std::vector<char>::iterator end =
+          std::search(raw_data_.begin(), raw_data_.end(), CRLFVec().begin(), CRLFVec().end());
+      if (end == raw_data_.end()) {
         return;
       }
 
-      std::string hex = raw_data_.substr(0, end);
+      std::string hex(raw_data_.begin(), end);
       std::stringstream ss(hex);
       ss >> std::hex >> chunked_size_;
 
       if (chunked_size_ == 0) {
-        rest_ = raw_data_.substr(end + 2);
+        rest_ = std::vector<char>(end + 2, raw_data_.end());
         moveToNextState();
         return;
       }
 
-      raw_data_ = raw_data_.substr(end + 2);
+      raw_data_ = std::vector<char>(end + 2, raw_data_.end());
       chunked_reading_state_ = ReadingChunkedData;
     }
 
@@ -311,12 +312,12 @@ void HttpRequestReader::readChunkedBody() {
       if (raw_data_.size() < (chunked_size_ + 2)) {
         return;
       }
-      if (raw_data_.substr(chunked_size_, 2) != CRLF) {
+      if (raw_data_[chunked_size_] != '\r' || raw_data_[chunked_size_ + 1] != '\n') {
         throw BadRequestException("Http Request: invalid chunked body");
       }
 
-      request_.body_ += raw_data_.substr(0, chunked_size_);
-      raw_data_ = raw_data_.substr(chunked_size_ + 2);
+      request_.body_.insert(request_.body_.end(), raw_data_.begin(), raw_data_.begin() + chunked_size_);
+      raw_data_ = std::vector<char>(raw_data_.begin() + chunked_size_ + 2, raw_data_.end());
 
       chunked_reading_state_ = ReadingChunkedSize;
     }
@@ -325,13 +326,14 @@ void HttpRequestReader::readChunkedBody() {
 }
 
 void HttpRequestReader::readBody() {
-  request_.body_ = raw_data_.substr(0, request_.headers_.content_length);
+  request_.body_ = std::vector<char>(raw_data_.begin(), raw_data_.begin() + request_.headers_.content_length);
   moveToNextState();
 }
 
 bool HttpRequestReader::isActionable() {
   if (state_ == ReadingStartLine || state_ == ReadingHeaders) {
-    return raw_data_.find(getEndingChars()) != std::string::npos;
+    return std::search(raw_data_.begin(), raw_data_.end(), getEndingChars().begin(), getEndingChars().end()) !=
+           raw_data_.end();
   } else if (state_ == ReadingBody) {
     // this accepts body that is larger than content-length
     return raw_data_.size() >= request_.headers_.content_length;
@@ -342,19 +344,27 @@ bool HttpRequestReader::isActionable() {
 
 // isActionable must be called before calling this function
 void HttpRequestReader::trimToEndingChars() {
-  const std::string ending_chars = getEndingChars();
-  size_t end_pos = raw_data_.find(ending_chars);
+  const std::vector<char> &ending_chars = getEndingChars();
+  std::vector<char>::iterator end_pos =
+      std::search(raw_data_.begin(), raw_data_.end(), ending_chars.begin(), ending_chars.end());
 
-  rest_ = raw_data_.substr(end_pos + ending_chars.size());
-  raw_data_ = raw_data_.substr(0, end_pos + ending_chars.size());
+  rest_ = std::vector<char>(end_pos + ending_chars.size(), raw_data_.end());
+  raw_data_ = std::vector<char>(raw_data_.begin(), end_pos + ending_chars.size());
 }
 
-std::string HttpRequestReader::getEndingChars() const {
+const std::vector<char> &HttpRequestReader::getEndingChars() const {
+  static std::vector<char> CRLFCRLF;
+  if (CRLFCRLF.empty()) {
+    CRLFCRLF.push_back('\r');
+    CRLFCRLF.push_back('\n');
+    CRLFCRLF.push_back('\r');
+    CRLFCRLF.push_back('\n');
+  }
   switch (state_) {
     case ReadingStartLine:
-      return CRLF;
+      return CRLFVec();
     case ReadingHeaders:
-      return std::string(CRLF) + CRLF;
+      return CRLFCRLF;
     default:
       throw std::runtime_error("invalid HttpRequestReader state");
   }

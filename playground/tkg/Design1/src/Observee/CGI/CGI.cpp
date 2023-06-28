@@ -258,14 +258,14 @@ void CGI::notify(struct kevent ev) {
       DEBUG_PRINTF("CGI WIP RESULT: '%s'\n", escape(recieved_data_).c_str());
     }
   } else if (ev.filter == EVFILT_WRITE) {
-    const char *response = request_->body_.c_str();
-    std::cout << "response: " << escape(response) << std::endl;
+    const char *response = request_->body_.data();
+    std::cout << "response: " << escape(std::string(request_->body_.begin(), request_->body_.end())) << std::endl;
     std::size_t size = request_->body_.size() - sending_size_;
 
     if (size > SOCKET_WRITE_SIZE) {
       size = SOCKET_WRITE_SIZE;
     }
-    int res = write(id_, &response[sending_size_], size);
+    int res = write(id_, response + sending_size_, size);
     if (res == -1) {
       perror("sendto");
       response_->setStatusAndReason(501, "");

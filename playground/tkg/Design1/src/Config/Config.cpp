@@ -80,7 +80,7 @@ ServerConf *Config::getServerConf(int port, const std::string &host) {
 
 int Config::getLimitConnection() const { return limit_connection_; }
 
-// todo: provide the most suitable one
+// todo(katakagi): provide the most suitable one
 int Config::getMaxBodySize() const { return common_.max_body_size_; }
 
 // ServerConfig class method

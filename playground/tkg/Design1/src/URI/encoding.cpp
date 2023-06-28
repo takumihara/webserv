@@ -99,7 +99,6 @@ char unhex(char c) {
   return 0;
 }
 
-// todo
 std::string Encoding::unescape(const std::string& str, Encoding::Type mode) {
   size_t pct_count = 0;
   bool has_plus = false;

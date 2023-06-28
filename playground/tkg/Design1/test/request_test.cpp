@@ -17,7 +17,7 @@ TEST(Request, Get) {
   ASSERT_EQ(req.request_target_->getPath(), "/");
   ASSERT_TRUE(req.methodIs(HttpRequest::GET));
   ASSERT_EQ(req.headers_.host.uri_host, "localhost");
-  ASSERT_EQ(req.body_, "");
+  ASSERT_EQ(std::string(req.body_.begin(), req.body_.end()), "");
 }
 
 TEST(Request, BodyLargerThanContentLength) {
@@ -29,7 +29,7 @@ TEST(Request, BodyLargerThanContentLength) {
   HttpRequestReader::State state = rreader.read();
 
   ASSERT_EQ(state, HttpRequestReader::FinishedReading);
-  ASSERT_EQ(req.body_, "bod");
+  ASSERT_EQ(std::string(req.body_.begin(), req.body_.end()), "bod");
 }
 
 TEST(Request, NoHostFeild) {

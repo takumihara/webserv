@@ -159,7 +159,7 @@ bool isAbsPath(const char *path) {
 }
 
 bool isAbsURI(const std::string &raw_uri) {
-  // todo:
+  // todo(katakagi):
   try {
     URI *uri = URI::parse(raw_uri);
     if (uri->getScheme() == "") return false;

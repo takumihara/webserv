@@ -57,7 +57,6 @@ std::vector<std::string> splitToSegment(const std::string &path) {
   return segments;
 }
 
-
 // path must not have query
 std::string getExtension(const std::string &path) {
   std::vector<std::string> segments = splitToSegment(path);
@@ -93,4 +92,13 @@ bool isAllDirectoryWritable(std::string &path) {
     if (!isWritable(partial_path.c_str())) return false;
   }
   return true;
+}
+
+const std::vector<char> &CRLFVec() {
+  static std::vector<char> res;
+  if (res.empty()) {
+    res.push_back('\r');
+    res.push_back('\n');
+  }
+  return res;
 }
