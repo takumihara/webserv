@@ -15,7 +15,7 @@ class EventManager;
 
 class HttpResponse {
  public:
-  typedef std::pair<std::string, std::string> header;
+  typedef std::map<std::string, std::string> t_headers;
   enum State { Free, Sending, End };
 
   HttpResponse(int fd, int port, Config *conf)
@@ -50,7 +50,7 @@ class HttpResponse {
   Config *conf_;
   std::vector<char> body_;
   std::vector<char> response_;
-  std::vector<header> headers;
+  t_headers headers_;
   int response_size_;
   int sending_response_size_;
 };

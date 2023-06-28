@@ -24,7 +24,6 @@ void HttpResponse::setStatusAndReason(const int status, const std::string &reaso
     reason_phrase_ = reason;
 }
 
-
 void HttpResponse::setContentType(const std::string &path) {
   std::string ext = getExtension(path);
   if (ext == "") return;
@@ -36,18 +35,14 @@ void HttpResponse::appendBody(const char *str, size_t size) { body_.insert(body_
 
 void HttpResponse::appendBody(const std::string &str) { body_.insert(body_.end(), str.begin(), str.end()); }
 
-
-void HttpResponse::appendHeader(const std::string &key, const std::string &value) {
-  headers.push_back(header(key, value));
-}
+void HttpResponse::appendHeader(const std::string &key, const std::string &value) { headers_[key] = value; }
 
 const std::vector<char> &HttpResponse::getBody() const { return body_; }
 
 bool HttpResponse::hasHeader(const std::string &target_name) {
-  for (std::vector<header>::const_iterator itr = headers.cbegin(); itr != headers.cend(); itr++) {
-    if (itr->first == target_name) return true;
-  }
-  return false;
+  t_headers::iterator key = headers_.find(target_name);
+  if (key == headers_.end()) return false;
+  return true;
 }
 
 void HttpResponse::createResponse() {
@@ -61,7 +56,7 @@ void HttpResponse::createResponse() {
   // status-line
   ss << "HTTP/1.1 " << status_ << " " << conf_->cache_.statusMsg_[status_] << CRLF;
   // header-fields
-  for (std::vector<header>::const_iterator itr = headers.cbegin(); itr != headers.cend(); itr++) {
+  for (t_headers::const_iterator itr = headers_.cbegin(); itr != headers_.cend(); itr++) {
     ss << itr->first << ": " << itr->second << CRLF;
   }
   ss << CRLF;
@@ -102,7 +97,7 @@ void HttpResponse::refresh() {
   status_ = 0;
   body_.clear();
   response_.clear();
-  headers.clear();
+  headers_.clear();
   sending_response_size_ = 0;
   response_size_ = 0;
 }
