@@ -35,7 +35,8 @@ TEST(CGI, isAbsPath_basic4) { EXPECT_TRUE(CGIValidation::isAbsPath("/example&aa&
 // CGIInfo
 
 TEST(CGI, CGIInfo1) {
-  IReadCloser *rc = new MockReadCloser("GET /a.cgi/hello/world HTTP/1.1\r\nHost: server1\r\n\r\n");
+  IReadCloser *rc =
+      new MockReadCloser("GET /a.cgi/hello/world HTTP/1.1\r\nHost: server1\r\nCookie: name1=val1; name2=val2\r\n\r\n");
   Parser parser;
   Config conf = parser.parse("test/www/config/basic.conf");
   conf.makePortServConfMap();
@@ -64,6 +65,7 @@ TEST(CGI, CGIInfo1) {
   EXPECT_EQ(info.server_port_, "80");
   EXPECT_EQ(info.server_protocol_, "HTTP/1.1");
   EXPECT_EQ(info.server_software_, "Webserv/1.1");
+  EXPECT_EQ(info.cookie_, "name1=val1; name2=val2");
 }
 
 TEST(CGI, CGIInfo2) {

@@ -19,7 +19,7 @@ class HttpRequestReader {
  public:
   enum State { ReadingStartLine, ReadingHeaders, ReadingChunkedBody, ReadingBody, FinishedReading, SocketClosed, End };
   enum ReadingChunkedState { ReadingChunkedSize, ReadingChunkedData };
-  enum HeaderField { HostField, ContentLengthField, TransferEncodingField, DateField, ContentTypeField };
+  enum HeaderField { HostField, ContentLengthField, TransferEncodingField, DateField, ContentTypeField, CookieField };
 
   HttpRequestReader(int fd, Config *conf, HttpRequest &request, IReadCloser *rc,
                     const std::vector<char> &remaining_data = std::vector<char>())
@@ -99,6 +99,7 @@ class HttpRequestReader {
   void analyzeDate(const std::string &value);
   void analyzeServer(const std::string &value);
   void analyzeContentType(const std::string &value);
+  void analyzeCookie(const std::string &value);
 
   void readBody();
   void readChunkedBody();

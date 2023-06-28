@@ -11,3 +11,4 @@ test.log
 *.cgi
 tmp
 log.txt
+test.db

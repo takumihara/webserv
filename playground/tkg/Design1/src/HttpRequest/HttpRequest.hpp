@@ -31,6 +31,7 @@ class HttpRequest {
     std::string content_type;
     std::vector<TransferEncoding> transfer_encodings;
     std::tm date;
+    std::string cookie_;
   };
 
   HttpRequest() : request_target_(NULL) {}

@@ -17,3 +17,10 @@ python cgi seems not to support DELETE
 ```
 curl -XDELETE -d 'column1=value' 'http://localhost:4000/cgi-bin/main.py'
 ```
+
+for our server
+
+```
+curl -XPOST -d 'column1=value' 'http://localhost/cgi-bin/db_app.py'
+curl -XDELETE -d 'column1=value' 'http://localhost/cgi-bin/db_app.py'
+```
