@@ -24,8 +24,35 @@
 #include "../HttpRequest/HttpRequestReader.hpp"
 #include "helper.hpp"
 
+void CGI::timeout() {
+  DEBUG_PUTS("CGI timeout");
+  if (parent_) {
+    parent_->stopMonitorChild(this);
+    parent_ = NULL;
+  }
+  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+    (*itr)->parent_ = NULL;
+    (*itr)->shutdown();
+  }
+  children_.clear();
+  close(id_);
+  em_->deleteTimerEvent(id_);
+  kill(pid_, SIGTERM);
+  waitpid(pid_, NULL, 0);
+  em_->remove(std::pair<t_id, t_type>(id_, FD));
+}
+
 void CGI::shutdown() {
   DEBUG_PUTS("CGI shutdown");
+  if (parent_) {
+    parent_->stopMonitorChild(this);
+    parent_ = NULL;
+  }
+  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+    (*itr)->parent_ = NULL;
+    (*itr)->shutdown();
+  }
+  children_.clear();
   int status = 0;
   close(id_);
   em_->deleteTimerEvent(id_);

@@ -28,8 +28,28 @@
 #include "POST.hpp"
 #include "helper.hpp"
 
+void ConnectionSocket::timeout() {
+  DEBUG_PUTS("ConnectionSocket timeout");
+  response_.setStatusAndReason(408, "");
+  if (loc_conf_) {
+    processErrorPage(loc_conf_);
+  }
+  response_.createResponse();
+  response_.sendResponse();
+  shutdown();
+}
+
 void ConnectionSocket::shutdown() {
   DEBUG_PUTS("ConnectionSocket shutdown");
+  if (parent_) {
+    parent_->stopMonitorChild(this);
+    parent_ = NULL;
+  }
+  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+    (*itr)->parent_ = NULL;
+    (*itr)->shutdown();
+  }
+  children_.clear();
   close(id_);
   em_->deleteTimerEvent(id_);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
@@ -79,7 +99,8 @@ void ConnectionSocket::execCGI(const std::string &path) {
     close(fd[1]);
     throw InternalServerErrorException("fcntl error");
   }
-  if (setsockopt(fd[0], SOL_SOCKET, SO_NOSIGPIPE, NULL, 0) == -1) {
+  int set = 1;
+  if (setsockopt(fd[0], SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(set)) == -1) {
     close(fd[0]);
     close(fd[1]);
     throw InternalServerErrorException("setsockopt error");
@@ -196,10 +217,6 @@ void ConnectionSocket::processGET() {
   // URI file or index file
   int fd = open(path.c_str(), O_RDONLY);
   if (fd < 0) throw InternalServerErrorException("open error");
-  if (setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, NULL, 0) == -1) {
-    close(fd);
-    throw InternalServerErrorException("setsockopt error");
-  }
   GET *obs = makeGET(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
   em_->disableReadEvent(id_);

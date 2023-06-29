@@ -24,9 +24,18 @@
 #include "../HttpException.hpp"
 #include "../HttpResponse.hpp"
 
+void POST::timeout() {
+  DEBUG_PUTS("POST shutdown");
+  close(id_);
+  parent_->stopMonitorChild(this);
+  em_->deleteTimerEvent(id_);
+  em_->remove(std::pair<t_id, t_type>(id_, FD));
+}
+
 void POST::shutdown() {
   DEBUG_PUTS("POST shutdown");
   close(id_);
+  parent_->stopMonitorChild(this);
   em_->deleteTimerEvent(id_);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
@@ -45,7 +54,7 @@ void POST::notify(struct kevent ev) {
     write_size_ += res;
     if (write_size_ >= request_->body_.size()) {
       close(id_);
-      parent_->obliviateChild(this);
+      parent_->stopMonitorChild(this);
       em_->deleteTimerEvent(id_);
       em_->registerWriteEvent(parent_->id_);
       em_->remove(std::pair<t_id, t_type>(id_, FD));

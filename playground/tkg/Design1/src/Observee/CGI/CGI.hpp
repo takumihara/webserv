@@ -19,6 +19,7 @@ class CGI : public Observee {
   ~CGI() {}
   void notify(struct kevent ev);
   void shutdown();
+  void timeout();
   void terminate();
   void handleCGIResponse();
   void parseHeaders(std::string &headers);

@@ -26,8 +26,19 @@
 #include "../HttpRequest/HttpRequest.hpp"
 #include "../HttpResponse.hpp"
 
+void GET::timeout() { shutdown(); }
+
 void GET::shutdown() {
   DEBUG_PUTS("GET shutdown");
+  if (parent_) {
+    parent_->stopMonitorChild(this);
+    parent_ = NULL;
+  }
+  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+    (*itr)->parent_ = NULL;
+    (*itr)->shutdown();
+  }
+  children_.clear();
   close(id_);
   em_->deleteTimerEvent(id_);
   em_->remove(std::pair<t_id, t_type>(id_, FD));

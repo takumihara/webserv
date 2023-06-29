@@ -33,18 +33,17 @@ class Observee {
   virtual ~Observee() {}
   virtual void notify(struct kevent ev) = 0;
   virtual void shutdown() = 0;
+  virtual void timeout() = 0;
   virtual void terminate() = 0;
-  virtual void obliviateChild(Observee *child) {
-    if (parent_) parent_->children_.erase(child);
-  };
-  virtual void monitorChild(Observee *child) { children_.insert(child); };
+  void stopMonitorChild(Observee *child) { children_.erase(std::find(children_.begin(), children_.end(), child)); };
+  void monitorChild(Observee *child) { children_.push_back(child); };
 
  public:
   uintptr_t id_;
   std::string type_;
   EventManager *em_;
   Observee *parent_;
-  std::set<Observee *> children_;
+  std::vector<Observee *> children_;
 };
 
 #endif
