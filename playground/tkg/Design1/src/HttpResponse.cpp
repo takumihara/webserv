@@ -29,11 +29,16 @@ void HttpResponse::setStatusAndReason(const int status) {
   reason_phrase_ = conf_->cache_.statusMsg_[status_];
 }
 
-void HttpResponse::setContentType(const std::string &path) {
+void HttpResponse::setContentType(const std::string &path, bool forced) {
   std::string ext = getExtension(path);
   if (ext == "") return;
-  if (hasHeader("content-type")) return;
-  appendHeader("content-type", conf_->cache_.ext_contentType_map_[ext]);
+  if (conf_->cache_.ext_contentType_map_.find(ext) == conf_->cache_.ext_contentType_map_.end()) return;
+  if (forced) {
+    appendHeader("content-type", conf_->cache_.ext_contentType_map_[ext]);
+  } else {
+    if (hasHeader("content-type")) return;
+    appendHeader("content-type", conf_->cache_.ext_contentType_map_[ext]);
+  }
 }
 
 void HttpResponse::appendBody(const char *str, size_t size) { body_.insert(body_.end(), str, str + size); }

@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -99,7 +100,7 @@ TEST(E2E, CGILocalRedirectToClientRedirect) {
   ASSERT_TRUE(includes(res, "location: http://example.com"));
 }
 
-TEST(E2E, Get) {
+TEST(E2E, Get_index_html) {
   std::string host = "localhost";
   std::string port = "80";
   std::string method = "GET";
@@ -107,9 +108,26 @@ TEST(E2E, Get) {
   std::string body = "hello";
   std::string headers = "Host: localhost;Content-Length:5";
   std::string res = sendRequest(host, port, method, path, body, headers);
-
+  std::cerr << res << std::endl;
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
+  ASSERT_TRUE(includes(res, "content-type: text/html"));
   ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
+}
+
+TEST(E2E, Get_42_jpg) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/html/42.jpg";
+  std::string body = "hello";
+  std::string headers = "Host: localhost;Content-Length:5";
+  std::string res = sendRequest(host, port, method, path, body, headers);
+  std::cerr << res << std::endl;
+  // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
+  ASSERT_TRUE(includes(res, "content-type: image/jpeg"));
+  std::ifstream ifs("../html/42.jpg");
+  std::string str((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+  ASSERT_TRUE(includes(res, str));
 }
 
 TEST(E2E, Autoindex) {
@@ -120,8 +138,9 @@ TEST(E2E, Autoindex) {
   std::string body = "hello";
   std::string headers = "Host: localhost";
   std::string res = sendRequest(host, port, method, path, body, headers);
-
+  std::cerr << res << std::endl;
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
+  ASSERT_TRUE(includes(res, "content-type: text/html"));
   ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
   ASSERT_TRUE(includes(res, "<p><a href=\"http://localhost:80"));
   ASSERT_TRUE(includes(res, "/Config/con.conf\">con.conf </a><br></p>"));
@@ -135,7 +154,7 @@ TEST(E2E, Non_Autoindex) {
   std::string body = "hello";
   std::string headers = "Host: localhost";
   std::string res = sendRequest(host, port, method, path, body, headers);
-
+  std::cerr << res << std::endl;
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
   ASSERT_TRUE(includes(res, "HTTP/1.1 404 Not Found"));
 }
@@ -149,7 +168,7 @@ TEST(E2E, Chunked) {
   std::string headers = "Host: localhost;Transfer-Encoding:chunked, chunked     , chunked  ";
 
   std::string res = sendRequest(host, port, method, path, body, headers);
-
+  std::cerr << res << std::endl;
   // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
   ASSERT_TRUE(includes(res, "<!DOCTYPE html>"));
 }
@@ -164,7 +183,7 @@ TEST(E2E, ObsFold) {
 
   std::string res = sendRequest(host, port, method, path, body, headers);
 
-  std::cout << res << std::endl;
+  std::cerr << res << std::endl;
 
   EXPECT_TRUE(includes(res, "HTTP/1.1 400 Bad Request"));
 }
