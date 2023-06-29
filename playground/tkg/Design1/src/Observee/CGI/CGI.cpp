@@ -31,8 +31,8 @@ void CGI::shutdown() {
   em_->deleteTimerEvent(id_);
   kill(pid_, SIGTERM);
   waitpid(pid_, &status, 0);
-  em_->remove(std::pair<t_id, t_type>(id_, FD));
   if (status != 0) response_->setStatusAndReason(500, "");
+  em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
 void CGI::terminate() {

@@ -23,6 +23,7 @@ struct CGIInfo {
   std::string server_software_;
   std::string protocol_var_name_;
   std::string extension_var_name_;
+  std::string cookie_;
 
   void setEnv(std::vector<char *> &env);
 };

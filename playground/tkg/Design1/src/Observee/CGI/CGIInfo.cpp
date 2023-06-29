@@ -67,6 +67,7 @@ CGIInfo parseCGIInfo(const std::string &path, const std::string &ext, HttpReques
   info.server_port_ = ss.str();
   info.server_protocol_ = "HTTP/1.1";
   info.server_software_ = "Webserv/1.1";
+  info.cookie_ = req.headers_.cookie_;
   return info;
 }
 
@@ -96,5 +97,6 @@ void CGIInfo::setEnv(std::vector<char *> &env) {
   env.push_back(strdup(("SERVER_SOFTWARE=" + server_software_).c_str()));
   env.push_back(strdup(("PROTOCOL_VAR_NAME=" + protocol_var_name_).c_str()));
   env.push_back(strdup(("EXTENSION_VAR_NAME=" + extension_var_name_).c_str()));
+  env.push_back(strdup(("HTTP_COOKIE=" + cookie_).c_str()));
   env.push_back(NULL);
 }

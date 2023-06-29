@@ -27,8 +27,8 @@ HttpRequestReader::State HttpRequestReader::read() {
   }
   raw_data_.insert(raw_data_.end(), buff.begin(), buff.end());
 
-  std::cout << "read from socket(fd:" << sock_fd_ << ")"
-            << ":'" << escape(std::string(raw_data_.begin(), raw_data_.end())) << "'" << std::endl;
+  DEBUG_PRINTF("read from socket(fd:%d):'%s'", sock_fd_,
+               escape(std::string(raw_data_.begin(), raw_data_.end())).c_str());
   if (state_ == ReadingStartLine && isActionable()) {
     trimToEndingChars();
     parseStartline();
@@ -48,7 +48,6 @@ HttpRequestReader::State HttpRequestReader::read() {
 }
 
 bool HttpRequestReader::isReceivingBody() {
-  std::cout << request_.headers_.content_length << std::endl;
   if ((!request_.isChunked() && request_.headers_.content_length == 0)) {
     return false;
   }
@@ -116,6 +115,7 @@ void HttpRequestReader::initAnalyzeFuncs(
   analyze_funcs["transfer-encoding"] = &HttpRequestReader::analyzeTransferEncoding;
   analyze_funcs["date"] = &HttpRequestReader::analyzeDate;
   analyze_funcs["content-type"] = &HttpRequestReader::analyzeContentType;
+  analyze_funcs["cookie"] = &HttpRequestReader::analyzeCookie;
 }
 
 void HttpRequestReader::parseHeaders() {
@@ -256,7 +256,7 @@ void HttpRequestReader::analyzeDate(const std::string &value) {
   // this checks if the format matches
   ss >> std::get_time(&request_.headers_.date, "%a, %d %b %Y %H:%M:%S");
   if (ss.fail()) {
-    std::cout << "ss.fail()" << std::endl;
+    DEBUG_PUTS("ss.fail()");
     throw BadRequestException("Http Request: invalid date");
   }
 
@@ -271,6 +271,44 @@ void HttpRequestReader::analyzeContentType(const std::string &value) {
   insertIfNotDuplicate(ContentTypeField, "Http Request: duplicated content type");
 
   request_.headers_.content_type = value;
+}
+
+void validateCookieName(const std::string &name) {
+  if (isToken(name)) return;
+  throw BadRequestException("Http Request: invalid cookie name");
+}
+
+void validateCookieValue(const std::string &value) {
+  for (std::string::const_iterator itr = value.begin(); itr != value.end(); itr++) {
+    if (*itr == 0x21 || (0x23 <= *itr && *itr <= 0x2B) || (0x2D <= *itr && *itr <= 0x3A) ||
+        (0x3C <= *itr && *itr <= 0x5B) || (0x5D <= *itr && *itr <= 0x7E)) {
+      continue;
+    }
+    throw BadRequestException("Http Request: invalid cookie value");
+  }
+}
+
+// this will not take obs-fold in OWS
+void HttpRequestReader::analyzeCookie(const std::string &value) {
+  insertIfNotDuplicate(CookieField, "Http Request: duplicated cookie");
+
+  std::string::size_type start;
+  // in order to have start 0 at the beginning
+  std::string::size_type end = -2;
+  while (end != std::string::npos) {
+    start = end + 2;
+    end = value.find("; ", start);
+    std::string cookie = value.substr(start, end - start);
+    std::string::size_type equalPos = cookie.find('=');
+    if (equalPos == std::string::npos) {
+      throw BadRequestException("Http Request: invalid cookie");
+    }
+    std::string cookieName = cookie.substr(0, equalPos);
+    std::string cookieValue = cookie.substr(equalPos + 1);
+    validateCookieName(cookieName);
+    validateCookieValue(cookieValue);
+  }
+  request_.headers_.cookie_ = value;
 }
 
 void HttpRequestReader::validateHeaderName(const std::string &name) {
