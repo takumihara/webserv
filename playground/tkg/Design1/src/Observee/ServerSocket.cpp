@@ -33,7 +33,18 @@ void ServerSocket::notify(struct kevent ev) {
     perror("accept");
     return;
   }
-  fcntl(connection_fd, F_SETFL, O_NONBLOCK);
+  int res = fcntl(connection_fd, F_SETFL, O_NONBLOCK);
+  if (res == -1) {
+    close(connection_fd);
+    perror("fctl");
+    return;
+  }
+  res = setsockopt(connection_fd, SOL_SOCKET, SO_NOSIGPIPE, NULL, 0);
+  if (res == -1) {
+    close(connection_fd);
+    perror("setsockopt");
+    return;
+  }
   em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_READ, EV_ADD, 0, 0, 0});
   em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_TIMER, EV_ADD | EV_ENABLE,
                                         NOTE_SECONDS, EventManager::kTimeoutDuration, 0});

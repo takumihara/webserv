@@ -72,9 +72,18 @@ void ConnectionSocket::execCGI(const std::string &path) {
   if ((st.st_mode & S_IFMT) == S_IFDIR || !isExecutable(info.script_name_.c_str()))
     throw ResourceForbiddenException("cgi script name is directory or not excutable");
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1) {
-    throw InternalServerErrorException("error socketpair");
+    throw InternalServerErrorException("socketpair error");
   }
-  fcntl(fd[0], F_SETFL, O_NONBLOCK);
+  if (fcntl(fd[0], F_SETFL, O_NONBLOCK) == -1) {
+    close(fd[0]);
+    close(fd[1]);
+    throw InternalServerErrorException("fcntl error");
+  }
+  if (setsockopt(fd[0], SOL_SOCKET, SO_NOSIGPIPE, NULL, 0) == -1) {
+    close(fd[0]);
+    close(fd[1]);
+    throw InternalServerErrorException("setsockopt error");
+  }
   int pid = fork();
   if (pid == 0) {
     close(fd[0]);
@@ -187,6 +196,10 @@ void ConnectionSocket::processGET() {
   // URI file or index file
   int fd = open(path.c_str(), O_RDONLY);
   if (fd < 0) throw InternalServerErrorException("open error");
+  if (setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, NULL, 0) == -1) {
+    close(fd);
+    throw InternalServerErrorException("setsockopt error");
+  }
   GET *obs = makeGET(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
   em_->disableReadEvent(id_);
