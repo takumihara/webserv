@@ -48,17 +48,21 @@ std::string GET::listFilesAndDirectories(std::string &directory_path, const Http
   ret += "<h1>Index of</h1>";
   while ((entry = readdir(dir)) != NULL) {
     std::string file_path;
-    if (directory_path.back() != '/')
+    std::string target_path;
+    if (directory_path.back() != '/') {
       file_path = directory_path + "/" + entry->d_name;
-    else
+      target_path = req.request_target_->getPath() + "/" + entry->d_name;
+    } else {
       file_path = directory_path + entry->d_name;
+      target_path = req.request_target_->getPath() + entry->d_name;
+    }
     if (stat(file_path.c_str(), &file_stat) == -1) {
       perror("listFilesAndDirectories: stat error");
       continue;
     }
-    std::string name = entry->d_name;
     std::stringstream ss;
-    ss << "http://" << req.headers_.host.uri_host << ":" << req.headers_.host.port << file_path;
+    ss << "http://" << req.headers_.host.uri_host << ":" << req.headers_.host.port << target_path;
+    std::string name = entry->d_name;
     if (S_ISREG(file_stat.st_mode)) {
       ret += HTML::aTag(HTML::sanitize(ss.str()), HTML::sanitize(name));
     } else if (S_ISDIR(file_stat.st_mode)) {
