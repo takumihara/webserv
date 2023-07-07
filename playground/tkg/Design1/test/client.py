@@ -34,6 +34,7 @@ if __name__ == "__main__":
     body = argv[5]
     headers = dict()
     for h in argv[6:]:
-        pair = h.split(":")
-        headers[pair[0]] = pair[1]
+        name = h[:h.find(":")]
+        value = h[h.find(":")+1:]
+        headers[name] = value
     send_http_request(host, port, method, path, body, headers)

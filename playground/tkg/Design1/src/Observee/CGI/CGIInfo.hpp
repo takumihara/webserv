@@ -26,6 +26,7 @@ struct CGIInfo {
   std::string cookie_;
 
   void setEnv(std::vector<char *> &env);
+  std::string getCGIWorkingDirectory();
 };
 
 std::string getPathInfo(const std::string &path, const std::string &ext);

@@ -78,26 +78,29 @@ void ConnectionSocket::execCGI(const std::string &path) {
     em_->terminateAll();
     std::vector<char *> env;
     info.setEnv(env);
+    std::string cwd = info.getCGIWorkingDirectory();
+    if (chdir(cwd.c_str()) == -1) {
+      perror("chdir");
+      close(fd[1]);
+      exit(1);
+    }
     argv[0] = const_cast<char *>(info.script_name_.c_str());
     if (dup2(fd[1], STDIN_FILENO) == -1) {
       perror("dup2");
       close(fd[1]);
-      deleteEnv(env);
       exit(1);
     }
     if (dup2(fd[1], STDOUT_FILENO) == -1) {
       perror("dup2");
       close(fd[1]);
-      deleteEnv(env);
       exit(1);
     }
     close(fd[1]);
     if (execve(info.script_name_.c_str(), argv, &env[0]) == -1) {
       perror("execve");
-      deleteEnv(env);
       exit(1);
     }
-    deleteEnv(env);
+    exit(1);
   } else {
     close(fd[1]);
     std::cout << "pid: " << pid << std::endl;
@@ -169,7 +172,7 @@ void ConnectionSocket::processGET() {
     if (idx_path == "" && loc_conf_->common_.autoindex_) {
       DEBUG_PUTS("autoindex");
       response_.appendBody(GET::listFilesAndDirectories(path, request_));
-      response_.setStatusAndReason(200, "");
+      response_.setStatusAndReason(200);
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
       return;  // 200 OK
@@ -191,7 +194,7 @@ void ConnectionSocket::processRedirect() {
   if (!isAcceptableMethod(loc_conf_, request_.method_)) {
     throw MethodNotAllowedException("No Suitable Location");
   }
-  response_.setStatusAndReason(std::atoi(loc_conf_->getRedirectStatus().c_str()), "");
+  response_.setStatusAndReason(std::atoi(loc_conf_->getRedirectStatus().c_str()));
   response_.appendHeader("location", loc_conf_->getRedirectURI());
   em_->disableReadEvent(id_);
   em_->registerWriteEvent(id_);
@@ -242,7 +245,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     } catch (HttpException &e) {
       // all 4xx 5xx exception(readRequest and process) is caught here
       std::cerr << e.what() << std::endl;
-      response_.setStatusAndReason(e.statusCode(), "");
+      response_.setStatusAndReason(e.statusCode());
       if (loc_conf_) {
         // error_page directive is ignored when error ocuured reading Request
         processErrorPage(loc_conf_);
