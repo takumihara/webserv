@@ -85,7 +85,7 @@ void GET::notify(struct kevent ev) {
     response_->appendBody(buff, res);
     if (res == 0 || res == ev.data) {
       close(id_);
-      response_->setStatusAndReason(200);
+      response_->setStatusAndReason(200, "");
       parent_->obliviateChild(this);
       em_->deleteTimerEvent(id_);
       em_->registerWriteEvent(parent_->id_);

@@ -22,8 +22,6 @@ std::string getScriptName(const std::string &path, const std::string &ext) {
   return "";
 }
 
-std::string CGIInfo::getCGIWorkingDirectory() { return script_name_.substr(0, script_name_.rfind("/")); }
-
 std::string getPathInfo(const std::string &path, const std::string &ext) {
   std::size_t pos = path.find(ext);
   while (pos != std::string::npos) {

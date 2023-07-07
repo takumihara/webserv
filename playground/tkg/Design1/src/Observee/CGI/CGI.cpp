@@ -31,8 +31,8 @@ void CGI::shutdown() {
   em_->deleteTimerEvent(id_);
   kill(pid_, SIGTERM);
   waitpid(pid_, &status, 0);
-  if (status != 0) response_->setStatusAndReason(500);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
+  if (status != 0) response_->setStatusAndReason(500, "");
 }
 
 void CGI::terminate() {
@@ -44,164 +44,194 @@ void CGI::terminate() {
 std::pair<std::string, std::string> getHeaderField(std::string &field) {
   std::stringstream ss(field);
   std::string name, value;
-  if (field.find(':') == std::string::npos) throw InternalServerErrorException("invalid header field");
+  if (field.find(':') == std::string::npos) throw std::runtime_error("invalid header field");
   std::getline(ss, name, ':');
-  toLower(name);
   std::getline(ss, value);
-  value = trimOws(value);
+  trimOws(value);
   return std::pair<std::string, std::string>(name, value);
 }
 
-void CGI::processDocRes(std::string &body) {
-  DEBUG_PUTS("processDocRes");
-  for (HttpResponse::t_headers::const_iterator itr = headers_.cbegin(); itr != headers_.cend(); itr++) {
-    if (itr->first == "status") {
-      std::istringstream iss(itr->second);
+void CGI::parseDocRes(std::vector<std::string> &lines) {
+  DEBUG_PUTS("parseDocRes");
+  std::size_t i = 0;
+  while (i < lines.size() && lines[i] != "") {
+    t_field field = getHeaderField(lines[i]);
+    if (i == 0) {
+      response_->appendHeader("content-type", field.second);
+    } else if (i == 1 && field.first == "Status") {
+      std::istringstream iss(field.second);
       std::string status;
       std::string reason;
       iss >> status;
       iss.ignore();
-      getline(iss, reason);
+      getline(iss, reason, '\n');
       response_->setStatusAndReason(std::atoi(status.c_str()), reason);
     } else {
-      response_->appendHeader(itr->first, itr->second);
+      response_->appendHeader(toLower(field.first), field.second);
     }
+    i++;
   }
-  response_->appendBody(body);
-  em_->registerWriteEvent(parent_->id_);
-  shutdown();
+  // parse body
+  i++;
+  for (; i < lines.size(); i++) {
+    response_->appendBody(lines[i] + "\n");
+  }
+  return;
 }
 
-void CGI::processClientRedirect() {
-  DEBUG_PUTS("processClientRedirect");
-  for (HttpResponse::t_headers::const_iterator itr = headers_.cbegin(); itr != headers_.cend(); itr++) {
-    response_->appendHeader(itr->first, itr->second);
-  }
-  response_->setStatusAndReason(302);
-  em_->registerWriteEvent(parent_->id_);
-  shutdown();
+void CGI::parseClientRedirect(std::vector<std::string> &lines) {
+  DEBUG_PUTS("parseClientRedirect");
+  t_field field = getHeaderField(lines[0]);
+  response_->appendHeader("location", field.second);
+  response_->setStatusAndReason(302, "");
 }
 
-void CGI::processClientRedirectWithDoc(std::string &body) {
-  DEBUG_PUTS("processClientRedirectWithDoc");
-  for (HttpResponse::t_headers::const_iterator itr = headers_.cbegin(); itr != headers_.cend(); itr++) {
-    if (itr->first == "status") {
-      std::istringstream iss(itr->second);
-      std::string status;
-      std::string reason;
-      iss >> status;
-      iss.ignore();
-      getline(iss, reason);
-      response_->setStatusAndReason(std::atoi(status.c_str()), reason);
-    } else {
-      response_->appendHeader(itr->first, itr->second);
-    }
+void CGI::parseClientRedirectWithDoc(std::vector<std::string> &lines) {
+  DEBUG_PUTS("parseClientRedirectWithDoc");
+  t_field field = getHeaderField(lines[0]);
+  response_->appendHeader("location", field.second);
+  field = getHeaderField(lines[1]);
+  response_->setStatusAndReason(std::atoi(field.second.c_str()), field.second.substr(4));
+  field = getHeaderField(lines[2]);
+  response_->appendHeader("content-type", field.second);
+  std::size_t i = 3;
+  while (i < lines.size() && lines[i] != "") {
+    field = getHeaderField(lines[i]);
+    response_->appendHeader(toLower(field.first), field.second);
+    i++;
   }
-  response_->appendBody(body);
-  em_->registerWriteEvent(parent_->id_);
-  shutdown();
+  if (lines[i] == "") i++;
+  while (i < lines.size() && lines[i] != "") {
+    response_->appendBody(lines[i] + "\n");
+    i++;
+  }
 }
 
-void CGI::processLocalRedirect() {
-  DEBUG_PUTS("processLocalRedirect");
-  std::string loc_value = headers_["location"];
+void CGI::parseLocalRedirect(std::vector<std::string> &lines) {
+  DEBUG_PUTS("parseLocalRedirect");
+  t_field field = getHeaderField(lines[0]);
   try {
-    const size_t fragment_pos = loc_value.find("#");
+    const size_t fragment_pos = field.second.find("#");
     std::string fragment;
     if (fragment_pos != std::string::npos) {
-      fragment = loc_value.substr(fragment_pos + 1);
+      fragment = field.second.substr(fragment_pos + 1);
     }
-    URI *uri = URI::parseRequestURI(loc_value.substr(0, fragment_pos));
+    URI *uri = URI::parseRequestURI(field.second.substr(0, fragment_pos));
     delete request_->request_target_;
     request_->request_target_ = uri;
     request_->body_.clear();
     dynamic_cast<ConnectionSocket *>(parent_)->initExtension();
-    ConnectionSocket *parent = dynamic_cast<ConnectionSocket *>(parent_);
-    shutdown();
-    parent->process();
   } catch (std::runtime_error &e) {
-    throw InternalServerErrorException("CGI Local Redirect response URI is invalid");
+    throw(InternalServerErrorException("CGI response URI is invalid"));
   }
 }
 
-bool CGI::isDocRes() {
-  if (headers_.find("content-type") == headers_.end()) return false;
-  if (!CGIValidation::isMediaType(headers_["content-type"])) return false;
-  if (headers_.find("status") != headers_.end() && !CGIValidation::isStatusHeaderValue(headers_["status"]))
+bool CGI::isDocRes(std::vector<std::string> &lines) {
+  try {
+    std::size_t i = 0;
+    while (i < lines.size() && lines[i] != "") {
+      t_field field = getHeaderField(lines[i]);
+      if (i == 0 && field.first != "Content-Type") return false;
+      if (i == 1 && field.first == "Status" && !CGIValidation::isStatusHeaderValue(field.second)) return false;
+      i++;
+    }
+  } catch (std::runtime_error &e) {
+    std::cout << e.what() << std::endl;
     return false;
-  if (headers_.find("location") != headers_.end()) return false;
-  return true;
-}
-
-bool CGI::isLocalRedirectRes() {
-  if (headers_.size() != 1) return false;
-  if (headers_.find("location") == headers_.end()) return false;
-  if (!CGIValidation::isAbsPath(headers_["location"].c_str())) return false;
-
-  return true;
-}
-
-bool CGI::isClientRedirectRes() {
-  if (headers_.find("location") == headers_.end()) return false;
-  if (!CGIValidation::isAbsURI(headers_["location"])) return false;
-  if (headers_.find("content-type") != headers_.end()) return false;
-  if (headers_.find("status") != headers_.end()) return false;
-  return true;
-}
-
-bool CGI::isClientRedirectWithDocRes() {
-  if (headers_.find("location") == headers_.end()) return false;
-  if (!CGIValidation::isAbsURI(headers_["location"])) return false;
-  if (headers_.find("content-type") == headers_.end()) return false;
-  if (!CGIValidation::isMediaType(headers_["content-type"])) return false;
-  if (headers_.find("status") != headers_.end()) {
-    if (!CGIValidation::isStatusHeaderValue(headers_["status"])) return false;
   }
   return true;
 }
 
-CGI::Type CGI::getResponseType() {
-  if (isDocRes()) {
+bool CGI::isLocalRedirectRes(std::vector<std::string> &lines) {
+  if (lines.size() != 2) return false;
+  try {
+    t_field field = getHeaderField(lines[0]);
+    if (field.first != "Location") return false;
+    if (!CGIValidation::isAbsPath(field.second.c_str())) return false;
+    if (lines[1] != "") return false;
+  } catch (std::runtime_error &e) {
+    std::cout << e.what() << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool CGI::isClientRedirectRes(std::vector<std::string> &lines) {
+  if (lines.size() != 2) return false;
+  try {
+    t_field filed = getHeaderField(lines[0]);
+    if (filed.first != "Location") return false;
+    if (!CGIValidation::isAbsURI(filed.second)) return false;
+    if (lines[1] != "") return false;
+  } catch (std::runtime_error &e) {
+    std::cout << e.what() << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool CGI::isClientRedirectWithDocRes(std::vector<std::string> &lines) {
+  if (lines.size() < 3) return false;
+  try {
+    t_field field = getHeaderField(lines[0]);
+    if (field.first != "Location" || !CGIValidation::isAbsURI(field.second)) return false;
+    field = getHeaderField(lines[1]);
+    if (field.first != "Status" || !CGIValidation::isStatusHeaderValue(field.second)) return false;
+    field = getHeaderField(lines[2]);
+    if (field.first != "Content-Type" || !CGIValidation::isMediaType(field.second)) return false;
+    std::size_t i = 3;
+    while (i < lines.size() && lines[i] != "") {
+      field = getHeaderField(lines[i]);
+      i++;
+    }
+    if (i == lines.size() && lines[i - 1] != "") return false;
+  } catch (std::runtime_error &e) {
+    std::cout << e.what() << std::endl;
+    return false;
+  }
+  return true;
+}
+
+CGI::Type CGI::getResponseType(std::vector<std::string> &lines) {
+  if (isDocRes(lines)) {
     return CGI::Doc;
-  } else if (isLocalRedirectRes()) {
+  } else if (isLocalRedirectRes(lines)) {
     return CGI::LocalRedir;
-  } else if (isClientRedirectRes()) {
+  } else if (isClientRedirectRes(lines)) {
     return CGI::ClientRedir;
-  } else if (isClientRedirectWithDocRes()) {
+  } else if (isClientRedirectWithDocRes(lines)) {
     return CGI::ClientRedirWithDoc;
   }
   return CGI::Error;
 }
 
-void CGI::parseHeaders(std::string &headers) {
-  std::vector<std::string> fields = CGIValidation::extractLines(headers);
-  std::vector<std::string>::size_type i = 0;
-  while (i < fields.size() && fields[i] != "") {
-    t_field field = getHeaderField(fields[i]);
-    headers_[field.first] = field.second;
-    i++;
-  }
-}
-
-void CGI::handleCGIResponse() {
-  DEBUG_PRINTF("CGI LAST RESULT: '%s'\n", escape(recieved_data_).c_str());
-  std::size_t nlnl_pos = recieved_data_.find("\n\n");
-  if (nlnl_pos == std::string::npos)
-    throw InternalServerErrorException("CGI response is invalid(no end NL of headers)");
-  std::string headers = recieved_data_.substr(0, nlnl_pos);
-  std::string body = recieved_data_.substr(recieved_data_.find("\n\n") + 2);
-  parseHeaders(headers);
-  CGI::Type type = getResponseType();
+void CGI::parseCGIResponse() {
+  std::vector<std::string> lines = CGIValidation::extractLines(recieved_data_);
+  CGI::Type type = getResponseType(lines);
   if (type == CGI::Error) {
-    throw InternalServerErrorException("CGI response is invalid");
+    response_->setStatusAndReason(500, "");
   } else if (type == CGI::Doc) {
-    processDocRes(body);
+    parseDocRes(lines);
   } else if (type == CGI::LocalRedir) {
-    processLocalRedirect();
+    DEBUG_PRINTF("CGI LAST RESULT: '%s'\n", escape(recieved_data_).c_str());
+    try {
+      parseLocalRedirect(lines);
+      ConnectionSocket *parent = dynamic_cast<ConnectionSocket *>(parent_);
+      shutdown();
+      parent->process();
+    } catch (HttpException &e) {
+      response_->setStatusAndReason(e.statusCode(), "");
+      type = CGI::Error;
+    }
   } else if (type == CGI::ClientRedir) {
-    processClientRedirect();
+    parseClientRedirect(lines);
   } else if (type == CGI::ClientRedirWithDoc) {
-    processClientRedirectWithDoc(body);
+    parseClientRedirectWithDoc(lines);
+  }
+  if (type != CGI::LocalRedir) {
+    DEBUG_PRINTF("CGI LAST RESULT: '%s'\n", escape(recieved_data_).c_str());
+    em_->registerWriteEvent(parent_->id_);
+    shutdown();
   }
 }
 
@@ -214,20 +244,13 @@ void CGI::notify(struct kevent ev) {
 
     int res = read(id_, &buff[0], FILE_READ_SIZE);
     if (res == -1) {
-      response_->setStatusAndReason(500);
+      response_->setStatusAndReason(501, "");
       em_->registerWriteEvent(parent_->id_);
       shutdown();
       return;
     } else if (res == 0) {
-      response_->setStatusAndReason(200);
-      try {
-        handleCGIResponse();
-      } catch (HttpException &e) {
-        DEBUG_PUTS(e.what());
-        response_->setStatusAndReason(e.statusCode());
-        em_->registerWriteEvent(parent_->id_);
-        shutdown();
-      }
+      response_->setStatusAndReason(200, "");
+      parseCGIResponse();
     } else {
       std::cout << "CGI read res: " << res << std::endl;
       buff[res] = '\0';
@@ -246,7 +269,7 @@ void CGI::notify(struct kevent ev) {
     int res = write(id_, response + sending_size_, size);
     if (res == -1) {
       perror("sendto");
-      response_->setStatusAndReason(500);
+      response_->setStatusAndReason(501, "");
       em_->registerWriteEvent(parent_->id_);
       shutdown();
       return;

@@ -25,7 +25,6 @@ struct CGIInfo {
   std::string extension_var_name_;
 
   void setEnv(std::vector<char *> &env);
-  std::string getCGIWorkingDirectory();
 };
 
 std::string getPathInfo(const std::string &path, const std::string &ext);

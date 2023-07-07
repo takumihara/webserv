@@ -6,8 +6,8 @@ int main() {
   extern char **environ;
   std::string input;
   std::cin >> input;
-  std::cout << "Status:200 " << std::endl;
   std::cout << "Content-Type:text/plain" << std::endl;
+  std::cout << "Status:200 " << std::endl;
   std::cout << std::endl;
   std::cout << input << std::endl;
   std::cout << "AUTH_TYPE: " << getenv("AUTH_TYPE") << std::endl;

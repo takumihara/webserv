@@ -25,19 +25,6 @@ TEST(E2E, CGIDoc) {
   ASSERT_TRUE(includes(res, "CGI Response \n"));
 }
 
-TEST(E2E, CGI_CWD) {
-  std::string host = "localhost";
-  std::string port = "80";
-  std::string method = "GET";
-  std::string path = "/cgi-bin/cgi_getCWD.cgi?query";
-  std::string body = "";
-  std::string headers = "Host: localhost;Content-Length:0;Date: Wed, 16 Oct 2019 07:28:00 GMT";
-  std::string res = sendRequest(host, port, method, path, body, headers);
-
-  // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
-  ASSERT_TRUE(includes(res, "/playground/tkg/Design1/cgi-bin\n"));
-}
-
 TEST(E2E, CGILocalRedirect) {
   std::string host = "localhost";
   std::string port = "80";
