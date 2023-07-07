@@ -40,9 +40,7 @@ TEST(Request, Cookie) {
   HttpRequestReader::State state = rreader.read();
 
   ASSERT_EQ(state, HttpRequestReader::FinishedReading);
-  ASSERT_EQ(req.headers_.cookie_.size(), 2);
-  ASSERT_EQ(req.headers_.cookie_["name1"], "val1");
-  ASSERT_EQ(req.headers_.cookie_["name2"], "val2");
+  ASSERT_EQ(req.headers_.cookie_, "name1=val1; name2=val2");
 }
 
 TEST(Request, NoHostFeild) {
