@@ -214,17 +214,17 @@ void CGI::notify(struct kevent ev) {
 
     int res = read(id_, &buff[0], FILE_READ_SIZE);
     if (res == -1) {
-      response_->setStatusAndReason(501, "");
+      response_->setStatusAndReason(500);
       em_->registerWriteEvent(parent_->id_);
       shutdown();
       return;
     } else if (res == 0) {
-      response_->setStatusAndReason(200, "");
+      response_->setStatusAndReason(200);
       try {
         handleCGIResponse();
       } catch (HttpException &e) {
         DEBUG_PUTS(e.what());
-        response_->setStatusAndReason(e.statusCode(), "");
+        response_->setStatusAndReason(e.statusCode());
         em_->registerWriteEvent(parent_->id_);
         shutdown();
       }
@@ -246,7 +246,7 @@ void CGI::notify(struct kevent ev) {
     int res = write(id_, response + sending_size_, size);
     if (res == -1) {
       perror("sendto");
-      response_->setStatusAndReason(501, "");
+      response_->setStatusAndReason(500);
       em_->registerWriteEvent(parent_->id_);
       shutdown();
       return;
