@@ -12,6 +12,8 @@
 bool includes(const std::string &str, const std::string &substr);
 std::string sendRequest(const std::string &host, const std::string &port, const std::string &method,
                         const std::string &path, const std::string &body, const std::string &headers);
+std::string sendInvalidRequest(const std::string &host, const std::string &port, const std::string &method,
+                               const std::string &path, const std::string &body, const std::string &headers);
 
 TEST(E2E, CGIDoc) {
   std::string host = "localhost";
@@ -159,6 +161,36 @@ TEST(E2E, Non_Autoindex) {
   ASSERT_TRUE(includes(res, "HTTP/1.1 404 Not Found"));
 }
 
+TEST(E2E, NotImplementedDefaultError) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GETS";
+  std::string path = "/cgi-bin/";
+  std::string body = "hello";
+  std::string headers = "Host: localhost";
+  std::string res = sendRequest(host, port, method, path, body, headers);
+  std::cerr << res << std::endl;
+  // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
+  ASSERT_TRUE(includes(res, "HTTP/1.1 501 Not Implemented"));
+  ASSERT_TRUE(includes(
+      res, "<p>Our apologies for the temporary inconvenience. The requested URL was not found on this server.\n</p>"));
+}
+
+TEST(E2E, duplicate_host_header) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/cgi-bin/";
+  std::string body = "hello";
+  std::string headers = "Host: localhost;Host: localhost";
+  std::string res = sendInvalidRequest(host, port, method, path, body, headers);
+  std::cerr << res << std::endl;
+  // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
+  ASSERT_TRUE(includes(res, "HTTP/1.1 400 Bad Request"));
+  ASSERT_TRUE(includes(
+      res, "<p>Our apologies for the temporary inconvenience. The requested URL was not found on this server.\n</p>"));
+}
+
 TEST(E2E, Chunked) {
   std::string host = "localhost";
   std::string port = "80";
@@ -256,4 +288,68 @@ std::string sendRequest(const std::string &host, const std::string &port, const 
   }
 
   return response;
+}
+
+std::string sendInvalidRequest(const std::string &host, const std::string &port, const std::string &method,
+                               const std::string &path, const std::string &body, const std::string &headers) {
+  struct addrinfo hints, *res;
+  int err;
+  int sock;
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_socktype = SOCK_STREAM;
+  // 名前解決の方法を指定
+  hints.ai_family = AF_INET;
+
+  if ((err = getaddrinfo(host.c_str(), port.c_str(), &hints, &res)) != 0) {
+    return "";
+  }
+  void *ptr = &((struct sockaddr_in *)res->ai_addr)->sin_addr;
+  char addr_buf[64];
+  inet_ntop(res->ai_family, ptr, addr_buf, sizeof(addr_buf));
+
+  sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+  if (sock == -1) {
+    perror("socket");
+    return "";
+  }
+
+  if (connect(sock, res->ai_addr, res->ai_addrlen) == -1) {
+    perror("connect");
+    return "";
+  }
+  std::stringstream ss;
+  ss << method << " " << path << " "
+     << "HTTP/1.1\r\n";
+  std::vector<std::string> lines;
+  std::stringstream hs(headers);
+  std::string str;
+  if (headers != "") {
+    while (getline(hs, str, ';')) {
+      ss << str << "\r\n";
+    }
+  }
+  ss << "\r\n";
+  ss << body;
+  char response[10000];
+  std::string request = ss.str();
+  int write_res = sendto(sock, request.c_str(), request.size(), 0, NULL, 0);
+  if (write_res == -1) {
+    perror("write");
+  }
+  memset(response, 0, 10000);
+  ssize_t read_res = -1;
+  size_t total = 0;
+  while (read_res != 0) {
+    read_res = read(sock, response + total, 10000 - total);
+    if (read_res == -1) {
+      perror("read");
+      exit(1);
+    }
+    total += read_res;
+    response[total] = '\0';
+  }
+  freeaddrinfo(res);
+  close(sock);
+  return std::string(response);
 }
