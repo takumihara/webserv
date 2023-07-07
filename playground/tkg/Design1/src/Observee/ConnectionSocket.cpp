@@ -261,7 +261,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     } catch (HttpException &e) {
       // all 4xx 5xx exception(readRequest and process) is caught here
       DEBUG_PUTS(e.what());
-      response_.setStatusAndReason(e.statusCode(), "");
+      response_.setStatusAndReason(e.statusCode());
       processErrorPage(loc_conf_);
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);

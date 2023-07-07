@@ -64,7 +64,7 @@ void HttpResponse::createResponse() {
   }
   std::stringstream ss;
   // status-line
-  ss << "HTTP/1.1 " << status_ << " " << conf_->cache_.statusMsg_[status_] << CRLF;
+  ss << "HTTP/1.1 " << status_ << " " << reason_phrase_ << CRLF;
   // header-fields
   for (t_headers::const_iterator itr = headers_.cbegin(); itr != headers_.cend(); itr++) {
     ss << itr->first << ": " << itr->second << CRLF;
