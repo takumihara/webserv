@@ -10,7 +10,7 @@ std::string HTML::header() {
 std::string HTML::footer() { return "</body>\n</html>"; }
 
 std::string HTML::aTag(const std::string &url, const std::string &text) {
-  return "<p><a href=\"" + url + "\">" + text + " </a><br></p>";
+  return "<p><a href=\"" + url + "\">" + text + " </a><br></p>\n";
 }
 
 std::string HTML::sanitize(const std::string &origin) {

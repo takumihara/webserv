@@ -8,17 +8,17 @@ from http import cookies
 
 cgitb.enable()
 
-print("Content-Type: text/html")    # HTML is following
-print()                             # blank line required, end of headers
+print("Content-Type: text/html")  # HTML is following
+print()  # blank line required, end of headers
 
 form = cgi.FieldStorage()
 
-database_name = "test.db" # change this to your database name
-table_name = "test" # change this to your table name
-column_name = "column1" # change this to your column name
+database_name = "test.db"  # change this to your database name
+table_name = "test"  # change this to your table name
+column_name = "column1"  # change this to your column name
+
 
 def handle_get():
-    value = form.getvalue(column_name)
     conn = sqlite3.connect(database_name)
     cursor = conn.cursor()
 
@@ -28,6 +28,7 @@ def handle_get():
 
     for row in rows:
         print(row)
+
 
 def handle_post():
     value = form.getvalue(column_name)
@@ -40,6 +41,7 @@ def handle_post():
 
     print(f"{value} has been added to the database.")
 
+
 def handle_delete():
     value = form.getvalue(column_name)
     conn = sqlite3.connect(database_name)
@@ -51,13 +53,14 @@ def handle_delete():
 
     print(f"{value} has been deleted from the database.")
 
-request_method = os.environ['REQUEST_METHOD']
 
-if request_method == 'GET':
+request_method = os.environ["REQUEST_METHOD"]
+
+if request_method == "GET":
     handle_get()
-elif request_method == 'POST':
+elif request_method == "POST":
     handle_post()
-elif request_method == 'DELETE':
+elif request_method == "DELETE":
     handle_delete()
 else:
     print(f"HTTP {request_method} is not supported.")
