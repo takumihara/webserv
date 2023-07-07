@@ -82,29 +82,25 @@ void ConnectionSocket::execCGI(const std::string &path) {
     if (chdir(cwd.c_str()) == -1) {
       perror("chdir");
       close(fd[1]);
-      deleteEnv(env);
       exit(1);
     }
     argv[0] = const_cast<char *>(info.script_name_.c_str());
     if (dup2(fd[1], STDIN_FILENO) == -1) {
       perror("dup2");
       close(fd[1]);
-      deleteEnv(env);
       exit(1);
     }
     if (dup2(fd[1], STDOUT_FILENO) == -1) {
       perror("dup2");
       close(fd[1]);
-      deleteEnv(env);
       exit(1);
     }
     close(fd[1]);
     if (execve(info.script_name_.c_str(), argv, &env[0]) == -1) {
       perror("execve");
-      deleteEnv(env);
       exit(1);
     }
-    deleteEnv(env);
+    exit(1);
   } else {
     close(fd[1]);
     std::cout << "pid: " << pid << std::endl;
