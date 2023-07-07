@@ -105,7 +105,7 @@ bool isPrintable(const char c) {
 
 bool isMediaType(std::string &raw_media) {
   std::string media = raw_media.substr(0, raw_media.find(";"));
-  trimOws(media);
+  media = trimOws(media);
   toLower(media);
   std::size_t pos = media.find("/");
   if (pos == std::string::npos) return false;

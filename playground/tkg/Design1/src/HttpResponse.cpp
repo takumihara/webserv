@@ -24,6 +24,11 @@ void HttpResponse::setStatusAndReason(const int status, const std::string &reaso
     reason_phrase_ = reason;
 }
 
+void HttpResponse::setStatusAndReason(const int status) {
+  status_ = status;
+  reason_phrase_ = conf_->cache_.statusMsg_[status_];
+}
+
 void HttpResponse::setContentType(const std::string &path) {
   std::string ext = getExtension(path);
   if (ext == "") return;
