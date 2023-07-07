@@ -172,7 +172,7 @@ void ConnectionSocket::processGET() {
     if (idx_path == "" && loc_conf_->common_.autoindex_) {
       DEBUG_PUTS("autoindex");
       response_.appendBody(GET::listFilesAndDirectories(path, request_));
-      response_.setStatusAndReason(200, "");
+      response_.setStatusAndReason(200);
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
       return;  // 200 OK
@@ -194,7 +194,7 @@ void ConnectionSocket::processRedirect() {
   if (!isAcceptableMethod(loc_conf_, request_.method_)) {
     throw MethodNotAllowedException("No Suitable Location");
   }
-  response_.setStatusAndReason(std::atoi(loc_conf_->getRedirectStatus().c_str()), "");
+  response_.setStatusAndReason(std::atoi(loc_conf_->getRedirectStatus().c_str()));
   response_.appendHeader("location", loc_conf_->getRedirectURI());
   em_->disableReadEvent(id_);
   em_->registerWriteEvent(id_);
@@ -245,7 +245,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     } catch (HttpException &e) {
       // all 4xx 5xx exception(readRequest and process) is caught here
       std::cerr << e.what() << std::endl;
-      response_.setStatusAndReason(e.statusCode(), "");
+      response_.setStatusAndReason(e.statusCode());
       if (loc_conf_) {
         // error_page directive is ignored when error ocuured reading Request
         processErrorPage(loc_conf_);
