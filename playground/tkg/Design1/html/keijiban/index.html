@@ -1,0 +1,145 @@
+
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<link href="./keijiban/light/cmn/bbs.css" rel="stylesheet">
+<script src="./keijiban/light/cmn/bbs.js"></script>
+<title>掲示板 - LIGHT BOARD</title>
+</head>
+<body>
+<div id="head"><h1>掲示板 - LIGHT BOARD</h1></div>
+<div id="main">
+
+<div id="button-panel">
+	<a class="button small" href="./keijiban/light/light.cgi">ホーム</a>
+	<a class="button small" href="./keijiban/light/light.cgi?mode=note" target="note" onclick="window.open(this.href,'note','width=610,height=380,scrollbars=1');return false;">留意事項</a>
+	<a class="button small" href="./keijiban/light/light.cgi?mode=find">検索</a>
+	<a class="button small" href="./keijiban/light/light.cgi?mode=past">過去ログ</a>
+	<a class="button small" href="./keijiban/light/admin.cgi">管理</a>
+</div>
+
+<form action="./keijiban/light/light.cgi" method="post">
+<input type="hidden" name="mode" value="recv">
+<div id="reg-box">
+<table id="reg-tbl">
+<tr>
+	<th>おなまえ</th>
+	<td>
+		<!-- err:name -->
+		<input type="text" name="name" value="" class="reg-name">
+	</td>
+</tr><tr>
+	<th>e-mail</th>
+	<td>
+		<!-- err:eml -->
+		<input type="text" name="email" value="" class="reg-name">
+	</td>
+</tr><tr>
+	<th>タイトル</th>
+	<td>
+    	<input type="text" name="sub" value="" class="reg-url">
+    	<input type="submit" value="投稿" class="reg-btn">
+  </td>
+</tr><tr>
+	<th colspan="2">
+    	メッセージ<br>
+    	<!-- err:com -->
+    	<textarea name="comment" class="reg-com"></textarea>
+	</th>
+</tr><tr>
+	<th>参照先</th>
+	<td>
+		<!-- err:url -->
+		<input type="text" name="url" value="http://" class="reg-url">
+	</td>
+</tr><tr>
+	<th>削除キー</th>
+	<td>
+    	<input type="password" name="pwd" maxlength="8" class="reg-num" value="">
+		<span>（英数字8文字以内）</span>
+		<input type="checkbox" name="cookie" value="1" checked><span>情報を保存</span>
+	</td>
+</tr>
+</table>
+<div class="ta-r">
+	<a href="#" onclick="regform();" title="隠す"><img src="./keijiban/light/cmn/arrow.png" alt="" class="icon"></a>
+</div>
+</div>
+</form>
+
+
+<div class="bbs-art">
+	<h3>レスポンシブデザイン</h3>
+	<div class="bbs-com">v11.0より、スマホ画面に自動対応するレスポンシブデザインとしました。</div>
+	<div class="bbs-pan">
+		<img src="./keijiban/light/cmn/user.png" alt="" class="icon"> <b>KENT</b>
+		<img src="./keijiban/light/cmn/date.png" alt="" class="icon"> 2019/12/08(Sun) 08:14 
+		<img src="./keijiban/light/cmn/pgnum.png" alt="" class="icon"> <span>No.5</span>
+		<a href="./keijiban/light/light.cgi?res=5&amp;pg=0" title="返信"><img src="./keijiban/light/cmn/reply.png" alt="" class="icon"></a>
+		<a href="./keijiban/light/light.cgi?del=5&amp;pg=0" title="記事削除"><img src="./keijiban/light/cmn/trash.png" alt="" class="icon"></a>
+	</div>
+</div>
+
+<div class="bbs-art">
+	<h3>クッキー</h3>
+	<div class="bbs-com">もちろん、クッキー機能付きです。<p class="url"><a href="http://www.kent-web.com/" target="_blank">http://www.kent-web.com/</a></p></div>
+	<div class="bbs-pan">
+		<img src="./keijiban/light/cmn/user.png" alt="" class="icon"> <b><a href="mailto:webmaster@kent-web.com">KENT</a></b>
+		<img src="./keijiban/light/cmn/date.png" alt="" class="icon"> 99/09/18(Sat) 14:50 
+		<img src="./keijiban/light/cmn/pgnum.png" alt="" class="icon"> <span>No.4</span>
+		<a href="./keijiban/light/light.cgi?res=4&amp;pg=0" title="返信"><img src="./keijiban/light/cmn/reply.png" alt="" class="icon"></a>
+		<a href="./keijiban/light/light.cgi?del=4&amp;pg=0" title="記事削除"><img src="./keijiban/light/cmn/trash.png" alt="" class="icon"></a>
+	</div>
+</div>
+
+<div class="bbs-art">
+	<h3>環境設定</h3>
+	<div class="bbs-com">環境設定はWEB上から行ないますので、運営は楽だと思います。<p class="url"><a href="http://www.kent-web.com/" target="_blank">http://www.kent-web.com/</a></p></div>
+	<div class="bbs-pan">
+		<img src="./keijiban/light/cmn/user.png" alt="" class="icon"> <b><a href="mailto:webmaster@kent-web.com">KENT</a></b>
+		<img src="./keijiban/light/cmn/date.png" alt="" class="icon"> 99/09/18(Sat) 14:50 
+		<img src="./keijiban/light/cmn/pgnum.png" alt="" class="icon"> <span>No.3</span>
+		<a href="./keijiban/light/light.cgi?res=3&amp;pg=0" title="返信"><img src="./keijiban/light/cmn/reply.png" alt="" class="icon"></a>
+		<a href="./keijiban/light/light.cgi?del=3&amp;pg=0" title="記事削除"><img src="./keijiban/light/cmn/trash.png" alt="" class="icon"></a>
+	</div>
+</div>
+
+<div class="bbs-art">
+	<h3>LIGHT BOARD</h3>
+	<div class="bbs-com">ノーマルな掲示板です。外見はシンプルですが、使いやすく工夫しました。 管理者への投稿記事メール通知機能、コメント削除機能、ワード検索など機能は多彩です。 <p class="url"><a href="http://www.kent-web.com/" target="_blank">http://www.kent-web.com/</a></p></div>
+	<div class="bbs-pan">
+		<img src="./keijiban/light/cmn/user.png" alt="" class="icon"> <b><a href="mailto:webmaster@kent-web.com">KENT</a></b>
+		<img src="./keijiban/light/cmn/date.png" alt="" class="icon"> 99/09/18(Sat) 14:49 
+		<img src="./keijiban/light/cmn/pgnum.png" alt="" class="icon"> <span>No.2</span>
+		<a href="./keijiban/light/light.cgi?res=2&amp;pg=0" title="返信"><img src="./keijiban/light/cmn/reply.png" alt="" class="icon"></a>
+		<a href="./keijiban/light/light.cgi?del=2&amp;pg=0" title="記事削除"><img src="./keijiban/light/cmn/trash.png" alt="" class="icon"></a>
+	</div>
+</div>
+
+<div class="bbs-art">
+	<h3>テスト</h3>
+	<div class="bbs-com">テスト投稿です。</div>
+	<div class="bbs-pan">
+		<img src="./keijiban/light/cmn/user.png" alt="" class="icon"> <b><a href="mailto:kent@lemon.ne.jp">KENT</a></b>
+		<img src="./keijiban/light/cmn/date.png" alt="" class="icon"> 99/05/05(Wedn) 18:01 
+		<img src="./keijiban/light/cmn/pgnum.png" alt="" class="icon"> <span>No.1</span>
+		<a href="./keijiban/light/light.cgi?res=1&amp;pg=0" title="返信"><img src="./keijiban/light/cmn/reply.png" alt="" class="icon"></a>
+		<a href="./keijiban/light/light.cgi?del=1&amp;pg=0" title="記事削除"><img src="./keijiban/light/cmn/trash.png" alt="" class="icon"></a>
+	</div>
+</div>
+
+
+<div class="bbs-art"></div>
+
+
+
+</div>
+
+<p style="margin-top:2em;text-align:center;font-family:Verdana,Helvetica,Arial;font-size:10px;">
+	- <a href="http://www.kent-web.com/" target="_top">LightBoard</a> -
+</p>
+</body>
+</html>
+
