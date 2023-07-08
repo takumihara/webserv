@@ -27,6 +27,9 @@
 void CGI::timeout() {
   DEBUG_PUTS("CGI timeout");
   if (parent_) {
+    response_->setStatusAndReason(500);
+    em_->enableTimerEvent(parent_->id_);
+    em_->registerWriteEvent(parent_->id_);
     parent_->stopMonitorChild(this);
     parent_ = NULL;
   }
@@ -36,7 +39,7 @@ void CGI::timeout() {
   }
   children_.clear();
   close(id_);
-  em_->deleteTimerEvent(id_);
+  em_->disableTimerEvent(id_);
   kill(pid_, SIGTERM);
   waitpid(pid_, NULL, 0);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
@@ -45,6 +48,7 @@ void CGI::timeout() {
 void CGI::shutdown() {
   DEBUG_PUTS("CGI shutdown");
   if (parent_) {
+    em_->enableTimerEvent(parent_->id_);
     parent_->stopMonitorChild(this);
     parent_ = NULL;
   }
@@ -259,7 +263,6 @@ void CGI::notify(struct kevent ev) {
       std::cout << "CGI read res: " << res << std::endl;
       buff[res] = '\0';
       recieved_data_ += buff;
-      em_->updateTimer(this);
       DEBUG_PRINTF("CGI WIP RESULT: '%s'\n", escape(recieved_data_).c_str());
     }
   } else if (ev.filter == EVFILT_WRITE) {

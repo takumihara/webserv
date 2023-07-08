@@ -60,6 +60,5 @@ void POST::notify(struct kevent ev) {
       em_->remove(std::pair<t_id, t_type>(id_, FD));
       return;
     }
-    em_->updateTimer(this);
   }
 }

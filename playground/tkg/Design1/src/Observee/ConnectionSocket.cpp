@@ -141,6 +141,7 @@ void ConnectionSocket::execCGI(const std::string &path) {
     std::cout << "need_fd: " << fd[0] << "  pid: " << pid << std::endl;
     em_->add(std::pair<t_id, t_type>(fd[0], FD), obs);
     em_->disableReadEvent(id_);
+    em_->disableTimerEvent(id_);
     em_->registerWriteEvent(fd[0]);
   }
 }
@@ -220,6 +221,7 @@ void ConnectionSocket::processGET() {
   GET *obs = makeGET(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
   em_->disableReadEvent(id_);
+  em_->disableTimerEvent(id_);
   em_->registerReadEvent(fd);
 }
 
@@ -266,6 +268,7 @@ void ConnectionSocket::process() {
 
 void ConnectionSocket::notify(struct kevent ev) {
   DEBUG_PUTS("ConnectionSocket notify");
+  em_->updateTimer(id_);
   if (ev.filter == EVFILT_READ) {
     DEBUG_PUTS("handle_request() called");
     try {

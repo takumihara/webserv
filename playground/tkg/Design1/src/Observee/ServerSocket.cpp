@@ -50,8 +50,8 @@ void ServerSocket::notify(struct kevent ev) {
     return;
   }
   em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_READ, EV_ADD, 0, 0, 0});
-  em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_TIMER, EV_ADD | EV_ENABLE,
-                                        NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+  em_->addChangedEvents((struct kevent){static_cast<uintptr_t>(connection_fd), EVFILT_TIMER, EV_ADD, NOTE_SECONDS,
+                                        EventManager::kTimeoutDuration, 0});
   ConnectionSocket *obs = new ConnectionSocket(connection_fd, port_, conf_, em_, NULL, new FDReadCloser(connection_fd));
   em_->add(std::pair<t_id, t_type>(connection_fd, FD), obs);
   return;

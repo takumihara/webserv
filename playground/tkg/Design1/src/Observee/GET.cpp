@@ -26,11 +26,21 @@
 #include "../HttpRequest/HttpRequest.hpp"
 #include "../HttpResponse.hpp"
 
-void GET::timeout() { shutdown(); }
+void GET::timeout() {
+  if (parent_) {
+    response_->setStatusAndReason(500);
+    em_->enableTimerEvent(parent_->id_);
+    em_->registerWriteEvent(parent_->id_);
+    parent_->stopMonitorChild(this);
+    parent_ = NULL;
+  }
+  shutdown();
+}
 
 void GET::shutdown() {
   DEBUG_PUTS("GET shutdown");
   if (parent_) {
+    em_->enableTimerEvent(parent_->id_);
     parent_->stopMonitorChild(this);
     parent_ = NULL;
   }
@@ -109,7 +119,6 @@ void GET::notify(struct kevent ev) {
       shutdown();
       return;
     }
-    em_->updateTimer(this);
     std::cout << "GET wip result: '" << std::string(&(response_->getBody()[0]), response_->getBody().size()) << "'"
               << std::endl;
   }
