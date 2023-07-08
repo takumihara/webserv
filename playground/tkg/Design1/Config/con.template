@@ -11,4 +11,7 @@ server {
   location /cgi-bin {
     cgi_extension .cgi .py; 
   }
+  location /html/keijiban {
+    cgi_extension .cgi .py; 
+  }
 }

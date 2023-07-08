@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<link href="!cmnurl!/bbs.css" rel="stylesheet">
+<script src="!cmnurl!/bbs.js"></script>
+<title>!bbs_title!</title>
+</head>
+<body>
+<div id="head"><h1>!bbs_title!</h1></div>
+<div id="main">
+
+<div id="button-panel">
+	<a class="button small" href="!homepage!">ホーム</a>
+	<a class="button small" href="!bbs_cgi!?mode=note" target="note" onclick="window.open(this.href,'note','width=610,height=380,scrollbars=1');return false;">留意事項</a>
+	<a class="button small" href="!bbs_cgi!?mode=find">検索</a>
+	<a class="button small" href="!bbs_cgi!?mode=past">過去ログ</a>
+	<a class="button small" href="!admin_cgi!">管理</a>
+</div>
+
+<form action="!bbs_cgi!" method="post">
+<input type="hidden" name="mode" value="recv">
+<div id="reg-box">
+<table id="reg-tbl">
+<tr>
+	<th>おなまえ</th>
+	<td>
+		<!-- err:name -->
+		<input type="text" name="name" value="!name!" class="reg-name">
+	</td>
+</tr><tr>
+	<th>e-mail</th>
+	<td>
+		<!-- err:eml -->
+		<input type="text" name="email" value="!email!" class="reg-name">
+	</td>
+</tr><tr>
+	<th>タイトル</th>
+	<td>
+    	<input type="text" name="sub" value="!sub!" class="reg-url">
+    	<input type="submit" value="投稿" class="reg-btn">
+  </td>
+</tr><tr>
+	<th colspan="2">
+    	メッセージ<br>
+    	<!-- err:com -->
+    	<textarea name="comment" class="reg-com">!comment!</textarea>
+	</th>
+</tr><tr>
+	<th>参照先</th>
+	<td>
+		<!-- err:url -->
+		<input type="text" name="url" value="!url!" class="reg-url">
+	</td>
+</tr><tr>
+	<th>削除キー</th>
+	<td>
+    	<input type="password" name="pwd" maxlength="8" class="reg-num" value="!pwd!">
+		<span>（英数字8文字以内）</span>
+		<input type="checkbox" name="cookie" value="1" checked><span>情報を保存</span>
+	</td>
+</tr>
+</table>
+<div class="ta-r">
+	<a href="#" onclick="regform();" title="隠す">!icon:arrow.png!</a>
+</div>
+</div>
+</form>
+
+<!-- loop -->
+<div class="bbs-art">
+	<h3>!_sub!</h3>
+	<div class="bbs-com">!_comment!</div>
+	<div class="bbs-pan">
+		!icon:user.png! <b>!_name!</b>
+		!icon:date.png! !_date! 
+		!icon:pgnum.png! <span>No.!_num!</span>
+		<a href="!bbs_cgi!?res=!_num!&amp;pg=!pg!" title="返信">!icon:reply.png!</a>
+		<a href="!bbs_cgi!?del=!_num!&amp;pg=!pg!" title="記事削除">!icon:trash.png!</a>
+	</div>
+</div>
+<!-- /loop -->
+
+<div class="bbs-art"></div>
+
+<!-- page_btn -->
+
+</div>
+
+</body>
+</html>

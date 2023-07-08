@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<link href="!cmnurl!/bbs.css" rel="stylesheet">
+<title>キーワード検索</title>
+</head>
+<body>
+
+<div id="head">
+		<div class="ta-r"><strong>!bbs_title!</strong></div>
+</div>
+<div id="main">
+
+<div id="back-btn">
+	<button type="button" class="button color green small" onclick="window.open('!bbs_cgi!','_self')">Back</button>
+</div>
+
+<div id="reg-box">
+<p>!icon:search.png! <b>検索</b></p>
+<p>キーワードはスペースで区切って複数指定することができます。</p>
+<form action="!bbs_cgi!" method="get">
+<input type="hidden" name="mode" value="find">
+	キーワード
+	<input type="text" name="word" class="reg-name" value="!word!">
+	条件
+	<select name="cond">
+	<!-- op_cond -->
+	</select>
+<input type="submit" value="検索">
+</form>
+</div>
+
+<!-- loop -->
+<div class="bbs-art">
+	<b>!sub!</b> <b>!name!</b> - !date! !home! No.!num!
+	<div class="bbs-com">!comment!</div>
+</div>
+<!-- /loop -->
+
+<div class="bbs-art"></div>
+
+</div>
+</body>
+</html>

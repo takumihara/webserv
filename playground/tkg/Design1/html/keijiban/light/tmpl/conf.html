@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<link href="!cmnurl!/bbs.css" rel="stylesheet">
+<title>!bbs_title!</title>
+</head>
+<body>
+<div id="head"><h1>!bbs_title!</h1></div>
+<div id="main">
+<p id="conf-msg">内容を確認してください。</p>
+<form action="!bbs_cgi!" method="post">
+<input type="hidden" name="mode" value="recv">
+<!-- hidden -->
+<div id="reg-box">
+<table id="conf-tbl">
+<tr>
+	<th>おなまえ</th>
+	<td class="data">!name!</td>
+</tr><tr>
+	<th>e-mail</th>
+	<td class="data">!email!</td>
+</tr><tr>
+	<th>タイトル</th>
+	<td class="data">!sub!</td>
+</tr><tr>
+	<th>コメント</th>
+	<td class="data">!comment!</td>
+</tr><tr>
+	<th>参照先</th>
+	<td class="data">!url!</td>
+</tr><tr>
+	<th>削除キー</th>
+	<td class="data">!pwd!</td>
+</tr><tr>
+		<th>情報保存</th>
+		<td>!cookie!</td>
+<!-- captcha -->
+</tr><tr>
+	<th>画像認証</th>
+	<td class="data">
+		<input type="text" name="captcha" class="reg-num" style="ime-mode:inactive" maxlength="8">
+		（右画像を入力）  !captcha!
+	</td>
+<!-- /captcha -->
+</tr>
+</table>
+<div class="conf-btn">
+	<input type="submit" name="job_bak" value="前に戻る" class="reg-btn">
+	<input type="submit" name="job_reg" value="投稿する" class="reg-btn">
+</div>
+</div>
+</form>
+
+</div>
+
+</body>
+</html>
