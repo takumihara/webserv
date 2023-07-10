@@ -35,8 +35,7 @@ void HttpResponse::setContentType(const std::string &path, bool forced) {
   if (conf_->cache_.ext_contentType_map_.find(ext) == conf_->cache_.ext_contentType_map_.end()) return;
   if (forced) {
     appendHeader("content-type", conf_->cache_.ext_contentType_map_[ext]);
-  } else {
-    if (hasHeader("content-type")) return;
+  } else if (!hasHeader("content-type")) {
     appendHeader("content-type", conf_->cache_.ext_contentType_map_[ext]);
   }
 }
