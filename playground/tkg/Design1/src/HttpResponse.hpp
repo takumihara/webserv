@@ -34,7 +34,7 @@ class HttpResponse {
   void setStatus(const int status);
   void setStatusAndReason(const int status, const std::string &reason);
   void setStatusAndReason(const int status);
-  void setContentType(const std::string &path);
+  void setContentType(const std::string &path, bool forced);
   void appendHeader(const std::string &key, const std::string &value);
   void appendBody(const char *str, size_t size);
   void appendBody(const std::string &str);

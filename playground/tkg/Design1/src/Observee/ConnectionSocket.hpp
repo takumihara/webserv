@@ -52,7 +52,7 @@ class ConnectionSocket : public Observee {
   HttpRequestReader rreader_;
   HttpResponse response_;
   Cache cache_;
-  std::string extension_;
+  std::string CGIextension_;
 
   //   std::deque<HttpRequest> request_;
   //   std::deque<HttpResponse> response_;
