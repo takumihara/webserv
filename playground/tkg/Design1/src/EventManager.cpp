@@ -15,12 +15,9 @@ EventManager::EventManager() {
 
 void EventManager::addChangedEvents(struct kevent kevent) {
   t_key key(kevent.ident, kevent.filter);
-  if (changed_events_.find(key) == changed_events_.end())
-    changed_events_[key] = kevent;
-  else {
-    changed_events_[key].flags |= kevent.flags;
-  }
+  changed_events_[key] = kevent;
 }
+
 void EventManager::terminateAll() {
   for (std::map<std::pair<t_id, t_type>, Observee *>::iterator itr = observees_.begin(); itr != observees_.end();
        itr++) {
@@ -54,14 +51,12 @@ void EventManager::registerServerEvent(int fd, int port, Config &conf) {
 
 void EventManager::registerWriteEvent(uintptr_t fd) {
   addChangedEvents((struct kevent){fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0});
-  addChangedEvents(
-      (struct kevent){fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+  addChangedEvents((struct kevent){fd, EVFILT_TIMER, EV_ADD, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
 }
 
 void EventManager::registerReadEvent(uintptr_t fd) {
   addChangedEvents((struct kevent){fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0});
-  addChangedEvents(
-      (struct kevent){fd, EVFILT_TIMER, EV_ADD | EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+  addChangedEvents((struct kevent){fd, EVFILT_TIMER, EV_ADD, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
 }
 
 void EventManager::disableReadEvent(uintptr_t fd) {
@@ -76,11 +71,17 @@ void EventManager::deleteTimerEvent(uintptr_t fd) {
   addChangedEvents((struct kevent){fd, EVFILT_TIMER, EV_DELETE, 0, 0, 0});
 }
 
-void EventManager::updateTimer(Observee *obs) {
-  if (obs->parent_) {
-    updateTimer(obs->parent_);
-  }
-  addChangedEvents((struct kevent){obs->id_, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+void EventManager::disableTimerEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_TIMER, EV_DISABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+}
+
+// enableTimerEvent() and updateTimer() do same thing but define two function for readability.
+void EventManager::enableTimerEvent(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
+}
+
+void EventManager::updateTimer(uintptr_t fd) {
+  addChangedEvents((struct kevent){fd, EVFILT_TIMER, EV_ENABLE, NOTE_SECONDS, EventManager::kTimeoutDuration, 0});
 }
 
 std::string getEventFilter(int flag) {
@@ -109,6 +110,11 @@ std::string getEventFlags(int state) {
 
 void EventManager::updateKqueue() {
   DEBUG_PUTS("UPDATE KQUEUE");
+  DEBUG_PUTS("---------Observees---------");
+  for (std::map<t_key, Observee *>::iterator itr = observees_.begin(); itr != observees_.end(); itr++) {
+    DEBUG_PRINTF("fd: %lu type: %hd\n", itr->first.first, itr->first.second);
+  }
+  DEBUG_PUTS("---------------------------");
   int size = changed_events_.size();
   struct kevent chlist[size];
   bzero(chlist, sizeof(struct kevent) * size);
@@ -143,7 +149,7 @@ void EventManager::handleEvent(struct kevent ev) {
   DEBUG_PUTS("END HANDLE EVENT");
 }
 
-void EventManager::handleTimeout(struct kevent ev) { observees_[std::pair<t_id, t_type>(ev.ident, FD)]->shutdown(); }
+void EventManager::handleTimeout(struct kevent ev) { observees_[std::pair<t_id, t_type>(ev.ident, FD)]->timeout(); }
 
 void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(struct kevent) * kMaxEventSize); }
 
@@ -166,7 +172,8 @@ void EventManager::eventLoop() {
     else if (nev == -1)
       perror("kevent");
     for (int i = 0; i < nev; i++) {
-      std::cout << "evlist fd: " << evlist[i].ident << std::endl;
+      DEBUG_PRINTF("evlist fd: %lu(%s:%s), ", evlist[i].ident, getEventFilter(evlist[i].filter).c_str(),
+                   getEventFlags(evlist[i].flags).c_str());
       handleEvent(evlist[i]);
     }
     DEBUG_PUTS("----------------------");
