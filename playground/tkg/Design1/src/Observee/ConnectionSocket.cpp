@@ -25,26 +25,22 @@
 #include "CGI/CGI.hpp"
 #include "CGI/CGIInfo.hpp"
 #include "GET.hpp"
-#include "POST.hpp"
 #include "helper.hpp"
 
 void ConnectionSocket::timeout() {
   DEBUG_PUTS("ConnectionSocket timeout");
-  response_.setStatusAndReason(408, "");
-  if (loc_conf_) {
-    processErrorPage(loc_conf_);
+  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+    (*itr)->parent_ = NULL;
+    (*itr)->shutdown();
   }
-  response_.createResponse();
-  response_.sendResponse();
-  shutdown();
+  children_.clear();
+  close(id_);
+  em_->deleteTimerEvent(id_);
+  em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
 void ConnectionSocket::shutdown() {
   DEBUG_PUTS("ConnectionSocket shutdown");
-  if (parent_) {
-    parent_->stopMonitorChild(this);
-    parent_ = NULL;
-  }
   for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
     (*itr)->parent_ = NULL;
     (*itr)->shutdown();
@@ -59,16 +55,14 @@ void ConnectionSocket::terminate() { close(id_); }
 
 void ConnectionSocket::initExtension() { extension_ = ""; }
 
+HttpResponse *ConnectionSocket::initResponse() {
+  response_ = HttpResponse(id_, port_, &conf_);
+  return &response_;
+}
+
 GET *ConnectionSocket::makeGET(int fd) {
   DEBUG_PRINTF("MAKE GET fd: %d\n", fd);
   GET *obs = new GET(fd, em_, this, &response_);
-  this->monitorChild(obs);
-  return obs;
-}
-
-POST *ConnectionSocket::makePOST(int fd) {
-  DEBUG_PUTS("MAKE POST");
-  POST *obs = new POST(fd, em_, this, &request_);
   this->monitorChild(obs);
   return obs;
 }
@@ -281,6 +275,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     } catch (HttpException &e) {
       // all 4xx 5xx exception(readRequest and process) is caught here
       DEBUG_PUTS(e.what());
+      response_ = HttpResponse(id_, port_, &conf_);
       response_.setStatusAndReason(e.statusCode());
       if (loc_conf_) {
         // error_page directive is ignored when error ocuured reading Request

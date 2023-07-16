@@ -144,16 +144,12 @@ void EventManager::handleEvent(struct kevent ev) {
     DEBUG_PUTS("timeout");
     handleTimeout(ev);
   } else {
-    if (observees_.find(std::pair<t_id, t_type>(ev.ident, FD)) != observees_.end())
-      observees_[std::pair<t_id, t_type>(ev.ident, getType(ev.filter))]->notify(ev);
+    observees_[std::pair<t_id, t_type>(ev.ident, getType(ev.filter))]->notify(ev);
   }
   DEBUG_PUTS("END HANDLE EVENT");
 }
 
-void EventManager::handleTimeout(struct kevent ev) {
-  if (observees_.find(std::pair<t_id, t_type>(ev.ident, FD)) != observees_.end())
-    observees_[std::pair<t_id, t_type>(ev.ident, FD)]->timeout();
-}
+void EventManager::handleTimeout(struct kevent ev) { observees_[std::pair<t_id, t_type>(ev.ident, FD)]->timeout(); }
 
 void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(struct kevent) * kMaxEventSize); }
 

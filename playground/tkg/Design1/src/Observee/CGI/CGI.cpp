@@ -26,20 +26,19 @@
 
 void CGI::timeout() {
   DEBUG_PUTS("CGI timeout");
-  if (parent_) {
-    response_->setStatusAndReason(500);
-    em_->enableTimerEvent(parent_->id_);
-    em_->registerWriteEvent(parent_->id_);
-    parent_->stopMonitorChild(this);
-    parent_ = NULL;
-  }
+  response_ = dynamic_cast<ConnectionSocket *>(parent_)->initResponse();
+  response_->setStatusAndReason(500);
+  em_->enableTimerEvent(parent_->id_);
+  em_->registerWriteEvent(parent_->id_);
+  parent_->stopMonitorChild(this);
+  parent_ = NULL;
   for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
     (*itr)->parent_ = NULL;
     (*itr)->shutdown();
   }
   children_.clear();
   close(id_);
-  em_->disableTimerEvent(id_);
+  em_->deleteTimerEvent(id_);
   kill(pid_, SIGTERM);
   waitpid(pid_, NULL, 0);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
@@ -47,11 +46,9 @@ void CGI::timeout() {
 
 void CGI::shutdown() {
   DEBUG_PUTS("CGI shutdown");
-  if (parent_) {
-    em_->enableTimerEvent(parent_->id_);
-    parent_->stopMonitorChild(this);
-    parent_ = NULL;
-  }
+  em_->enableTimerEvent(parent_->id_);
+  parent_->stopMonitorChild(this);
+  parent_ = NULL;
   for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
     (*itr)->parent_ = NULL;
     (*itr)->shutdown();

@@ -37,8 +37,8 @@ class ConnectionSocket : public Observee {
   void execCGI(const std::string &path);
   CGI *makeCGI(int id, int pid);
   GET *makeGET(int id);
-  POST *makePOST(int id);
   void initExtension();
+  HttpResponse *initResponse();
   // CGIInfo parseCGI(const std::string &path);
 
   void addChild(Observee *obs);

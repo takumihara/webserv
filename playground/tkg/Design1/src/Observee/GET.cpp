@@ -27,23 +27,27 @@
 #include "../HttpResponse.hpp"
 
 void GET::timeout() {
-  if (parent_) {
-    response_->setStatusAndReason(500);
-    em_->enableTimerEvent(parent_->id_);
-    em_->registerWriteEvent(parent_->id_);
-    parent_->stopMonitorChild(this);
-    parent_ = NULL;
+  response_ = dynamic_cast<ConnectionSocket *>(parent_)->initResponse();
+  response_->setStatusAndReason(500);
+  em_->enableTimerEvent(parent_->id_);
+  em_->registerWriteEvent(parent_->id_);
+  parent_->stopMonitorChild(this);
+  parent_ = NULL;
+  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+    (*itr)->parent_ = NULL;
+    (*itr)->shutdown();
   }
-  shutdown();
+  children_.clear();
+  close(id_);
+  em_->deleteTimerEvent(id_);
+  em_->remove(std::pair<t_id, t_type>(id_, FD));
 }
 
 void GET::shutdown() {
   DEBUG_PUTS("GET shutdown");
-  if (parent_) {
-    em_->enableTimerEvent(parent_->id_);
-    parent_->stopMonitorChild(this);
-    parent_ = NULL;
-  }
+  em_->enableTimerEvent(parent_->id_);
+  parent_->stopMonitorChild(this);
+  parent_ = NULL;
   for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
     (*itr)->parent_ = NULL;
     (*itr)->shutdown();

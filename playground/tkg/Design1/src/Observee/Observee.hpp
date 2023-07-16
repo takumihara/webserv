@@ -35,7 +35,11 @@ class Observee {
   virtual void shutdown() = 0;
   virtual void timeout() = 0;
   virtual void terminate() = 0;
-  void stopMonitorChild(Observee *child) { children_.erase(std::find(children_.begin(), children_.end(), child)); };
+  void stopMonitorChild(Observee *child) {
+    if (std::find(children_.begin(), children_.end(), child) != children_.end()) {
+      children_.erase(std::find(children_.begin(), children_.end(), child));
+    }
+  };
   void monitorChild(Observee *child) { children_.push_back(child); };
 
  public:
