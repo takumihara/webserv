@@ -22,3 +22,4 @@ std::string tchar();
 std::string vchar();
 std::string fieldContent();
 const std::vector<char> &CRLFVec();
+const std::vector<char> &CRLFCRLFVec();
