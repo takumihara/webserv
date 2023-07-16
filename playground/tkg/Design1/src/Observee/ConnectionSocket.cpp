@@ -21,6 +21,7 @@
 #include <string>
 
 #include "../Config/validation.h"
+#include "../HTML.hpp"
 #include "../HttpException.hpp"
 #include "CGI/CGI.hpp"
 #include "CGI/CGIInfo.hpp"
@@ -53,7 +54,7 @@ void ConnectionSocket::shutdown() {
 
 void ConnectionSocket::terminate() { close(id_); }
 
-void ConnectionSocket::initExtension() { extension_ = ""; }
+void ConnectionSocket::initExtension() { CGIextension_ = ""; }
 
 HttpResponse *ConnectionSocket::initResponse() {
   response_ = HttpResponse(id_, port_, &conf_);
@@ -79,7 +80,7 @@ void ConnectionSocket::execCGI(const std::string &path) {
   char *argv[2];
   argv[1] = NULL;
   int fd[2];
-  CGIInfo info = parseCGIInfo(path, extension_, request_, loc_conf_);
+  CGIInfo info = parseCGIInfo(path, CGIextension_, request_, loc_conf_);
   struct stat st;
   const bool file_exist = stat(info.script_name_.c_str(), &st) != -1;
   if (!file_exist) throw ResourceNotFoundException("cgi script is not found");
@@ -147,8 +148,8 @@ void ConnectionSocket::processDELETE() {
   std::string path = loc_conf_->getTargetPath(request_.request_target_->getPath());
 
   // if CGI extension exist, try exec CGI
-  const bool hasCGI = extension_ != "";
-  if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
+  const bool hasCGI = CGIextension_ != "";
+  if (hasCGI && contain(loc_conf_->cgi_exts_, CGIextension_)) {
     execCGI(path);
     return;
   }
@@ -161,8 +162,8 @@ void ConnectionSocket::processPOST() {
   }
   std::string path = loc_conf_->getTargetPath(request_.request_target_->getPath());
   // if CGI extension exist, try exec CGI
-  const bool hasCGI = extension_ != "";
-  if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
+  const bool hasCGI = CGIextension_ != "";
+  if (hasCGI && contain(loc_conf_->cgi_exts_, CGIextension_)) {
     execCGI(path);
     return;
   }
@@ -176,8 +177,8 @@ void ConnectionSocket::processGET() {
   std::string path = loc_conf_->getTargetPath(request_.request_target_->getPath());
 
   // if CGI extension exist, try exec CGI
-  const bool hasCGI = extension_ != "";
-  if (hasCGI && contain(loc_conf_->cgi_exts_, extension_)) {
+  const bool hasCGI = CGIextension_ != "";
+  if (hasCGI && contain(loc_conf_->cgi_exts_, CGIextension_)) {
     execCGI(path);
     return;
   }
@@ -201,6 +202,7 @@ void ConnectionSocket::processGET() {
       DEBUG_PUTS("autoindex");
       response_.appendBody(GET::listFilesAndDirectories(path, request_));
       response_.setStatusAndReason(200);
+      response_.setContentType("autoindex.html", false);
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
       return;  // 200 OK
@@ -210,6 +212,7 @@ void ConnectionSocket::processGET() {
     }
   }
   // URI file or index file
+  response_.setContentType(path, false);
   int fd = open(path.c_str(), O_RDONLY);
   if (fd < 0) throw InternalServerErrorException("open error");
   GET *obs = makeGET(fd);
@@ -230,14 +233,27 @@ void ConnectionSocket::processRedirect() {
 }
 
 void ConnectionSocket::processErrorPage(const LocationConf *conf) {
+  DEBUG_PUTS("process ErrorPage");
   std::stringstream ss;
   ss << response_.getStatus();
-  std::map<std::string, std::string>::const_iterator itr = conf->common_.error_pages_.find(ss.str());
-  if (itr != conf->common_.error_pages_.end()) {
-    std::string filename = itr->second;
-    if (filename[0] != '/') filename = conf->common_.root_ + "/" + filename;
-    if (conf_.cache_.error_page_paths_.find(filename) != conf_.cache_.error_page_paths_.end())
-      response_.appendBody(conf_.cache_.error_page_paths_[filename]);
+  if (!conf) {
+    // Bad Request error page
+    response_.appendBody(HTML::getDefaultErrorPage(ss.str(), conf_.cache_.statusMsg_[response_.getStatus()]));
+    response_.appendHeader("content-type", "text/html");
+  } else {
+    // Other error page
+    std::map<std::string, std::string>::const_iterator itr = conf->common_.error_pages_.find(ss.str());
+    if (itr != conf->common_.error_pages_.end()) {
+      std::string filename = itr->second;
+      if (filename[0] != '/') filename = conf->common_.root_ + "/" + filename;
+      if (conf_.cache_.error_page_paths_.find(filename) != conf_.cache_.error_page_paths_.end()) {
+        response_.appendBody(conf_.cache_.error_page_paths_[filename]);
+        response_.setContentType(conf_.cache_.error_page_paths_[filename], true);
+        return;
+      }
+    }
+    response_.appendBody(HTML::getDefaultErrorPage(ss.str(), conf_.cache_.statusMsg_[response_.getStatus()]));
+    response_.appendHeader("content-type", "text/html");
   }
 }
 
@@ -249,7 +265,7 @@ void ConnectionSocket::process() {
     processRedirect();
     return;
   }
-  extension_ = getCGIExtension(request_.request_target_->getPath());
+  CGIextension_ = getCGIExtension(request_.request_target_->getPath());
   if (request_.methodIs(HttpRequest::GET)) {
     processGET();
   } else if (request_.methodIs(HttpRequest::POST)) {
@@ -277,10 +293,7 @@ void ConnectionSocket::notify(struct kevent ev) {
       DEBUG_PUTS(e.what());
       response_ = HttpResponse(id_, port_, &conf_);
       response_.setStatusAndReason(e.statusCode());
-      if (loc_conf_) {
-        // error_page directive is ignored when error ocuured reading Request
-        processErrorPage(loc_conf_);
-      }
+      processErrorPage(loc_conf_);
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
     } catch (std::runtime_error &e) {
@@ -300,7 +313,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     }
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
-      extension_ = "";
+      CGIextension_ = "";
       request_ = HttpRequest();
       rreader_ = HttpRequestReader(rreader_, request_);
       response_ = HttpResponse(id_, port_, &conf_);

@@ -19,7 +19,14 @@ def send_http_request(host, port, method, path, body, headers):
     # レスポンスのボディを受け取る
     body = response.read()
     # レスポンスのボディを表示
-    print(body.decode())
+    content_type = response.getheader("Content-Type")
+    type = ""
+    if (content_type):
+        type, _ = content_type.split("/")
+    if (type == "text"):
+        print(body.decode())
+    else:
+        print(body)
 
     # 接続を閉じる
     conn.close()

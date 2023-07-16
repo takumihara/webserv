@@ -29,11 +29,15 @@ void HttpResponse::setStatusAndReason(const int status) {
   reason_phrase_ = conf_->cache_.statusMsg_[status_];
 }
 
-void HttpResponse::setContentType(const std::string &path) {
+void HttpResponse::setContentType(const std::string &path, bool forced) {
   std::string ext = getExtension(path);
   if (ext == "") return;
-  if (hasHeader("content-type")) return;
-  appendHeader("content-type", conf_->cache_.ext_contentType_map_[ext]);
+  if (conf_->cache_.ext_contentType_map_.find(ext) == conf_->cache_.ext_contentType_map_.end()) return;
+  if (forced) {
+    appendHeader("content-type", conf_->cache_.ext_contentType_map_[ext]);
+  } else if (!hasHeader("content-type")) {
+    appendHeader("content-type", conf_->cache_.ext_contentType_map_[ext]);
+  }
 }
 
 void HttpResponse::appendBody(const char *str, size_t size) { body_.insert(body_.end(), str, str + size); }
@@ -59,7 +63,7 @@ void HttpResponse::createResponse() {
   }
   std::stringstream ss;
   // status-line
-  ss << "HTTP/1.1 " << status_ << " " << conf_->cache_.statusMsg_[status_] << CRLF;
+  ss << "HTTP/1.1 " << status_ << " " << reason_phrase_ << CRLF;
   // header-fields
   for (t_headers::const_iterator itr = headers_.cbegin(); itr != headers_.cend(); itr++) {
     ss << itr->first << ": " << itr->second << CRLF;
