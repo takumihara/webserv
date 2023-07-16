@@ -43,6 +43,24 @@ TEST(Request, Cookie) {
   ASSERT_EQ(req.headers_.cookie_, "name1=val1; name2=val2");
 }
 
+TEST(Request, NoHeader) {
+  IReadCloser *rc = new MockReadCloser("GET / HTTP/1.1\r\n\r\n");
+  Config conf;
+  HttpRequest req;
+  HttpRequestReader rreader(0, &conf, req, rc);
+
+  try {
+    HttpRequestReader::State state = rreader.read();
+    std::cerr << "No Exception" << std::endl;
+    FAIL();
+  } catch (BadRequestException &e) {
+    ASSERT_EQ(std::string(e.what()), std::string("missing host header"));
+  } catch (std::exception &e) {
+    std::cerr << "Wrong Exception: " << e.what() << std::endl;
+    FAIL();
+  }
+}
+
 TEST(Request, NoHostFeild) {
   IReadCloser *rc = new MockReadCloser("GET / HTTP/1.1\r\nContent-Length: 3\r\n\r\n");
   Config conf;
@@ -50,10 +68,12 @@ TEST(Request, NoHostFeild) {
   try {
     HttpRequestReader rreader(0, &conf, req, rc);
     HttpRequestReader::State state = rreader.read();
+    std::cerr << "No Exception" << std::endl;
     FAIL();
   } catch (BadRequestException &e) {
     ASSERT_EQ(std::string(e.what()), std::string("missing host header"));
   } catch (...) {
+    std::cerr << "Wrong Exception" << std::endl;
     FAIL();
   }
 }

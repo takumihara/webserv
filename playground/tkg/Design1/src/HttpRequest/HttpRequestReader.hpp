@@ -74,7 +74,6 @@ class HttpRequestReader {
   Config *conf_;
   const static char *kSupportedTransferEncodings[];
 
-  const std::vector<char> &getEndingChars() const;
   void trimToEndingChars();
   void moveToNextState();
 
@@ -87,7 +86,7 @@ class HttpRequestReader {
   void assignAndValidateRequestTarget(const std::string &requestTarget);
   void assignAndValidateVersion(const std::string &version);
 
-  void parseHeaders();
+  bool parseHeaders();
   void validateHeaderName(const std::string &name);
   void validateHeaderValue(const std::string &value);
   void validateHeaders();

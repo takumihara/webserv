@@ -191,6 +191,20 @@ TEST(E2E, duplicate_host_header) {
       res, "<p>Our apologies for the temporary inconvenience. The requested URL was not found on this server.\n</p>"));
 }
 
+TEST(E2E, NoHeader) {
+  std::string host = "localhost";
+  std::string port = "80";
+  std::string method = "GET";
+  std::string path = "/index.html";
+  std::string body = "";
+  std::string headers = "";
+  std::string res = sendInvalidRequest(host, port, method, path, body, headers);
+  std::cerr << res << std::endl;
+  ASSERT_TRUE(includes(res, "HTTP/1.1 400 Bad Request"));
+  ASSERT_TRUE(includes(
+      res, "<p>Our apologies for the temporary inconvenience. The requested URL was not found on this server.\n</p>"));
+}
+
 TEST(E2E, Chunked) {
   std::string host = "localhost";
   std::string port = "80";
