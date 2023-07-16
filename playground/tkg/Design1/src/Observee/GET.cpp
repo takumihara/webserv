@@ -78,11 +78,11 @@ std::string GET::listFilesAndDirectories(std::string &directory_path, const Http
 }
 
 void GET::notify(struct kevent ev) {
-  std::cout << "handle GET" << std::endl;
+  DEBUG_PUTS("handle GET");
   (void)ev;
   char buff[FILE_READ_SIZE + 1];
   int res = read(id_, buff, FILE_READ_SIZE);
-  std::cout << "res: " << res << std::endl;
+  DEBUG_PRINTF("res: %d\n", res);
   if (res == -1) {
     return;
   } else {
@@ -93,13 +93,13 @@ void GET::notify(struct kevent ev) {
       parent_->obliviateChild(this);
       em_->deleteTimerEvent(id_);
       em_->registerWriteEvent(parent_->id_);
-      std::cout << "GET LAST RESULT: '" << std::string(&(response_->getBody()[0]), response_->getBody().size()) << "'"
-                << std::endl;
+      DEBUG_PRINTF("GET LAST RESULT: '%s'\n",
+                   std::string(&(response_->getBody()[0]), response_->getBody().size()).c_str());
       em_->remove(std::pair<t_id, t_type>(id_, FD));
       return;
     }
     em_->updateTimer(this);
-    std::cout << "GET wip result: '" << std::string(&(response_->getBody()[0]), response_->getBody().size()) << "'"
-              << std::endl;
+    DEBUG_PRINTF("GET WIP RESULT: '%s'\n",
+                 std::string(&(response_->getBody()[0]), response_->getBody().size()).c_str());
   }
 }

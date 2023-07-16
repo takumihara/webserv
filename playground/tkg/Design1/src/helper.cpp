@@ -93,7 +93,6 @@ bool isReadable(const char *path) { return access(path, R_OK) == 0; }
 bool isWritable(const char *path) { return access(path, W_OK) == 0; }
 
 bool isAllDirectoryWritable(std::string &path) {
-  std::cout << path << std::endl;
   std::vector<std::string> segments = splitToSegment(path);
   for (std::size_t i = 1; i < segments.size(); i++) {
     std::string partial_path = "";

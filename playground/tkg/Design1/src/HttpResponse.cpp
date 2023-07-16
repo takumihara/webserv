@@ -72,7 +72,7 @@ void HttpResponse::createResponse() {
   std::string head = ss.str();
   response_.insert(response_.end(), head.begin(), head.end());
   response_.insert(response_.end(), body_.begin(), body_.end());
-  std::cout << "full response: '" << escape(std::string(&response_[0], response_.size())) << "'" << std::endl;
+  DEBUG_PRINTF("full response: '%s'\n", escape(std::string(&response_[0], response_.size())).c_str());
   response_size_ = response_.size();
   sending_response_size_ = 0;
   state_ = Sending;
@@ -92,11 +92,9 @@ void HttpResponse::sendResponse() {
     throw std::runtime_error("send error");
   }
   std::string res_str = std::string(response, response_.size());
-  std::cout << "response sent: "
-            << "'" << escape(res_str.substr(sending_response_size_, size)) << "'"
-            << " (size:" << res << ")" << std::endl;
+  DEBUG_PRINTF("response sent: '%s' (size: %d)\n", escape(res_str.substr(sending_response_size_, size)).c_str(), res);
   sending_response_size_ += size;
-  std::cout << "response size: " << response_size_ << "(" << sending_response_size_ << ")" << std::endl;
+  DEBUG_PRINTF("response sent: %d (%d)\n", response_size_, sending_response_size_);
   if (sending_response_size_ == response_size_) state_ = End;
 }
 

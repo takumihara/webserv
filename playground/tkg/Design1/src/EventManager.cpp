@@ -46,10 +46,8 @@ void EventManager::registerServerEvent(int fd, int port, Config &conf) {
   DEBUG_PUTS("");
   kevent(kq_, &chlist, 1, NULL, 0, NULL);
   Observee *obs = new ServerSocket(fd, port, conf, this);
-  std::cout << "sock fd: " << fd << std::endl;
+  DEBUG_PRINTF("sock fd: %d\n", fd);
   add(std::pair<t_id, t_type>(fd, FD), obs);
-  observees_[std::pair<t_id, t_type>(fd, FD)];
-  std::cout << observees_[std::pair<t_id, t_type>(fd, FD)]->id_;
 }
 
 void EventManager::registerWriteEvent(uintptr_t fd) {
@@ -166,7 +164,7 @@ void EventManager::eventLoop() {
     else if (nev == -1)
       perror("kevent");
     for (int i = 0; i < nev; i++) {
-      std::cout << "evlist fd: " << evlist[i].ident << std::endl;
+      DEBUG_PRINTF("evlist fd: %zu\n", evlist[i].ident);
       handleEvent(evlist[i]);
     }
     DEBUG_PUTS("----------------------");
