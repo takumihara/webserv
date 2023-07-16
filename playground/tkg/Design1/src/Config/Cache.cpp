@@ -8,6 +8,7 @@
 #include <string>
 
 #include "Config.hpp"
+#include "debug.hpp"
 
 static std::string readFile(const char *filename) {
   std::ifstream ifs(filename);
@@ -32,7 +33,7 @@ void Cache::cacheErrorPages(const CommonConf *conf) {
     // translate into abs-path when error page path is relative-path
     if (itr->second[0] != '/') file = root + "/" + file;
     if (error_page_paths_.find(file) == error_page_paths_.end()) {
-      std::cerr << file << std::endl;
+      DEBUG_PUTS(file.c_str());
       error_page_paths_[file] = readFile(("." + file).c_str());
     }
   }

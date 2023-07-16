@@ -257,14 +257,14 @@ void CGI::notify(struct kevent ev) {
         shutdown();
       }
     } else {
-      std::cout << "CGI read res: " << res << std::endl;
+      DEBUG_PRINTF("CGI read res: %d\n", res);
       buff[res] = '\0';
       recieved_data_ += buff;
       DEBUG_PRINTF("CGI WIP RESULT: '%s'\n", escape(recieved_data_).c_str());
     }
   } else if (ev.filter == EVFILT_WRITE) {
     const char *response = request_->body_.data();
-    std::cout << "response: " << escape(std::string(request_->body_.begin(), request_->body_.end())) << std::endl;
+    DEBUG_PRINTF("response: %s\n", escape(std::string(request_->body_.begin(), request_->body_.end())).c_str());
     std::size_t size = request_->body_.size() - sending_size_;
 
     if (size > SOCKET_WRITE_SIZE) {

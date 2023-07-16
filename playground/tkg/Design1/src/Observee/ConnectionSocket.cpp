@@ -131,9 +131,8 @@ void ConnectionSocket::execCGI(const std::string &path) {
     exit(1);
   } else {
     close(fd[1]);
-    std::cout << "pid: " << pid << std::endl;
+    DEBUG_PRINTF("pid: %d, cgi fd: %d\n", pid, fd[0]);
     CGI *obs = makeCGI(fd[0], pid);
-    std::cout << "need_fd: " << fd[0] << "  pid: " << pid << std::endl;
     em_->add(std::pair<t_id, t_type>(fd[0], FD), obs);
     em_->disableReadEvent(id_);
     em_->disableTimerEvent(id_);

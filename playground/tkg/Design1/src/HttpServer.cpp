@@ -87,7 +87,7 @@ void HttpServer::setup() {
   }
 
 #ifdef DEBUG
-  std::cout << "-----------port conf map-------------\n" << std::endl;
+  DEBUG_PUTS("-----------port conf map-------------");
   conf_.printPortServConfMap();
 #endif
 }

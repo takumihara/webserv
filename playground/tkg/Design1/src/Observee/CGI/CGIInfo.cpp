@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <sstream>
 
+#include "../../debug.hpp"
 #include "../../helper.hpp"
 #include "Config/validation.h"
 #include "HttpRequest/HttpRequest.hpp"
@@ -33,7 +34,7 @@ std::string getPathInfo(const std::string &path, const std::string &ext) {
       std::string path_info = path.substr(pos + ext.size());
       if (path_info[0] == ';') path_info[0] = '/';
       if (path_info[0] != '/') path_info = "/" + path_info;
-      std::cout << "path_info: " << path_info << std::endl;
+      DEBUG_PRINTF("path_info: %s\n", path_info.c_str());
       return path_info;
     }
     pos = path.find(ext, pos + 1);
