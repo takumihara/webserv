@@ -11,6 +11,7 @@ class ServerSocket : public Observee {
   ~ServerSocket() {}
   void notify(struct kevent ev);
   void shutdown();
+  void timeout();
   void terminate();
 
  private:

@@ -26,8 +26,33 @@
 #include "../HttpRequest/HttpRequest.hpp"
 #include "../HttpResponse.hpp"
 
+void GET::timeout() {
+  response_ = dynamic_cast<ConnectionSocket *>(parent_)->initResponse();
+  response_->setStatusAndReason(500);
+  em_->enableTimerEvent(parent_->id_);
+  em_->registerWriteEvent(parent_->id_);
+  parent_->stopMonitorChild(this);
+  parent_ = NULL;
+  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+    (*itr)->parent_ = NULL;
+    (*itr)->shutdown();
+  }
+  children_.clear();
+  close(id_);
+  em_->deleteTimerEvent(id_);
+  em_->remove(std::pair<t_id, t_type>(id_, FD));
+}
+
 void GET::shutdown() {
   DEBUG_PUTS("GET shutdown");
+  em_->enableTimerEvent(parent_->id_);
+  parent_->stopMonitorChild(this);
+  parent_ = NULL;
+  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+    (*itr)->parent_ = NULL;
+    (*itr)->shutdown();
+  }
+  children_.clear();
   close(id_);
   em_->deleteTimerEvent(id_);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
@@ -84,21 +109,20 @@ void GET::notify(struct kevent ev) {
   int res = read(id_, buff, FILE_READ_SIZE);
   DEBUG_PRINTF("res: %d\n", res);
   if (res == -1) {
+    response_->setStatusAndReason(500, "");
+    em_->registerWriteEvent(parent_->id_);
+    shutdown();
     return;
   } else {
     response_->appendBody(buff, res);
     if (res == 0 || res == ev.data) {
-      close(id_);
-      response_->setStatusAndReason(200);
-      parent_->obliviateChild(this);
-      em_->deleteTimerEvent(id_);
-      em_->registerWriteEvent(parent_->id_);
       DEBUG_PRINTF("GET LAST RESULT: '%s'\n",
                    std::string(&(response_->getBody()[0]), response_->getBody().size()).c_str());
-      em_->remove(std::pair<t_id, t_type>(id_, FD));
+      response_->setStatusAndReason(200);
+      em_->registerWriteEvent(parent_->id_);
+      shutdown();
       return;
     }
-    em_->updateTimer(this);
     DEBUG_PRINTF("GET WIP RESULT: '%s'\n",
                  std::string(&(response_->getBody()[0]), response_->getBody().size()).c_str());
   }

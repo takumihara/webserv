@@ -46,7 +46,9 @@ class EventManager {
   void disableReadEvent(uintptr_t fd);
   void disableWriteEvent(uintptr_t fd);
   void deleteTimerEvent(uintptr_t fd);
-  void updateTimer(Observee *obs);
+  void disableTimerEvent(uintptr_t fd);
+  void enableTimerEvent(uintptr_t fd);
+  void updateTimer(uintptr_t fd);
   void terminateAll();
   static const int kTimeoutDuration = 5;
 

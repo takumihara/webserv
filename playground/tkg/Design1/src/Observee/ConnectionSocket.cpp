@@ -26,11 +26,27 @@
 #include "CGI/CGI.hpp"
 #include "CGI/CGIInfo.hpp"
 #include "GET.hpp"
-#include "POST.hpp"
 #include "helper.hpp"
+
+void ConnectionSocket::timeout() {
+  DEBUG_PUTS("ConnectionSocket timeout");
+  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+    (*itr)->parent_ = NULL;
+    (*itr)->shutdown();
+  }
+  children_.clear();
+  close(id_);
+  em_->deleteTimerEvent(id_);
+  em_->remove(std::pair<t_id, t_type>(id_, FD));
+}
 
 void ConnectionSocket::shutdown() {
   DEBUG_PUTS("ConnectionSocket shutdown");
+  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+    (*itr)->parent_ = NULL;
+    (*itr)->shutdown();
+  }
+  children_.clear();
   close(id_);
   em_->deleteTimerEvent(id_);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
@@ -40,26 +56,27 @@ void ConnectionSocket::terminate() { close(id_); }
 
 void ConnectionSocket::initExtension() { CGIextension_ = ""; }
 
+HttpResponse *ConnectionSocket::initResponse() {
+  response_ = HttpResponse(id_, port_, &conf_);
+  return &response_;
+}
+
 GET *ConnectionSocket::makeGET(int fd) {
+  DEBUG_PRINTF("MAKE GET fd: %d\n", fd);
   GET *obs = new GET(fd, em_, this, &response_);
   this->monitorChild(obs);
   return obs;
 }
 
-POST *ConnectionSocket::makePOST(int fd) {
-  POST *obs = new POST(fd, em_, this, &request_);
-  this->monitorChild(obs);
-  return obs;
-}
-
 CGI *ConnectionSocket::makeCGI(int id, int pid) {
+  DEBUG_PRINTF("MAKE CGI fd: %d\n", id);
   CGI *obs = new CGI(id, pid, em_, this, &request_, &response_);
   this->monitorChild(obs);
   return obs;
 }
 
 void ConnectionSocket::execCGI(const std::string &path) {
-  DEBUG_PUTS("MAKE EXEC");
+  DEBUG_PUTS("EXEC CGI");
   char *argv[2];
   argv[1] = NULL;
   int fd[2];
@@ -70,9 +87,19 @@ void ConnectionSocket::execCGI(const std::string &path) {
   if ((st.st_mode & S_IFMT) == S_IFDIR || !isExecutable(info.script_name_.c_str()))
     throw ResourceForbiddenException("cgi script name is directory or not excutable");
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1) {
-    throw InternalServerErrorException("error socketpair");
+    throw InternalServerErrorException("socketpair error");
   }
-  fcntl(fd[0], F_SETFL, O_NONBLOCK);
+  if (fcntl(fd[0], F_SETFL, O_NONBLOCK) == -1) {
+    close(fd[0]);
+    close(fd[1]);
+    throw InternalServerErrorException("fcntl error");
+  }
+  int set = 1;
+  if (setsockopt(fd[0], SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(set)) == -1) {
+    close(fd[0]);
+    close(fd[1]);
+    throw InternalServerErrorException("setsockopt error");
+  }
   int pid = fork();
   if (pid == 0) {
     close(fd[0]);
@@ -108,6 +135,7 @@ void ConnectionSocket::execCGI(const std::string &path) {
     CGI *obs = makeCGI(fd[0], pid);
     em_->add(std::pair<t_id, t_type>(fd[0], FD), obs);
     em_->disableReadEvent(id_);
+    em_->disableTimerEvent(id_);
     em_->registerWriteEvent(fd[0]);
   }
 }
@@ -189,6 +217,7 @@ void ConnectionSocket::processGET() {
   GET *obs = makeGET(fd);
   em_->add(std::pair<t_id, t_type>(fd, FD), obs);
   em_->disableReadEvent(id_);
+  em_->disableTimerEvent(id_);
   em_->registerReadEvent(fd);
 }
 
@@ -248,6 +277,7 @@ void ConnectionSocket::process() {
 
 void ConnectionSocket::notify(struct kevent ev) {
   DEBUG_PUTS("ConnectionSocket notify");
+  em_->updateTimer(id_);
   if (ev.filter == EVFILT_READ) {
     DEBUG_PUTS("handle_request() called");
     try {
@@ -260,12 +290,13 @@ void ConnectionSocket::notify(struct kevent ev) {
     } catch (HttpException &e) {
       // all 4xx 5xx exception(readRequest and process) is caught here
       DEBUG_PUTS(e.what());
+      response_ = HttpResponse(id_, port_, &conf_);
       response_.setStatusAndReason(e.statusCode());
       processErrorPage(loc_conf_);
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
     } catch (std::runtime_error &e) {
-      // when client close socket
+      DEBUG_PUTS("client close socket");
       shutdown();
     }
   }
@@ -277,6 +308,7 @@ void ConnectionSocket::notify(struct kevent ev) {
     } catch (std::runtime_error &e) {
       DEBUG_PUTS("client close socket");
       shutdown();
+      return;
     }
     if (response_.getState() == HttpResponse::End) {
       loc_conf_ = NULL;
