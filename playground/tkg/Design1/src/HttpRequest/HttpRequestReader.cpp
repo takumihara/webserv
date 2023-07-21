@@ -36,8 +36,12 @@ HttpRequestReader::State HttpRequestReader::read() {
   }
   if (state_ == ReadingHeaders && isActionable()) {
     trimToEndingChars();
-    parseHeaders();
-    moveToNextState();
+    if (parseHeaders()) {
+      moveToNextState();
+    } else {
+      raw_data_ = rest_;
+      rest_.clear();
+    }
   }
   if (state_ == ReadingChunkedBody) {
     readChunkedBody();
@@ -118,7 +122,8 @@ void HttpRequestReader::initAnalyzeFuncs(
   analyze_funcs["cookie"] = &HttpRequestReader::analyzeCookie;
 }
 
-void HttpRequestReader::parseHeaders() {
+// parseHeaders returns true if all headers are parsed
+bool HttpRequestReader::parseHeaders() {
   std::stringstream ss(std::string(raw_data_.begin(), raw_data_.end()));
 
   std::vector<char>::iterator start = raw_data_.begin();
@@ -126,11 +131,14 @@ void HttpRequestReader::parseHeaders() {
 
   std::map<std::string, void (HttpRequestReader::*)(const std::string &)> analyze_funcs;
   initAnalyzeFuncs(analyze_funcs);
-  while (true) {
+
+  while (end != raw_data_.end()) {
     std::vector<char> line(start, end);
     // this is the end of headers
     if (line.empty()) {
-      break;
+      validateHeaders();
+      request_.printHeaders();
+      return true;
     }
 
     std::stringstream lineStream(std::string(line.begin(), line.end()));
@@ -151,8 +159,7 @@ void HttpRequestReader::parseHeaders() {
     end = std::search(start, raw_data_.end(), CRLFVec().begin(), CRLFVec().end());
   }
 
-  validateHeaders();
-  request_.printHeaders();
+  return false;
 }
 
 void HttpRequestReader::validateHeaders() {
@@ -373,8 +380,7 @@ void HttpRequestReader::readBody() {
 
 bool HttpRequestReader::isActionable() {
   if (state_ == ReadingStartLine || state_ == ReadingHeaders) {
-    return std::search(raw_data_.begin(), raw_data_.end(), getEndingChars().begin(), getEndingChars().end()) !=
-           raw_data_.end();
+    return std::search(raw_data_.begin(), raw_data_.end(), CRLFVec().begin(), CRLFVec().end()) != raw_data_.end();
   } else if (state_ == ReadingBody) {
     // this accepts body that is larger than content-length
     return raw_data_.size() >= request_.headers_.content_length;
@@ -385,30 +391,25 @@ bool HttpRequestReader::isActionable() {
 
 // isActionable must be called before calling this function
 void HttpRequestReader::trimToEndingChars() {
-  const std::vector<char> &ending_chars = getEndingChars();
-  std::vector<char>::iterator end_pos =
-      std::search(raw_data_.begin(), raw_data_.end(), ending_chars.begin(), ending_chars.end());
+  std::vector<char>::iterator end_pos;
+  if (state_ == ReadingStartLine) {
+    end_pos = std::search(raw_data_.begin(), raw_data_.end(), CRLFVec().begin(), CRLFVec().end()) + CRLFVec().size();
+  } else if (state_ == ReadingHeaders) {
+    end_pos = std::search(raw_data_.begin(), raw_data_.end(), CRLFCRLFVec().begin(), CRLFCRLFVec().end());
 
-  rest_ = std::vector<char>(end_pos + ending_chars.size(), raw_data_.end());
-  raw_data_ = std::vector<char>(raw_data_.begin(), end_pos + ending_chars.size());
-}
+    if (end_pos == raw_data_.end()) {
+      std::vector<char>::reverse_iterator r_end_pos =
+          std::search(raw_data_.rbegin(), raw_data_.rend(), CRLFVec().rbegin(), CRLFVec().rend());
+      end_pos = r_end_pos.base();
+    } else {
+      end_pos += CRLFCRLFVec().size();
+    }
+  } else {
+    throw std::runtime_error("invalid HttpRequestReader state");
+  }
 
-const std::vector<char> &HttpRequestReader::getEndingChars() const {
-  static std::vector<char> CRLFCRLF;
-  if (CRLFCRLF.empty()) {
-    CRLFCRLF.push_back('\r');
-    CRLFCRLF.push_back('\n');
-    CRLFCRLF.push_back('\r');
-    CRLFCRLF.push_back('\n');
-  }
-  switch (state_) {
-    case ReadingStartLine:
-      return CRLFVec();
-    case ReadingHeaders:
-      return CRLFCRLF;
-    default:
-      throw std::runtime_error("invalid HttpRequestReader state");
-  }
+  rest_ = std::vector<char>(end_pos, raw_data_.end());
+  raw_data_ = std::vector<char>(raw_data_.begin(), end_pos);
 }
 
 void HttpRequestReader::moveToNextState() {
