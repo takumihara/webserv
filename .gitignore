@@ -2,3 +2,13 @@ a.out
 .vscode
 server
 client
+recieve.data
+obj
+tester
+gtest
+test.log
+!Client/
+*.cgi
+tmp
+log.txt
+test.db
