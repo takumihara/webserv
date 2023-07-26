@@ -3,7 +3,6 @@ SRC_DIR = src
 
 SRC_DIRS = $(shell find $(SRC_DIR) -type d -print | grep -v "Client\|*")
 SERVER_SRCS_WO_MAIN	= $(filter-out %main.cpp, $(foreach path, $(SRC_DIRS), $(wildcard $(path)/*.cpp)))
-$(info $(SERVER_SRCS_WO_MAIN))
 SERVER_SRCS	= $(SERVER_SRCS_WO_MAIN) $(SRC_DIR)/main.cpp
 
 VPATH = $(shell find $(SRC_DIR) -type d -print | grep -v "Client\|*")
@@ -20,8 +19,6 @@ gtest		=	$(gtestdir)/gtest $(gtestdir)/googletest-release-1.11.0
 
 testdir = ./test
 
-# todo(thara): rm
-CXXFLAGS += -D DEBUG
 ifdef DEBUG
 	CXXFLAGS += -D DEBUG
 endif
@@ -69,7 +66,7 @@ GTESTFLAGS := -Ltest/gtest -lgtest -lgtest_main -lpthread
 
 $(TEST_OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@);
-	clang++ -std=c++11 $(INCLUDE) -I$(gtestdir) -I$(gtestdir) -I$(includes) -MMD -MP -c $< -o $@
+	clang++ -std=c++11 -D DEBUG $(INCLUDE) -I$(gtestdir) -I$(gtestdir) -I$(includes) -MMD -MP -c $< -o $@
 
 $(gtest):
 	curl -OL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz
