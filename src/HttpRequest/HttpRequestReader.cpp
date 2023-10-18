@@ -27,7 +27,7 @@ HttpRequestReader::State HttpRequestReader::read() {
   }
   raw_data_.insert(raw_data_.end(), buff.begin(), buff.end());
 
-  DEBUG_PRINTF("read from socket(fd:%d):'%s'", sock_fd_,
+  DEBUG_PRINTF("read from socket(fd:%d):'%s'\n", sock_fd_,
                escape(std::string(raw_data_.begin(), raw_data_.end())).c_str());
   if (state_ == ReadingStartLine && isActionable()) {
     trimToEndingChars();

@@ -8,7 +8,7 @@ export const options = {
   },
 };
 
-const url = "http://localhost/html";
+const url = "http://localhost/html/keijiban/index.html";
 
 export default function () {
   const headers = {

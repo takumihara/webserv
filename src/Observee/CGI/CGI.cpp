@@ -25,18 +25,18 @@
 #include "helper.hpp"
 
 void CGI::timeout() {
-  DEBUG_PUTS("CGI timeout");
+  DEBUG_PUTS("CGI::timeout");
   response_ = dynamic_cast<ConnectionSocket *>(parent_)->initResponse();
   response_->setStatusAndReason(500);
   em_->enableTimerEvent(parent_->id_);
   em_->registerWriteEvent(parent_->id_);
   parent_->stopMonitorChild(this);
   parent_ = NULL;
-  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
-    (*itr)->parent_ = NULL;
-    (*itr)->shutdown();
-  }
-  children_.clear();
+  // for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+  //   (*itr)->parent_ = NULL;
+  //   (*itr)->shutdown();
+  // }
+  // children_.clear();
   close(id_);
   em_->deleteTimerEvent(id_);
   kill(pid_, SIGTERM);
@@ -46,14 +46,13 @@ void CGI::timeout() {
 
 void CGI::shutdown() {
   DEBUG_PUTS("CGI shutdown");
-  em_->enableTimerEvent(parent_->id_);
   parent_->stopMonitorChild(this);
   parent_ = NULL;
-  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
-    (*itr)->parent_ = NULL;
-    (*itr)->shutdown();
-  }
-  children_.clear();
+  // for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+  //   (*itr)->parent_ = NULL;
+  //   (*itr)->shutdown();
+  // }
+  // children_.clear();
   int status = 0;
   close(id_);
   em_->deleteTimerEvent(id_);
@@ -97,6 +96,7 @@ void CGI::processDocRes(std::string &body) {
   }
   response_->appendBody(body);
   em_->registerWriteEvent(parent_->id_);
+  em_->enableTimerEvent(parent_->id_);
   shutdown();
 }
 
@@ -107,6 +107,7 @@ void CGI::processClientRedirect() {
   }
   response_->setStatusAndReason(302);
   em_->registerWriteEvent(parent_->id_);
+  em_->enableTimerEvent(parent_->id_);
   shutdown();
 }
 
@@ -127,6 +128,7 @@ void CGI::processClientRedirectWithDoc(std::string &body) {
   }
   response_->appendBody(body);
   em_->registerWriteEvent(parent_->id_);
+  em_->enableTimerEvent(parent_->id_);
   shutdown();
 }
 
@@ -244,6 +246,7 @@ void CGI::notify(struct kevent ev) {
     if (res == -1) {
       response_->setStatusAndReason(500);
       em_->registerWriteEvent(parent_->id_);
+      em_->enableTimerEvent(parent_->id_);
       shutdown();
       return;
     } else if (res == 0) {
@@ -254,6 +257,7 @@ void CGI::notify(struct kevent ev) {
         DEBUG_PUTS(e.what());
         response_->setStatusAndReason(e.statusCode());
         em_->registerWriteEvent(parent_->id_);
+        em_->enableTimerEvent(parent_->id_);
         shutdown();
       }
     } else {
@@ -275,6 +279,7 @@ void CGI::notify(struct kevent ev) {
       perror("sendto");
       response_->setStatusAndReason(500);
       em_->registerWriteEvent(parent_->id_);
+      em_->enableTimerEvent(parent_->id_);
       shutdown();
       return;
     }
