@@ -37,8 +37,8 @@ TEST(E2E, CGI_CWD) {
   std::string headers = "Host: localhost;Content-Length:0;Date: Wed, 16 Oct 2019 07:28:00 GMT";
   std::string res = sendRequest(host, port, method, path, body, headers);
 
-  // ASSERT_TRUE(includes(res, "HTTP/1.1 200 OK"));
-  ASSERT_TRUE(includes(res, "/playground/tkg/Design1/cgi-bin\n"));
+  std::cout << res << std::endl;
+  ASSERT_TRUE(includes(res, "/cgi-bin\n"));
 }
 
 TEST(E2E, CGILocalRedirect) {

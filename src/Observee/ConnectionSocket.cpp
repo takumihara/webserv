@@ -29,10 +29,9 @@
 #include "helper.hpp"
 
 void ConnectionSocket::timeout() {
-  DEBUG_PUTS("ConnectionSocket timeout");
-  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
-    (*itr)->parent_ = NULL;
-    (*itr)->shutdown();
+  DEBUG_PUTS("ConnectionSocket::timeout");
+  for (size_t i = 0; i < children_.size(); i++) {
+    children_[i]->shutdown();
   }
   children_.clear();
   close(id_);
@@ -42,11 +41,11 @@ void ConnectionSocket::timeout() {
 
 void ConnectionSocket::shutdown() {
   DEBUG_PUTS("ConnectionSocket shutdown");
-  for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
-    (*itr)->parent_ = NULL;
-    (*itr)->shutdown();
-  }
-  children_.clear();
+  // for (std::vector<Observee *>::iterator itr = children_.begin(); itr != children_.end(); itr++) {
+  //   (*itr)->parent_ = NULL;
+  //   (*itr)->shutdown();
+  // }
+  // children_.clear();
   close(id_);
   em_->deleteTimerEvent(id_);
   em_->remove(std::pair<t_id, t_type>(id_, FD));
@@ -62,7 +61,7 @@ HttpResponse *ConnectionSocket::initResponse() {
 }
 
 GET *ConnectionSocket::makeGET(int fd) {
-  DEBUG_PRINTF("MAKE GET fd: %d\n", fd);
+  DEBUG_PRINTF("ConnectionSocket::makeGET fd: %d\n", fd);
   GET *obs = new GET(fd, em_, this, &response_);
   this->monitorChild(obs);
   return obs;

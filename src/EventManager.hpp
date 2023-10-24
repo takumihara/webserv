@@ -56,7 +56,6 @@ class EventManager {
   void updateKqueue();
   void handleEvent(struct kevent ev);
   void clearEvlist(struct kevent *evlist);
-  void handleTimeout(struct kevent ev);
   struct s_eventInfo {
     bool read;
     bool write;

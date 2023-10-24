@@ -107,12 +107,12 @@ std::string getEventFlags(int state) {
 }
 
 void EventManager::updateKqueue() {
-  DEBUG_PUTS("UPDATE KQUEUE");
-  DEBUG_PUTS("---------Observees---------");
-  for (std::map<t_key, Observee *>::iterator itr = observees_.begin(); itr != observees_.end(); itr++) {
-    DEBUG_PRINTF("fd: %lu type: %hd\n", itr->first.first, itr->first.second);
-  }
-  DEBUG_PUTS("---------------------------");
+  // DEBUG_PUTS("UPDATE KQUEUE");
+  // DEBUG_PUTS("---------Observees---------");
+  // for (std::map<t_key, Observee *>::iterator itr = observees_.begin(); itr != observees_.end(); itr++) {
+  //   DEBUG_PRINTF("fd: %lu type: %hd\n", itr->first.first, itr->first.second);
+  // }
+  // DEBUG_PUTS("---------------------------");
   int size = changed_events_.size();
   struct kevent chlist[size];
   bzero(chlist, sizeof(struct kevent) * size);
@@ -128,7 +128,6 @@ void EventManager::updateKqueue() {
 }
 
 t_type getType(short filter) {
-  (void)filter;
   if (filter == EVFILT_READ || filter == EVFILT_WRITE)
     return FD;
   else if (filter == EVFILT_PROC)
@@ -137,17 +136,15 @@ t_type getType(short filter) {
 }
 
 void EventManager::handleEvent(struct kevent ev) {
-  DEBUG_PUTS("START HANDLE EVENT");
+  DEBUG_PRINTF("-> evlist fd: %lu(%s)\n", ev.ident, getEventFilter(ev.filter).c_str());
+  if (observees_.find(std::pair<t_id, t_type>(ev.ident, FD)) == observees_.end()) return;
   if (ev.filter == EVFILT_TIMER) {
-    DEBUG_PUTS("timeout");
-    handleTimeout(ev);
+    observees_[std::pair<t_id, t_type>(ev.ident, FD)]->timeout();
   } else {
     observees_[std::pair<t_id, t_type>(ev.ident, getType(ev.filter))]->notify(ev);
   }
-  DEBUG_PUTS("END HANDLE EVENT");
+  DEBUG_PUTS("<-");
 }
-
-void EventManager::handleTimeout(struct kevent ev) { observees_[std::pair<t_id, t_type>(ev.ident, FD)]->timeout(); }
 
 void EventManager::clearEvlist(struct kevent *evlist) { bzero(evlist, sizeof(struct kevent) * kMaxEventSize); }
 
@@ -155,8 +152,9 @@ void EventManager::eventLoop() {
   struct kevent evlist[kMaxEventSize];
   extern sig_atomic_t sig_int;
   DEBUG_PUTS("server setup finished!");
+
   while (1) {
-    DEBUG_PUTS("loop start");
+    DEBUG_PUTS("----------------------");
     updateKqueue();
     clearEvlist(evlist);
     int nev = kevent(kq_, NULL, 0, evlist, kMaxEventSize, NULL);
@@ -170,10 +168,7 @@ void EventManager::eventLoop() {
     else if (nev == -1)
       perror("kevent");
     for (int i = 0; i < nev; i++) {
-      DEBUG_PRINTF("evlist fd: %lu(%s:%s), ", evlist[i].ident, getEventFilter(evlist[i].filter).c_str(),
-                   getEventFlags(evlist[i].flags).c_str());
       handleEvent(evlist[i]);
     }
-    DEBUG_PUTS("----------------------");
   }
 }
