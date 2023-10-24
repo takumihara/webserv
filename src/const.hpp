@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #define SOCKET_READ_SIZE 100
 #define FILE_READ_SIZE 100
