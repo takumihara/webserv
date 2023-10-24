@@ -26,15 +26,15 @@ endif
 all: server client cgi
 
 server: $(SERVER_OBJS)
-	clang++ $(SERVER_OBJS) -o server
+	c++ $(SERVER_OBJS) -o server
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@);
-	clang++ $(CXXFLAGS) $(INCLUDE) -MMD -MP -c $< -o $@
+	c++ $(CXXFLAGS) $(INCLUDE) -MMD -MP -c $< -o $@
 
 
 client:
-	clang++ $(CXXFLAGS) $(INCLUDE) src/client/client.cpp src/helper.cpp -o client
+	c++ $(CXXFLAGS) $(INCLUDE) src/client/client.cpp src/helper.cpp -o client
 
 cgi:
 	make -C cgi-bin
@@ -66,7 +66,7 @@ GTESTFLAGS := -Ltest/gtest -lgtest -lgtest_main -lpthread
 
 $(TEST_OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@);
-	clang++ -std=c++11 -D DEBUG $(INCLUDE) -I$(gtestdir) -I$(gtestdir) -I$(includes) -MMD -MP -c $< -o $@
+	$(CC) -std=c++11 -D DEBUG $(INCLUDE) -I$(gtestdir) -I$(gtestdir) -I$(includes) -MMD -MP -c $< -o $@
 
 $(gtest):
 	curl -OL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz
@@ -79,7 +79,7 @@ $(gtest):
 	mv $(gtestdir)/googletest-release-1.11.0/build-tmp/lib/libgtest_main.a $(gtestdir)
 
 tester: $(gtest) $(TEST_OBJS)
-	clang++ $(GTESTFLAGS) -o $@ $(TEST_OBJS) $(GTESTLIB)
+	$(CC) $(GTESTFLAGS) -o $@ $(TEST_OBJS) $(GTESTLIB)
 
 .PHONY: test
 test: server tester cgi
