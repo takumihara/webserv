@@ -58,7 +58,7 @@ bool HttpRequestReader::isReceivingBody() {
   return true;
 }
 void HttpRequestReader::parseStartline() {
-  std::stringstream ss = std::stringstream(std::string(raw_data_.begin(), raw_data_.end()));
+  std::stringstream ss(std::string(raw_data_.begin(), raw_data_.end()));
   std::string method;
   std::string request_target;
   std::string version;
