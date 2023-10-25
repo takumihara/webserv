@@ -88,7 +88,7 @@ void ConnectionSocket::execCGI(const std::string &path) {
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1) {
     throw InternalServerErrorException("socketpair error");
   }
-  if (fcntl(fd[0], F_SETFL, O_NONBLOCK) == -1) {
+  if (fcntl(fd[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
     close(fd[0]);
     close(fd[1]);
     throw InternalServerErrorException("fcntl error");

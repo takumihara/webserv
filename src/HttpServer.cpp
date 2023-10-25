@@ -60,7 +60,7 @@ void HttpServer::openPorts() {
         throw std::runtime_error("socket error");
       }
       setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, NULL, 0);
-      fcntl(sock_fd, F_SETFL, O_NONBLOCK);
+      fcntl(sock_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
       add.sin_family = AF_INET;
       add.sin_port = htons(itr->first);
 
