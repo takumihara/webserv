@@ -107,12 +107,12 @@ std::string getEventFlags(int state) {
 }
 
 void EventManager::updateKqueue() {
-  // DEBUG_PUTS("UPDATE KQUEUE");
-  // DEBUG_PUTS("---------Observees---------");
-  // for (std::map<t_key, Observee *>::iterator itr = observees_.begin(); itr != observees_.end(); itr++) {
-  //   DEBUG_PRINTF("fd: %lu type: %hd\n", itr->first.first, itr->first.second);
-  // }
-  // DEBUG_PUTS("---------------------------");
+  DEBUG_PUTS("UPDATE KQUEUE");
+  DEBUG_PUTS("---------Observees---------");
+  for (std::map<t_key, Observee *>::iterator itr = observees_.begin(); itr != observees_.end(); itr++) {
+    DEBUG_PRINTF("fd: %lu type: %hd\n", itr->first.first, itr->first.second);
+  }
+  DEBUG_PUTS("---------------------------");
   int size = changed_events_.size();
   struct kevent chlist[size];
   bzero(chlist, sizeof(struct kevent) * size);
