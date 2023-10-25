@@ -23,7 +23,7 @@ HttpRequestReader::State HttpRequestReader::read() {
 
   if (size == 0) {
     DEBUG_PRINTF("closed fd = %d\n", sock_fd_);
-    throw std::runtime_error("closed client socket");
+    throw BadRequestException("closed client socket");
   }
   raw_data_.insert(raw_data_.end(), buff.begin(), buff.end());
 
