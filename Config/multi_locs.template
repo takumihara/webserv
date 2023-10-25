@@ -2,8 +2,8 @@ autoindex on;
 server {
   server_name 127.0.0.1;
   index index.html;
-  listen 127.0.0.1:8087;
-  autoindex off;
+  listen 127.0.0.1:80;
+  root pwd;
   location /a {
     error_page 404 pwd/error_pages/Elocation;
   }

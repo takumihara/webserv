@@ -7,6 +7,7 @@ server {
     autoindex on;
     index index.html;
     autoindex on;
+    limit_except POST;
   }
   location /cgi-bin {
     cgi_extension .cgi .py;
