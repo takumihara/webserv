@@ -344,7 +344,7 @@ void Parser::analyseLimitExcept() {
   if (!expectTokenType(tok, Token::SEMICOLON)) {
     throw std::runtime_error("error_page: invalid grammar, need semicolon");
   }
-  if (loc.allowed_methods_["GET"] == true) {
+  if (loc.allowed_methods_.find("GET") != loc.allowed_methods_.end()) {
     loc.allowed_methods_["HEAD"] = true;
   }
   return;
