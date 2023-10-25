@@ -10,6 +10,8 @@ all: $(CGI_PROG)
 $(CGI_PROG): %.cgi: $(SRC_DIR)/%.cpp
 	clang++ $(CXXFLAGS)  $< -o $@
 
+clean:
+
 fclean: clean
 	$(RM) -r $(CGI_PROG)
 
