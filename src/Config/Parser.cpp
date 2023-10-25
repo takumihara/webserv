@@ -83,6 +83,9 @@ void Parser::analyseListen() {
   if (scope_.top() != SERVER) {
     throw std::runtime_error("listen: invalid scope");
   }
+  if (!conf_.server_confs_.back().host_.empty()) {
+    throw std::runtime_error("listen: duplicate listen");
+  }
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
     throw std::runtime_error("listen: invalid type");

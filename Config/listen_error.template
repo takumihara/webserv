@@ -1,0 +1,18 @@
+server {
+  server_name localhost;
+  index index.html;
+  listen 0.0.0.0:80;
+  listen 0.0.0.0:88;
+  root pwd;
+  location / {
+    autoindex on;
+    index index.html;
+    autoindex on;
+  }
+  location /cgi-bin {
+    cgi_extension .cgi .py;
+  }
+  location /html/keijiban {
+    cgi_extension .cgi .py;
+  }
+}
