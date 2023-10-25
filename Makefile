@@ -1,3 +1,5 @@
+NAME=webserv
+CLIENT=client
 CXXFLAGS	= -Wall -Werror -Wextra -std=c++98
 SRC_DIR = src
 
@@ -23,27 +25,29 @@ ifdef DEBUG
 	CXXFLAGS += -D DEBUG
 endif
 
-all: server client cgi
+all: $(NAME) $(CLIENT) cgi
 
-server: $(SERVER_OBJS)
-	clang++ $(SERVER_OBJS) -o server
+$(NAME): $(SERVER_OBJS)
+	c++ $(SERVER_OBJS) -o $(NAME)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@);
-	clang++ $(CXXFLAGS) $(INCLUDE) -MMD -MP -c $< -o $@
+	c++ $(CXXFLAGS) $(INCLUDE) -MMD -MP -c $< -o $@
 
 
 client:
-	clang++ $(CXXFLAGS) $(INCLUDE) src/client/client.cpp src/helper.cpp -o client
+	c++ $(CXXFLAGS) $(INCLUDE) src/client/client.cpp src/helper.cpp -o client
 
 cgi:
 	make -C cgi-bin
 
 clean:
+	make clean -C cgi-bin
 	$(RM) $(SERVER_OBJS) $(TEST_OBJS) $(DEPENDS)
 
 fclean: clean
-	$(RM) -r client $(OBJ_DIR) test/test.log $(TEST_OBJ_DIR)
+	make fclean -C cgi-bin
+	$(RM) -r $(CLIENT) $(NAME) $(OBJ_DIR) test/test.log $(TEST_OBJ_DIR)
 
 re: fclean all
 
@@ -52,7 +56,7 @@ re: fclean all
 debug:
 	make DEBUG=1
 
-.PHONY: clean fclean re server client cgi
+.PHONY: clean fclean re cgi
 
 TEST_SRC_DIRS := $(testdir) $(testdir)/mock
 TEST_SRCS := $(foreach dir, $(TEST_SRC_DIRS), $(wildcard $(dir)/*.cpp)) $(SERVER_SRCS_WO_MAIN)
@@ -66,7 +70,7 @@ GTESTFLAGS := -Ltest/gtest -lgtest -lgtest_main -lpthread
 
 $(TEST_OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@);
-	clang++ -std=c++11 -D DEBUG $(INCLUDE) -I$(gtestdir) -I$(gtestdir) -I$(includes) -MMD -MP -c $< -o $@
+	$(CC) -std=c++11 -D DEBUG $(INCLUDE) -I$(gtestdir) -I$(gtestdir) -I$(includes) -MMD -MP -c $< -o $@
 
 $(gtest):
 	curl -OL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz
@@ -79,12 +83,12 @@ $(gtest):
 	mv $(gtestdir)/googletest-release-1.11.0/build-tmp/lib/libgtest_main.a $(gtestdir)
 
 tester: $(gtest) $(TEST_OBJS)
-	clang++ $(GTESTFLAGS) -o $@ $(TEST_OBJS) $(GTESTLIB)
+	$(CC) $(GTESTFLAGS) -o $@ $(TEST_OBJS) $(GTESTLIB)
 
 .PHONY: test
-test: server tester cgi
+test: $(NAME) tester cgi
 	./configTranslater.sh
-	cp server server_binary
+	cp webserv server_binary
 	./server_binary > test/test.log 2>&1 &
 	@sleep 1
 	-./tester

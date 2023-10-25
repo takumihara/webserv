@@ -88,7 +88,7 @@ void ConnectionSocket::execCGI(const std::string &path) {
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) == -1) {
     throw InternalServerErrorException("socketpair error");
   }
-  if (fcntl(fd[0], F_SETFL, O_NONBLOCK) == -1) {
+  if (fcntl(fd[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1) {
     close(fd[0]);
     close(fd[1]);
     throw InternalServerErrorException("fcntl error");
@@ -230,20 +230,20 @@ void ConnectionSocket::processRedirect() {
   em_->registerWriteEvent(id_);
 }
 
-void ConnectionSocket::processErrorPage(const LocationConf *conf) {
+void ConnectionSocket::processErrorPage(const CommonConf *common_conf) {
   DEBUG_PUTS("process ErrorPage");
   std::stringstream ss;
   ss << response_.getStatus();
-  if (!conf) {
+  if (!common_conf) {
     // Bad Request error page
     response_.appendBody(HTML::getDefaultErrorPage(ss.str(), conf_.cache_.statusMsg_[response_.getStatus()]));
     response_.appendHeader("content-type", "text/html");
   } else {
     // Other error page
-    std::map<std::string, std::string>::const_iterator itr = conf->common_.error_pages_.find(ss.str());
-    if (itr != conf->common_.error_pages_.end()) {
+    std::map<std::string, std::string>::const_iterator itr = common_conf->error_pages_.find(ss.str());
+    if (itr != common_conf->error_pages_.end()) {
       std::string filename = itr->second;
-      if (filename[0] != '/') filename = conf->common_.root_ + "/" + filename;
+      if (filename[0] != '/') filename = common_conf->root_ + "/" + filename;
       if (conf_.cache_.error_page_paths_.find(filename) != conf_.cache_.error_page_paths_.end()) {
         response_.appendBody(conf_.cache_.error_page_paths_[filename]);
         response_.setContentType(conf_.cache_.error_page_paths_[filename], true);
@@ -291,7 +291,10 @@ void ConnectionSocket::notify(struct kevent ev) {
       DEBUG_PUTS(e.what());
       response_ = HttpResponse(id_, port_, &conf_);
       response_.setStatusAndReason(e.statusCode());
-      processErrorPage(loc_conf_);
+      // todo: when exception is raised in request reading, loc_conf_ is not sent
+      ServerConf *serv_conf = conf_.getServerConf(port_, request_.headers_.host.uri_host);
+      const CommonConf *common_conf = (loc_conf_ ? &loc_conf_->common_ : &serv_conf->common_);
+      processErrorPage(common_conf);
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);
     } catch (std::runtime_error &e) {

@@ -57,6 +57,11 @@ class MethodNotAllowedException : public HttpException {
   MethodNotAllowedException(const std::string &message) : HttpException(405, message) {}
 };
 
+class ContentTooLargeException : public HttpException {
+ public:
+  ContentTooLargeException(const std::string &message) : HttpException(413, message) {}
+};
+
 // 5xx error status code
 class InternalServerErrorException : public HttpException {
  public:

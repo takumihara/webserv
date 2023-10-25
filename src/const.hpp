@@ -2,12 +2,13 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
-#define SOCKET_READ_SIZE 100
-#define FILE_READ_SIZE 100
-#define FILE_WRITE_SIZE 100
+#define SOCKET_READ_SIZE 1024
+#define FILE_READ_SIZE 1024
+#define FILE_WRITE_SIZE 1024
 
-#define SOCKET_WRITE_SIZE 100
+#define SOCKET_WRITE_SIZE 1024
 
 #define DEFAULT_HTTP_PORT 80
 #define DEFAULT_HTTPS_PORT 443

@@ -87,7 +87,7 @@ void HttpResponse::sendResponse() {
     size = SOCKET_WRITE_SIZE;
   }
   int res = sendto(sock_fd_, &response[sending_response_size_], size, 0, NULL, 0);
-  if (res == -1) {
+  if ((size != 0 && res == 0) || res == -1) {
     perror("sendto");
     throw std::runtime_error("send error");
   }

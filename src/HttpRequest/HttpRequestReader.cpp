@@ -23,7 +23,7 @@ HttpRequestReader::State HttpRequestReader::read() {
 
   if (size == 0) {
     DEBUG_PRINTF("closed fd = %d\n", sock_fd_);
-    throw std::runtime_error("closed client socket");
+    throw BadRequestException("closed client socket");
   }
   raw_data_.insert(raw_data_.end(), buff.begin(), buff.end());
 
@@ -58,7 +58,7 @@ bool HttpRequestReader::isReceivingBody() {
   return true;
 }
 void HttpRequestReader::parseStartline() {
-  std::stringstream ss = std::stringstream(std::string(raw_data_.begin(), raw_data_.end()));
+  std::stringstream ss(std::string(raw_data_.begin(), raw_data_.end()));
   std::string method;
   std::string request_target;
   std::string version;
@@ -233,7 +233,7 @@ void HttpRequestReader::analyzeContentLength(const std::string &value) {
   // todo(thara): handle overflow
   const int val = std::atoi(value.c_str());
   if (val < 0 || conf_->getMaxBodySize() < val) {
-    throw BadRequestException("Http Request: invalid content-length");
+    throw ContentTooLargeException("Http Request: invalid content-length");
   }
   request_.headers_.content_length = val;
 }

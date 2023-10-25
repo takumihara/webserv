@@ -83,6 +83,9 @@ void Parser::analyseListen() {
   if (scope_.top() != SERVER) {
     throw std::runtime_error("listen: invalid scope");
   }
+  if (!conf_.server_confs_.back().host_.empty()) {
+    throw std::runtime_error("listen: duplicate listen");
+  }
   Token tok = readToken();
   if (!expectTokenType(tok, Token::STRING)) {
     throw std::runtime_error("listen: invalid type");
@@ -341,7 +344,7 @@ void Parser::analyseLimitExcept() {
   if (!expectTokenType(tok, Token::SEMICOLON)) {
     throw std::runtime_error("error_page: invalid grammar, need semicolon");
   }
-  if (loc.allowed_methods_["GET"] == true) {
+  if (loc.allowed_methods_.find("GET") != loc.allowed_methods_.end()) {
     loc.allowed_methods_["HEAD"] = true;
   }
   return;

@@ -36,7 +36,7 @@ void ServerSocket::notify(struct kevent ev) {
     perror("accept");
     return;
   }
-  int res = fcntl(connection_fd, F_SETFL, O_NONBLOCK);
+  int res = fcntl(connection_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
   if (res == -1) {
     close(connection_fd);
     perror("fctl");
