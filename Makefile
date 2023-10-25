@@ -86,9 +86,9 @@ tester: $(gtest) $(TEST_OBJS)
 	$(CC) $(GTESTFLAGS) -o $@ $(TEST_OBJS) $(GTESTLIB)
 
 .PHONY: test
-test: server tester cgi
+test: $(NAME) tester cgi
 	./configTranslater.sh
-	cp server server_binary
+	cp webserv server_binary
 	./server_binary > test/test.log 2>&1 &
 	@sleep 1
 	-./tester
