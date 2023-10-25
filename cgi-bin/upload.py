@@ -5,6 +5,8 @@ import os
 
 # print(os.environ["CONTENT_TYPE"], file=logfile)
 
+WHERE_TO_UPLOAD = "./"
+
 form = cgi.FieldStorage()
 
 try:
@@ -19,7 +21,7 @@ try:
         # print(type(fileitem.file.read().decode('utf-8')), file=logfile)
 
         # todo(thara): fix path once working directory for cgi is fixed
-        tmpfile = open("./tmp/" + fn, "wb")
+        tmpfile = open(WHERE_TO_UPLOAD + fn, "wb")
         tmpfile.write(fileitem.file.read())
         tmpfile.close()
 
