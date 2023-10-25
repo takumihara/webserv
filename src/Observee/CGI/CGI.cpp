@@ -275,8 +275,8 @@ void CGI::notify(struct kevent ev) {
       size = SOCKET_WRITE_SIZE;
     }
     int res = write(id_, response + sending_size_, size);
-    if (res == -1) {
-      perror("sendto");
+    if ((size != 0 && res == 0) || res == -1) {
+      perror("write");
       response_->setStatusAndReason(500);
       em_->registerWriteEvent(parent_->id_);
       em_->enableTimerEvent(parent_->id_);
