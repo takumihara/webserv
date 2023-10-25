@@ -65,7 +65,7 @@ void HttpResponse::createResponse() {
   // status-line
   ss << "HTTP/1.1 " << status_ << " " << reason_phrase_ << CRLF;
   // header-fields
-  for (t_headers::const_iterator itr = headers_.cbegin(); itr != headers_.cend(); itr++) {
+  for (t_headers::iterator itr = headers_.begin(); itr != headers_.end(); itr++) {
     ss << itr->first << ": " << itr->second << CRLF;
   }
   ss << CRLF;

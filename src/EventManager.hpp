@@ -33,7 +33,6 @@ class EventManager {
   typedef short t_filter;
   typedef std::pair<t_ident, t_filter> t_key;
   typedef std::map<t_key, struct kevent>::iterator changed_events_iterator;
-  typedef std::map<t_key, struct kevent>::const_iterator changed_events_const_iterator;
 
   EventManager();
   void eventLoop();

@@ -87,18 +87,18 @@ class HttpRequestReader {
   void assignAndValidateVersion(const std::string &version);
 
   bool parseHeaders();
-  void validateHeaderName(const std::string &name);
-  void validateHeaderValue(const std::string &value);
+  void validateHeaderName(std::string &name);
+  void validateHeaderValue(std::string &value);
   void validateHeaders();
 
-  void initAnalyzeFuncs(std::map<std::string, void (HttpRequestReader::*)(const std::string &)> &analyze_funcs);
-  void analyzeHost(const std::string &value);
-  void analyzeContentLength(const std::string &value);
-  void analyzeTransferEncoding(const std::string &value);
-  void analyzeDate(const std::string &value);
-  void analyzeServer(const std::string &value);
-  void analyzeContentType(const std::string &value);
-  void analyzeCookie(const std::string &value);
+  void initAnalyzeFuncs(std::map<std::string, void (HttpRequestReader::*)(std::string &)> &analyze_funcs);
+  void analyzeHost(std::string &value);
+  void analyzeContentLength(std::string &value);
+  void analyzeTransferEncoding(std::string &value);
+  void analyzeDate(std::string &value);
+  void analyzeServer(std::string &value);
+  void analyzeContentType(std::string &value);
+  void analyzeCookie(std::string &value);
 
   void readBody();
   void readChunkedBody();

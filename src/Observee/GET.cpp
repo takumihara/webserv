@@ -82,13 +82,14 @@ std::string GET::listFilesAndDirectories(std::string &directory_path, const Http
     }
     std::stringstream ss;
     ss << "http://" << req.headers_.host.uri_host << ":" << req.headers_.host.port << target_path;
+    std::string str(ss.str());
     std::string name = entry->d_name;
     if (S_ISREG(file_stat.st_mode)) {
-      ret += HTML::aTag(HTML::sanitize(ss.str()), HTML::sanitize(name));
+      ret += HTML::aTag(HTML::sanitize(str), HTML::sanitize(name));
     } else if (S_ISDIR(file_stat.st_mode)) {
       if (name != "." && name != "..") {
         name += "/";
-        ret += HTML::aTag(HTML::sanitize(ss.str()), HTML::sanitize(name));
+        ret += HTML::aTag(HTML::sanitize(str), HTML::sanitize(name));
       }
     }
   }

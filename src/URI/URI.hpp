@@ -23,13 +23,13 @@ class URI {
   std::string getUsername() const;
   std::string getPassword() const;
   const std::string& getOpaque() const;
-  std::string recompose() const;
+  std::string recompose();
   bool isForceQuery() const;
   bool isOmitHost() const;
 
-  std::string escapedPath() const;
+  std::string escapedPath();
 
-  URI* resolveReference(const URI& ref) const;
+  URI* resolveReference(URI& ref);
 
  private:
   URI() : user_info_(NULL), omit_host_(false), force_query_(false){};
@@ -64,8 +64,8 @@ class URI {
   // (from RFC 3986)
   bool force_query_;
 
-  void setFragment(const std::string& fragment);
-  void setPath(const std::string& path);
+  void setFragment(std::string& fragment);
+  void setPath(std::string& path);
   void parseAndSetQuery(std::string raw_query);
   void parseAndSetAuthority(std::string authority);
 };

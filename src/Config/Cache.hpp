@@ -14,15 +14,15 @@ class Cache {
   typedef std::map<std::string, std::string> t_map;
 
   Cache() { initStatusMsg(); }
-  void initCache(const Config *conf);
+  void initCache(Config *conf);
 
   t_map error_page_paths_;
   std::map<int, std::string> statusMsg_;
   std::map<std::string, std::string> ext_contentType_map_;
 
  private:
-  void cacheErrorPages(const CommonConf *conf);
-  void initStatusErrorPageMap(const Config *conf);
+  void cacheErrorPages(CommonConf *conf);
+  void initStatusErrorPageMap(Config *conf);
   void initStatusMsg();
   void initContentType();
 };

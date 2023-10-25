@@ -230,7 +230,7 @@ void ConnectionSocket::processRedirect() {
   em_->registerWriteEvent(id_);
 }
 
-void ConnectionSocket::processErrorPage(const CommonConf *common_conf) {
+void ConnectionSocket::processErrorPage(CommonConf *common_conf) {
   DEBUG_PUTS("process ErrorPage");
   std::stringstream ss;
   ss << response_.getStatus();
@@ -240,7 +240,7 @@ void ConnectionSocket::processErrorPage(const CommonConf *common_conf) {
     response_.appendHeader("content-type", "text/html");
   } else {
     // Other error page
-    std::map<std::string, std::string>::const_iterator itr = common_conf->error_pages_.find(ss.str());
+    std::map<std::string, std::string>::iterator itr = common_conf->error_pages_.find(ss.str());
     if (itr != common_conf->error_pages_.end()) {
       std::string filename = itr->second;
       if (filename[0] != '/') filename = common_conf->root_ + "/" + filename;
@@ -293,7 +293,7 @@ void ConnectionSocket::notify(struct kevent ev) {
       response_.setStatusAndReason(e.statusCode());
       // todo: when exception is raised in request reading, loc_conf_ is not sent
       ServerConf *serv_conf = conf_.getServerConf(port_, request_.headers_.host.uri_host);
-      const CommonConf *common_conf = (loc_conf_ ? &loc_conf_->common_ : &serv_conf->common_);
+      CommonConf *common_conf = (loc_conf_ ? &loc_conf_->common_ : &serv_conf->common_);
       processErrorPage(common_conf);
       em_->disableReadEvent(id_);
       em_->registerWriteEvent(id_);

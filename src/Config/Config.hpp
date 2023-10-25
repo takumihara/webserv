@@ -30,7 +30,7 @@ class CommonConf {
     flag &= error_pages_ == rhs.error_pages_;
     return flag;
   }
-  std::string getIndexFile(std::string path) const;
+  std::string getIndexFile(std::string path);
   std::size_t max_body_size_;
   std::string root_;
   std::vector<std::string> index_;
@@ -51,8 +51,8 @@ class LocationConf {
     flag &= common_ == rhs.common_;
     return flag;
   }
-  void printLocationConf() const;
-  void printAllowedMethod() const;
+  void printLocationConf();
+  void printAllowedMethod();
   std::map<std::string, bool> &getAllowedMethods();
   std::vector<std::string> &getCGIExtensions();
   const std::string &getRedirectStatus() const;
@@ -74,7 +74,7 @@ class ServerConf {
   std::vector<std::string> &getServerNames();
   std::string &getHostNames();
   int &getPorts();
-  LocationConf *getLocationConf(const HttpRequest *req) const;
+  LocationConf *getLocationConf(const HttpRequest *req);
   std::string host_;
   int port_;
   std::vector<std::string> server_names_;

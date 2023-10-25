@@ -11,12 +11,12 @@
 using Encoding::Fragment;
 using Encoding::Path;
 
-bool validUserinfo(const std::string& user_info);
-std::string parseHost(const std::string& host);
-bool validRegNameHost(const std::string& host);
-bool validOptionalPort(const std::string& port);
+bool validUserinfo(std::string& user_info);
+std::string parseHost(std::string& host);
+bool validRegNameHost(std::string& host);
+bool validOptionalPort(std::string& port);
 std::string parseScheme(std::string& raw_url);
-bool stringContainsCTLByte(const std::string& str);
+bool stringContainsCTLByte(std::string& str);
 
 URI* URI::parse(const std::string& raw_uri) {
   const size_t fragment_pos = raw_uri.find("#");
@@ -180,8 +180,8 @@ void URI::parseAndSetAuthority(std::string authority) {
 // sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
 //                / "*" / "+" / "," / ";" / "="
 // It doesn't validate pct-encoded. The caller does that via func unescape.
-bool validUserinfo(const std::string& user_info) {
-  for (std::string::const_iterator it = user_info.begin(); it != user_info.end(); ++it) {
+bool validUserinfo(std::string& user_info) {
+  for (std::string::iterator it = user_info.begin(); it != user_info.end(); ++it) {
     if (isUnreserved(*it) || isSubDelims(*it) || *it == ':') {
       continue;
     } else {
@@ -191,7 +191,7 @@ bool validUserinfo(const std::string& user_info) {
   return std::count(user_info.begin(), user_info.end(), ':') <= 1;
 }
 
-std::string parseHost(const std::string& host) {
+std::string parseHost(std::string& host) {
   if (*host.begin() == '[') {
     // IP-literal
     size_t end = host.find("]");
@@ -207,8 +207,8 @@ std::string parseHost(const std::string& host) {
 }
 
 // validRegNameHost does not check pct-encoded. The caller does that via func unescape.
-bool validRegNameHost(const std::string& host) {
-  for (std::string::const_iterator it = host.begin(); it != host.end(); ++it) {
+bool validRegNameHost(std::string& host) {
+  for (std::string::iterator it = host.begin(); it != host.end(); ++it) {
     if (isUnreserved(*it) || isSubDelims(*it)) {
       continue;
     } else {
@@ -218,14 +218,14 @@ bool validRegNameHost(const std::string& host) {
   return true;
 }
 
-bool validOptionalPort(const std::string& port) {
+bool validOptionalPort(std::string& port) {
   if (port == "") return true;
   return isAllDigit(port);
 }
 
 // parseScheme puts the rest of the raw_url into the raw_url parameter and returns the scheme
 std::string parseScheme(std::string& raw_url) {
-  for (std::string::const_iterator it = raw_url.begin(); it != raw_url.end(); ++it) {
+  for (std::string::iterator it = raw_url.begin(); it != raw_url.end(); ++it) {
     if (std::isalpha(*it)) {
       continue;
     } else if (std::isdigit(*it) || *it == '+' || *it == '-' || *it == '.') {
@@ -248,7 +248,7 @@ std::string parseScheme(std::string& raw_url) {
   return "";
 }
 
-void URI::setFragment(const std::string& fragment) {
+void URI::setFragment(std::string& fragment) {
   fragment_ = Encoding::unescape(fragment, Encoding::Fragment);
   std::string escaped = Encoding::escape(fragment, Encoding::Fragment);
   if (escaped == fragment) {
@@ -258,7 +258,7 @@ void URI::setFragment(const std::string& fragment) {
   }
 }
 
-void URI::setPath(const std::string& path) {
+void URI::setPath(std::string& path) {
   path_ = unescape(path, Encoding::Path);
   if (path == escape(path, Encoding::Path)) {
     raw_path_ = "";
@@ -267,8 +267,8 @@ void URI::setPath(const std::string& path) {
   }
 }
 
-bool stringContainsCTLByte(const std::string& str) {
-  for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
+bool stringContainsCTLByte(std::string& str) {
+  for (std::string::iterator it = str.begin(); it != str.end(); ++it) {
     if (*it < 32 || *it == 127) {
       return true;
     }
@@ -348,15 +348,16 @@ std::string removeDotSegments(const std::string& path) {
 }
 
 // caller has to be absolute-URI
-URI* URI::resolveReference(const URI& ref) const {
+URI* URI::resolveReference(URI& ref) {
   URI* uri = new URI(ref);
 
   if (ref.scheme_ == "") {
     uri->scheme_ = scheme_;
   }
   if (ref.scheme_ != "" || ref.host_ != "" || ref.user_info_ != NULL) {
-    // if it has authority
-    uri->setPath(removeDotSegments(ref.escapedPath()));
+    // if it has authority;
+    std::string str = removeDotSegments(ref.escapedPath());
+    uri->setPath(str);
     return uri;
   }
   uri->host_ = host_;
@@ -372,7 +373,7 @@ URI* URI::resolveReference(const URI& ref) const {
   return uri;
 }
 
-std::string URI::recompose() const {
+std::string URI::recompose() {
   std::string res;
   if (scheme_ != "") {
     res += scheme_ + ":";
@@ -438,4 +439,4 @@ bool URI::isForceQuery() const { return force_query_; }
 const std::string& URI::getOpaque() const { return opaque_; }
 bool URI::isOmitHost() const { return omit_host_; }
 
-std::string URI::escapedPath() const { return escape(path_, Encoding::Path); }
+std::string URI::escapedPath() { return escape(path_, Encoding::Path); }

@@ -48,11 +48,11 @@ bool shouldEscape(char c, Encoding::Type mode) {
   return true;
 }
 
-std::string Encoding::escape(const std::string& str, Type mode) {
+std::string Encoding::escape(std::string& str, Type mode) {
   int space_count = 0;
   int hex_count = 0;
 
-  for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
+  for (std::string::iterator it = str.begin(); it != str.end(); ++it) {
     if (shouldEscape(*it, mode)) {
       if (*it == ' ' && mode == Encoding::QueryComponent) {
         space_count++;
@@ -70,7 +70,7 @@ std::string Encoding::escape(const std::string& str, Type mode) {
   size_t required = str.size() + 2 * hex_count;
   escaped.reserve(required);
 
-  for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
+  for (std::string::iterator it = str.begin(); it != str.end(); ++it) {
     if (shouldEscape(*it, mode)) {
       if (*it == ' ' && mode == Encoding::QueryComponent) {
         escaped += '+';
@@ -87,11 +87,11 @@ std::string Encoding::escape(const std::string& str, Type mode) {
   return escaped;
 }
 
-std::string Encoding::unescape(const std::string& str, Encoding::Type mode) {
+std::string Encoding::unescape(std::string& str, Encoding::Type mode) {
   size_t pct_count = 0;
   bool has_plus = false;
 
-  for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
+  for (std::string::iterator it = str.begin(); it != str.end(); ++it) {
     if (*it == '%') {
       pct_count++;
       if (std::distance(it, str.end()) < 2 || !ishex(*(it + 1)) || !ishex(*(it + 2))) {
@@ -116,7 +116,7 @@ std::string Encoding::unescape(const std::string& str, Encoding::Type mode) {
 
   std::string unescaped;
   unescaped.reserve(str.size() - 2 * pct_count);
-  for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
+  for (std::string::iterator it = str.begin(); it != str.end(); ++it) {
     if (*it == '%') {
       unescaped += (unhex(*(it + 1)) << 4) + unhex(*(it + 2));
       std::advance(it, 2);

@@ -18,17 +18,17 @@ static std::string readFile(const char *filename) {
   return std::string((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 }
 
-void Cache::initCache(const Config *conf) {
+void Cache::initCache(Config *conf) {
   initStatusMsg();
   initStatusErrorPageMap(conf);
   initContentType();
 }
 
-void Cache::cacheErrorPages(const CommonConf *conf) {
-  const std::map<std::string, std::string> &error_pages = conf->error_pages_;
+void Cache::cacheErrorPages(CommonConf *conf) {
+  std::map<std::string, std::string> &error_pages = conf->error_pages_;
   const std::string &root = conf->root_;
   std::string file;
-  for (t_map::const_iterator itr = error_pages.cbegin(); itr != error_pages.cend(); itr++) {
+  for (t_map::iterator itr = error_pages.begin(); itr != error_pages.end(); itr++) {
     file = itr->second;
     // translate into abs-path when error page path is relative-path
     if (itr->second[0] != '/') file = root + "/" + file;
@@ -39,14 +39,14 @@ void Cache::cacheErrorPages(const CommonConf *conf) {
   }
 }
 
-void Cache::initStatusErrorPageMap(const Config *conf) {
+void Cache::initStatusErrorPageMap(Config *conf) {
   CommonConf common = conf->common_;
   cacheErrorPages(&common);
-  for (std::vector<ServerConf>::const_iterator serv = conf->server_confs_.cbegin(); serv != conf->server_confs_.cend();
+  for (std::vector<ServerConf>::iterator serv = conf->server_confs_.begin(); serv != conf->server_confs_.end();
        serv++) {
     cacheErrorPages(&serv->common_);
-    for (std::vector<LocationConf>::const_iterator loc = serv->location_confs_.cbegin();
-         loc != serv->location_confs_.cend(); loc++) {
+    for (std::vector<LocationConf>::iterator loc = serv->location_confs_.begin(); loc != serv->location_confs_.end();
+         loc++) {
       cacheErrorPages(&loc->common_);
     }
   }
