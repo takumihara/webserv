@@ -34,7 +34,7 @@ void Cache::cacheErrorPages(const CommonConf *conf) {
     if (itr->second[0] != '/') file = root + "/" + file;
     if (error_page_paths_.find(file) == error_page_paths_.end()) {
       DEBUG_PUTS(file.c_str());
-      error_page_paths_[file] = readFile(("." + file).c_str());
+      error_page_paths_[file] = readFile(file.c_str());
     }
   }
 }
