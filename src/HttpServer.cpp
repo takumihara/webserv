@@ -23,7 +23,7 @@ std::vector<std::string> getIPList(const std::vector<ServerConf *> servs) {
     // not push back when current ip is already pushed back
     if (!contain(ip_list, ((*serv)->host_))) {
       ip_list.push_back((*serv)->host_);
-      printf("ip: %s\n", (*serv)->host_.c_str());
+      DEBUG_PRINTF("ip: %s\n", (*serv)->host_.c_str());
     }
   }
   return ip_list;
@@ -59,13 +59,13 @@ void HttpServer::openPorts() {
       if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         throw std::runtime_error("socket error");
       }
-      setsockopt(sock_fd, SOL_SOCKET, SO_REUSEPORT, NULL, 0);
+      setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, NULL, 0);
       fcntl(sock_fd, F_SETFL, O_NONBLOCK);
       add.sin_family = AF_INET;
-      add.sin_addr.s_addr = htonl(ipv4ToByte(*ip));
       add.sin_port = htons(itr->first);
 
       if (bind(sock_fd, (struct sockaddr *)&add, sizeof(add)) == -1) {
+        perror("bind");
         throw std::runtime_error("bind error");
       }
       if (listen(sock_fd, kMaxBackLog) < 0) {
