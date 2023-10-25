@@ -30,19 +30,19 @@ std::vector<std::string> split(std::string &str, const std::string &sep) {
   return ret;
 }
 
-bool isStatusCode(const std::string &status) { return status.size() == 3 && isAllDigit(status); }
+bool isStatusCode(std::string &status) { return status.size() == 3 && isAllDigit(status); }
 
-bool isAllDigit(const std::string &str) {
+bool isAllDigit(std::string &str) {
   if (str == "") {
     return false;
   }
-  for (std::string::const_iterator itr = str.cbegin(); itr != str.cend(); itr++) {
+  for (std::string::iterator itr = str.begin(); itr != str.end(); itr++) {
     if (*itr < '0' || '9' < *itr) return false;
   }
   return true;
 }
 
-bool is3xxStatus(const std::string &status) {
+bool is3xxStatus(std::string &status) {
   if (isAllDigit(status) && status[0] == '3') return true;
   return false;
 }
@@ -71,7 +71,7 @@ bool validateHost(std::string &host) {
   if (host == "") return true;
   std::vector<std::string> split_host = split(host, ".");
   if (split_host.size() != 4) return false;
-  for (std::vector<std::string>::const_iterator itr = split_host.cbegin(); itr != split_host.cend(); itr++) {
+  for (std::vector<std::string>::iterator itr = split_host.begin(); itr != split_host.end(); itr++) {
     if (!isAllDigit(*itr)) return false;
     int num = atoi((*itr).c_str());
     if (num < 0 || 255 < num) return false;
@@ -90,21 +90,21 @@ bool validatePort(std::string &port) {
 
 // todo(thara): this can be more effective
 // token = 1*tchar (https://triple-underscore.github.io/RFC7230-ja.html#field.components)
-bool isToken(const std::string &str) {
+bool isToken(std::string &str) {
   if (str == "") {
     return false;
   }
-  for (std::string::const_iterator itr = str.cbegin(); itr != str.cend(); itr++) {
+  for (std::string::iterator itr = str.begin(); itr != str.end(); itr++) {
     if (tchar().find(*itr) == std::string::npos) return false;
   }
   return true;
 }
 
-bool isVchar(const std::string &str) {
+bool isVchar(std::string &str) {
   if (str == "") {
     return false;
   }
-  for (std::string::const_iterator itr = str.cbegin(); itr != str.cend(); itr++) {
+  for (std::string::iterator itr = str.begin(); itr != str.end(); itr++) {
     if (*itr > 126 || *itr < 21) {
       return false;
     }
@@ -112,12 +112,13 @@ bool isVchar(const std::string &str) {
   return true;
 }
 
-bool isFieldContent(const std::string &str) {
+bool isFieldContent(std::string &str) {
   if (str == "") {
     return false;
   }
-  for (std::string::const_iterator itr = str.cbegin(); itr != str.cend(); itr++) {
-    if (!isVchar(std::string(1, *itr)) && *itr != ' ' && *itr != '\t') return false;
+  for (std::string::iterator itr = str.begin(); itr != str.end(); itr++) {
+    std::string s(1, *itr);
+    if (!isVchar(s) && *itr != ' ' && *itr != '\t') return false;
   }
   return true;
 }

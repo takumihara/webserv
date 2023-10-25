@@ -117,7 +117,7 @@ void EventManager::updateKqueue() {
   struct kevent chlist[size];
   bzero(chlist, sizeof(struct kevent) * size);
   int i = 0;
-  for (changed_events_const_iterator itr = changed_events_.begin(); itr != changed_events_.end(); itr++, i++) {
+  for (changed_events_iterator itr = changed_events_.begin(); itr != changed_events_.end(); itr++, i++) {
     const struct kevent &ev = itr->second;
     DEBUG_PRINTF("fd: %lu(%s:%s), ", ev.ident, getEventFilter(ev.filter).c_str(), getEventFlags(ev.flags).c_str());
     EV_SET(&chlist[i], ev.ident, ev.filter, ev.flags, ev.fflags, ev.data, ev.udata);

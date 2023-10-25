@@ -11,16 +11,16 @@
 
 bool validateHost(std::string &host);
 bool validatePort(std::string &port);
-bool isAllDigit(const std::string &str);
-bool isStatusCode(const std::string &status);
+bool isAllDigit(std::string &str);
+bool isStatusCode(std::string &status);
 bool isPath(const std::string &path);
-bool isToken(const std::string &str);
-bool isVchar(const std::string &str);
-bool isFieldContent(const std::string &str);
+bool isToken(std::string &str);
+bool isVchar(std::string &str);
+bool isFieldContent(std::string &str);
 bool isMethod(const std::string &method);
 bool isCGIExtension(const std::string &ext);
 bool isURL(const std::string &URL);
-bool is3xxStatus(const std::string &status);
+bool is3xxStatus(std::string &status);
 bool isServernameDuplicate(Config &conf);
 bool isAcceptableMethod(const LocationConf *conf, const HttpRequest::Method &method);
 std::string methodToString(const HttpRequest::Method &method);

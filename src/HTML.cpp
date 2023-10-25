@@ -29,10 +29,10 @@ std::string HTML::getDefaultErrorPage(const std::string &status, const std::stri
   return ss.str();
 }
 
-std::string HTML::sanitize(const std::string &origin) {
+std::string HTML::sanitize(std::string &origin) {
   std::string sanitized;
   sanitized.reserve(origin.size());
-  for (std::string::const_iterator c = origin.cbegin(); c != origin.cend(); c++) {
+  for (std::string::iterator c = origin.begin(); c != origin.end(); c++) {
     switch (*c) {
       case '&':
         sanitized += "&amp;";

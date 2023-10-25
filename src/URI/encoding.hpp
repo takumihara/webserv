@@ -10,7 +10,7 @@ enum Type {
   QueryComponent,
   Fragment
 };
-std::string escape(const std::string& str, Type mode);
-std::string unescape(const std::string& str, Type mode);
+std::string escape(std::string& str, Type mode);
+std::string unescape(std::string& str, Type mode);
 
 }  // namespace Encoding

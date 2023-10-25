@@ -113,7 +113,7 @@ void HttpRequestReader::assignAndValidateVersion(const std::string &version) {
 }
 
 void HttpRequestReader::initAnalyzeFuncs(
-    std::map<std::string, void (HttpRequestReader::*)(const std::string &)> &analyze_funcs) {
+    std::map<std::string, void (HttpRequestReader::*)(std::string &)> &analyze_funcs) {
   analyze_funcs["host"] = &HttpRequestReader::analyzeHost;
   analyze_funcs["content-length"] = &HttpRequestReader::analyzeContentLength;
   analyze_funcs["transfer-encoding"] = &HttpRequestReader::analyzeTransferEncoding;
@@ -129,7 +129,7 @@ bool HttpRequestReader::parseHeaders() {
   std::vector<char>::iterator start = raw_data_.begin();
   std::vector<char>::iterator end = std::search(raw_data_.begin(), raw_data_.end(), CRLFVec().begin(), CRLFVec().end());
 
-  std::map<std::string, void (HttpRequestReader::*)(const std::string &)> analyze_funcs;
+  std::map<std::string, void (HttpRequestReader::*)(std::string &)> analyze_funcs;
   initAnalyzeFuncs(analyze_funcs);
 
   while (end != raw_data_.end()) {
@@ -188,7 +188,7 @@ void HttpRequestReader::insertIfNotDuplicate(HeaderField field, const char *erro
   received_fields_.insert(field);
 }
 
-void HttpRequestReader::analyzeHost(const std::string &value) {
+void HttpRequestReader::analyzeHost(std::string &value) {
   std::string hostHeader = trimUntilCRLF(value);
 
   insertIfNotDuplicate(HostField, "Http Request: duplicated host header");
@@ -222,7 +222,7 @@ void HttpRequestReader::analyzeHost(const std::string &value) {
   }
 }
 
-void HttpRequestReader::analyzeContentLength(const std::string &value) {
+void HttpRequestReader::analyzeContentLength(std::string &value) {
   // https://www.rfc-editor.org/rfc/rfc7230#section-3.3.3
   insertIfNotDuplicate(ContentLengthField, "Http Request: duplicated content length");
 
@@ -238,7 +238,7 @@ void HttpRequestReader::analyzeContentLength(const std::string &value) {
   request_.headers_.content_length = val;
 }
 
-void HttpRequestReader::analyzeTransferEncoding(const std::string &value) {
+void HttpRequestReader::analyzeTransferEncoding(std::string &value) {
   std::stringstream ss(value);
   std::string encoding;
   while (std::getline(ss, encoding, ',')) {
@@ -254,7 +254,7 @@ void HttpRequestReader::analyzeTransferEncoding(const std::string &value) {
   }
 }
 
-void HttpRequestReader::analyzeDate(const std::string &value) {
+void HttpRequestReader::analyzeDate(std::string &value) {
   std::string dateStr = trimUntilCRLF(value);
   insertIfNotDuplicate(DateField, "Http Request: duplicated date");
 
@@ -274,19 +274,19 @@ void HttpRequestReader::analyzeDate(const std::string &value) {
   }
 }
 
-void HttpRequestReader::analyzeContentType(const std::string &value) {
+void HttpRequestReader::analyzeContentType(std::string &value) {
   insertIfNotDuplicate(ContentTypeField, "Http Request: duplicated content type");
 
   request_.headers_.content_type = value;
 }
 
-void validateCookieName(const std::string &name) {
+void validateCookieName(std::string &name) {
   if (isToken(name)) return;
   throw BadRequestException("Http Request: invalid cookie name");
 }
 
-void validateCookieValue(const std::string &value) {
-  for (std::string::const_iterator itr = value.begin(); itr != value.end(); itr++) {
+void validateCookieValue(std::string &value) {
+  for (std::string::iterator itr = value.begin(); itr != value.end(); itr++) {
     if (*itr == 0x21 || (0x23 <= *itr && *itr <= 0x2B) || (0x2D <= *itr && *itr <= 0x3A) ||
         (0x3C <= *itr && *itr <= 0x5B) || (0x5D <= *itr && *itr <= 0x7E)) {
       continue;
@@ -296,7 +296,7 @@ void validateCookieValue(const std::string &value) {
 }
 
 // this will not take obs-fold in OWS
-void HttpRequestReader::analyzeCookie(const std::string &value) {
+void HttpRequestReader::analyzeCookie(std::string &value) {
   insertIfNotDuplicate(CookieField, "Http Request: duplicated cookie");
 
   std::string::size_type start;
@@ -318,13 +318,13 @@ void HttpRequestReader::analyzeCookie(const std::string &value) {
   request_.headers_.cookie_ = value;
 }
 
-void HttpRequestReader::validateHeaderName(const std::string &name) {
+void HttpRequestReader::validateHeaderName(std::string &name) {
   if (!isToken(name)) {
     throw BadRequestException("Http Request: invalid header name");
   }
 }
 
-void HttpRequestReader::validateHeaderValue(const std::string &value) {
+void HttpRequestReader::validateHeaderValue(std::string &value) {
   if (!isVchar(value)) {
     throw BadRequestException("Http Request: invalid header value");
   }

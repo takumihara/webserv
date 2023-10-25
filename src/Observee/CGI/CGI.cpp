@@ -81,7 +81,7 @@ std::pair<std::string, std::string> getHeaderField(std::string &field) {
 
 void CGI::processDocRes(std::string &body) {
   DEBUG_PUTS("processDocRes");
-  for (HttpResponse::t_headers::const_iterator itr = headers_.cbegin(); itr != headers_.cend(); itr++) {
+  for (HttpResponse::t_headers::iterator itr = headers_.begin(); itr != headers_.end(); itr++) {
     if (itr->first == "status") {
       std::istringstream iss(itr->second);
       std::string status;
@@ -102,7 +102,7 @@ void CGI::processDocRes(std::string &body) {
 
 void CGI::processClientRedirect() {
   DEBUG_PUTS("processClientRedirect");
-  for (HttpResponse::t_headers::const_iterator itr = headers_.cbegin(); itr != headers_.cend(); itr++) {
+  for (HttpResponse::t_headers::iterator itr = headers_.begin(); itr != headers_.end(); itr++) {
     response_->appendHeader(itr->first, itr->second);
   }
   response_->setStatusAndReason(302);
@@ -113,7 +113,7 @@ void CGI::processClientRedirect() {
 
 void CGI::processClientRedirectWithDoc(std::string &body) {
   DEBUG_PUTS("processClientRedirectWithDoc");
-  for (HttpResponse::t_headers::const_iterator itr = headers_.cbegin(); itr != headers_.cend(); itr++) {
+  for (HttpResponse::t_headers::iterator itr = headers_.begin(); itr != headers_.end(); itr++) {
     if (itr->first == "status") {
       std::istringstream iss(itr->second);
       std::string status;

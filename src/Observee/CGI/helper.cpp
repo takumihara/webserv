@@ -112,10 +112,10 @@ bool isMediaType(std::string &raw_media) {
   std::string type = media.substr(0, pos);
   std::string subtype = media.substr(pos + 1);
   if (type == "" || subtype == "") return false;
-  for (std::string::const_iterator c = type.cbegin(); c != type.cend(); c++) {
+  for (std::string::iterator c = type.begin(); c != type.end(); c++) {
     if (!isToken(*c)) return false;
   }
-  for (std::string::const_iterator c = subtype.cbegin(); c != subtype.cend(); c++) {
+  for (std::string::iterator c = subtype.begin(); c != subtype.end(); c++) {
     if (!isToken(*c)) return false;
   }
   return true;
@@ -131,7 +131,8 @@ bool isStatusHeaderValue(std::string &field) {
   else
     return false;
   getline(iss, reason, '\n');
-  if (!isStatusCode(field.substr(0, 3))) return false;
+  std::string str = field.substr(0, 3);
+  if (!isStatusCode(str)) return false;
   for (std::string::iterator c = reason.begin(); c != reason.end(); c++) {
     if (!isPrintable(*c)) return false;
   }

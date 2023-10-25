@@ -61,7 +61,8 @@ CGIInfo parseCGIInfo(const std::string &path, const std::string &ext, HttpReques
   info.gateway_interface_ = "CGI/1.1";
   info.path_info_ = getPathInfo(path, ext);
   info.path_translated_ = setPathTranslated(conf->common_.root_, info.path_info_);
-  info.query_string_ = Encoding::unescape(req.request_target_->getRawQuery(), Encoding::QueryComponent);
+  std::string str = req.request_target_->getRawQuery();
+  info.query_string_ = Encoding::unescape(str, Encoding::QueryComponent);
   // todo(katakagi): set remote_addr and remote_host by value obtained when accept()
   info.request_method_ = methodToString(req.method_);
   info.script_name_ = getScriptName(path, ext);

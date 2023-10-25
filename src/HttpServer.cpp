@@ -12,9 +12,9 @@ sig_atomic_t sig_int = 0;
 
 void sigIntHandler(int sig) { sig_int = sig; }
 
-std::vector<std::string> getIPList(const std::vector<ServerConf *> servs) {
+std::vector<std::string> getIPList(std::vector<ServerConf *> servs) {
   std::vector<std::string> ip_list;
-  for (std::vector<ServerConf *>::const_iterator serv = servs.cbegin(); serv != servs.cend(); serv++) {
+  for (std::vector<ServerConf *>::iterator serv = servs.begin(); serv != servs.end(); serv++) {
     if ((*serv)->host_ == "0.0.0.0") {
       ip_list.clear();
       ip_list.push_back("0.0.0.0");
@@ -55,7 +55,7 @@ void HttpServer::openPorts() {
   for (std::map<int, std::vector<ServerConf *> >::iterator itr = conf_.port_servConf_map_.begin();
        itr != conf_.port_servConf_map_.end(); itr++) {
     std::vector<std::string> ip_list = getIPList(itr->second);
-    for (std::vector<std::string>::const_iterator ip = ip_list.cbegin(); ip != ip_list.cend(); ip++) {
+    for (std::vector<std::string>::iterator ip = ip_list.begin(); ip != ip_list.end(); ip++) {
       if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         throw std::runtime_error("socket error");
       }
