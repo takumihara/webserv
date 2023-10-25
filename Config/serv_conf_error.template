@@ -1,0 +1,11 @@
+autoindex on;
+error_page 501 pwd/error_pages/Elocation;
+server {
+  root pwd/html;
+  server_name 127.0.0.1;
+  index index.html;
+  listen 127.0.0.1:8087;
+  autoindex off;
+  location / {
+  }
+}
