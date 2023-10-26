@@ -1,5 +1,7 @@
 #include "CGI/CGIInfo.hpp"
 
+#include <stdlib.h>
+
 #include <cstdlib>
 #include <sstream>
 
@@ -102,5 +104,10 @@ void CGIInfo::setEnv(std::vector<char *> &env) {
   env.push_back(strdup(("PROTOCOL_VAR_NAME=" + protocol_var_name_).c_str()));
   env.push_back(strdup(("EXTENSION_VAR_NAME=" + extension_var_name_).c_str()));
   env.push_back(strdup(("HTTP_COOKIE=" + cookie_).c_str()));
+  std::string path;
+  if (getenv("PATH")) {
+    path = getenv("PATH");
+  }
+  env.push_back(strdup(("PATH=" + path).c_str()));
   env.push_back(NULL);
 }
