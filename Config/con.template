@@ -1,7 +1,7 @@
 server {
   server_name localhost;
   index index.html;
-  listen 0.0.0.0:80;
+  listen 0.0.0.0:8087;
   root pwd;
   location / {
     autoindex on;
